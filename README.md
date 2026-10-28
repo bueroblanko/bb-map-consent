@@ -50,3 +50,21 @@ Die Sperre verarbeitet die fertige HTML-Antwort vor der Auslieferung. WordPress 
 Snazzy-Maps-iframes auf snazzymaps.com/embed/NUMMER werden jetzt ebenfalls serverseitig gesperrt. Die ursprüngliche iframe-URL und somit die Kartengestaltung bleiben erhalten. Vor Freigabe wird auch Snazzy Maps nicht geladen. Der Hinweistext benennt diesen zusätzlichen Anbieter. Die Datenschutzerklärung muss bei Nutzung von Snazzy Maps beide Anbieter berücksichtigen.
 
 Die Kontaktseite rhotertundpartner.de verwendet genau diese Einbettungsart. Ihr öffentlich ausgeliefertes HTML wurde als Regressionstest geprüft. Keine Änderung auf der Live-Seite vorgenommen, kein Browser-Netzwerktest durchgeführt.
+
+
+## GitHub-Updates ab 0.2.0
+
+Version 0.2.0 einmal manuell installieren. Ab dann fragt WordPress stabile Releases des öffentlichen Repositorys bueroblanko/bb-map-consent ab und zeigt neue Versionen in der normalen Plugin-Verwaltung an. Dort lassen sich auch die WordPress-Auto-Updates aktivieren. Das Plugin schaltet automatische Installationen nicht ungefragt ein. Keine Tokens oder GitHub-Zugangsdaten auf Kundenseiten nötig.
+
+Updates werden im normalen WordPress-Prüfintervall gefunden, mit einem zusätzlichen API-Cache von einer Stunde. Bei API-Fehlern wird fünf Minuten zwischengespeichert. WP-Cron bzw. ein Server-Cron und ausgehende HTTPS-Verbindungen zu GitHub müssen funktionieren. GitHub kann anonyme API-Aufrufe begrenzen, besonders bei vielen Websites mit derselben Server-IP. Die Abfragen gehen vom WordPress-Server aus, nicht vom Browser des Besuchers.
+
+### Neue Version veröffentlichen
+
+1. Änderungen vornehmen, Versionsnummer im PHP-Plugin-Header und Asset-Versionen aktualisieren.
+2. `php tests/updater.php` und `node --check assets/maps.js` ausführen.
+3. Commit pushen, danach passenden Tag setzen und pushen, zum Beispiel `git tag v0.2.1` und `git push origin v0.2.1`.
+4. GitHub Actions prüft den Code, baut eine ZIP mit stabilem Plugin-Ordner bb-map-consent und veröffentlicht ein Release mit der ZIP. Erst das veröffentlichte Release macht das Update verfügbar; ein normaler Commit reicht nicht.
+
+Der Updater akzeptiert nur stabile Versions-Tags und die passend benannte ZIP aus genau diesem Repository. Entwürfe und Vorabversionen werden nicht ausgeliefert. GitHub-Releases sollten unveränderlich behandelt werden: Korrekturen mit neuer Versionsnummer veröffentlichen. Zugang zum GitHub-Konto und Schreibrechte für das Repository schützen, da veröffentlichte Releases Code auf verbundenen Websites aktualisieren können.
+
+Validierung: automatisierte Tests für Release-Auswahl, fremde Plugins, ungültige Download-URLs, Cache, API-Fehler und Timeouts. Ein vollständiger WordPress-Upgrade-Durchlauf ist noch ausstehend.

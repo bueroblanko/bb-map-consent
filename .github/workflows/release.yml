@@ -1,0 +1,25 @@
+name: Build plugin release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify PHP and regression tests
+        run: |
+          find . -name '*.php' -not -path './.git/*' -exec php -l {} \;
+          php tests/filter.php
+          php tests/updater.php
+          node --check assets/maps.js
+      - name: Build and check tag
+        run: |
+          VERSION=$(python3 tools/package.py)
+          test "$GITHUB_REF_NAME" = "v$VERSION"
+      - name: Publish release with installable ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --verify-tag --title "BB Map Consent $GITHUB_REF_NAME" --generate-notes
