@@ -1,4 +1,4 @@
-# BB Consent 0.5.0
+# BB Consent 0.5.1
 
 Installierbare erste Testversion für WordPress ab 6.2 / PHP ab 7.4. GPL-2.0-or-later.
 
@@ -20,7 +20,7 @@ Es gibt kein zusätzliches Cookie-Banner und keine externe Bibliothek. Der Klick
 ## Grenzen dieser Version
 
 - Noch nicht in einer echten WordPress-/Divi-Installation getestet. Divi 5 mit nativem Block-/JSON-Rendering ist nicht als unterstützt bestätigt. Der klassische Shortcode-Pfad wird verarbeitet, die iframe-Sperre ist unabhängig vom Builder.
-- Eigene Divi-Kartenfarben, individuelle Modul-CSS-Klassen/IDs, Animationen, exakte Modulhöhe und HTML in Pin-Beschreibungen werden nicht übernommen. Iframes werden responsiv mit der numerischen Originalhöhe (200–1000 px, Standard 400 px) dargestellt.
+- Eigene Divi-Kartenfarben, individuelle Modul-CSS-Klassen/IDs, Animationen, exakte Modulhöhe und HTML in Pin-Beschreibungen werden nicht übernommen. Iframes werden responsiv mit der numerischen Originalhöhe (150–1000 px, Standard 400 px; bis 0.5.0: 200–1000 px) dargestellt.
 - Keine Unterstützung für Karten, die Drittanbieter-JavaScript nachträglich einfügt, srcdoc, Google-My-Maps auf anderen URL-Pfaden, eigene Proxy-URLs oder beliebige andere Google-Dienste. Ein MutationObserver wäre keine zuverlässige Netzwerksperre und wird deshalb nicht als solche eingesetzt.
 - Direkt ausgegebene Maps-API-script-Tags werden vor der Auslieferung entfernt; eigene Inline-Skripte, die Google Maps dynamisch nachladen, werden nicht umgeschrieben. Solche Integrationen müssen gesondert geprüft werden.
 - Maps-API-Skripte werden im Frontend global entfernt, auch wenn andere Plugins dieselbe API nutzen. Nicht parallel mit weiteren Karten-/Places-Integrationen einsetzen, ohne deren Verhalten zu prüfen.
@@ -111,3 +111,8 @@ Das Planity-Buchungswidget (Inline-Konfiguration mit `window.planity = …` und 
 Geprüft auf villa-haartrend-speyer.de/termin/ (28.10.2026): Der von Borlabs gesperrte Widget-Code wurde in eine lokale Testseite mit Plugin-Filter und -Skript übernommen. Vor dem Klick gab es keine externen Anfragen. Nach dem Klick luden CloudFront und Planity, und das Widget zeigte die Dienstleistungen. Mit gemerkter Freigabe lud es nach dem Neuladen automatisch.
 
 Nicht vom Plugin abgedeckt: Divi bettet dort Google Fonts als `@font-face` mit Adressen auf fonts.gstatic.com direkt ins CSS ein. Die Schriften laden auf jeder Seite ohne Einwilligung. Das muss über lokal gehostete Schriften gelöst werden, nicht über eine Einwilligung.
+
+
+## Kompakter Platzhalter ab 0.5.1
+
+Für schmale Spalten wie eine Footer-Karte. Ist die Box höchstens 360 px breit oder das eingebettete Element niedriger als 260 px, zeigt der Platzhalter einen Kurzhinweis mit dem Link zur Datenschutzerklärung („Beim Laden werden Daten an Google übermittelt.“), „30 Tage merken“ und einen kleineren Button. Die Höhe wird schon serverseitig gesetzt, damit nichts springt. Ab 240 px Breite und schmaler entfällt die Überschrift, und der Widerruf unter einer geladenen Karte erscheint als kleiner Textlink statt als Button über der Karte. Die Breitenerkennung nutzt CSS-Container-Queries; ältere Browser zeigen dort die normale Variante. Geprüft im Browser mit einer 195 px breiten, 170 px hohen Karte wie im Footer von wagner-containerservice.de.

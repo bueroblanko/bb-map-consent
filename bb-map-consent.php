@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner und Planity-Terminbuchung.
- * Version: 0.5.0
+ * Version: 0.5.1
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,7 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.5.0');
+define('BBMC_VERSION', '0.5.1');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
@@ -25,8 +25,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.5.0');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.5.0', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.5.1');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.5.1', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -73,15 +73,19 @@ final class BB_Map_Consent {
     public static function box($config) {
         $service = $config['service'] ?? 'maps';
         $texts = [
-            'maps' => ['Google Maps', 'Mit dem Laden stimmen Sie zu, dass Google Maps eingebunden wird (bei einer Snazzy-Maps-Karte auch über Snazzy Maps). Dabei wird Ihre IP-Adresse an Google übermittelt; Daten können auch in den USA verarbeitet werden.'],
-            'instagram' => ['Instagram', 'Mit dem Laden stimmen Sie zu, dass Inhalte von Instagram (Meta) eingebunden werden. Dabei wird Ihre IP-Adresse an Meta übermittelt; Daten können auch in den USA verarbeitet werden.'],
-            'planity' => ['Online-Terminbuchung', 'Mit dem Laden stimmen Sie zu, dass das Buchungssystem von Planity (Planity SAS, Frankreich) eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an Planity und von Planity eingesetzte Dienstleister wie Amazon Web Services übermittelt; Daten können auch in den USA verarbeitet werden.'],
-            'dealerweb' => ['Aktionsbanner', 'Mit dem Laden stimmen Sie zu, dass ein Aktionsbanner der COmarketing GmbH (dealerweb-comarketing.de) eingebunden wird, das über die Website-Plattform Wix ausgeliefert wird. Dabei wird Ihre IP-Adresse an COmarketing und Wix übermittelt; Daten können auch außerhalb der EU verarbeitet werden.'],
+            'maps' => ['Google Maps', 'Mit dem Laden stimmen Sie zu, dass Google Maps eingebunden wird (bei einer Snazzy-Maps-Karte auch über Snazzy Maps). Dabei wird Ihre IP-Adresse an Google übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Google übermittelt.'],
+            'instagram' => ['Instagram', 'Mit dem Laden stimmen Sie zu, dass Inhalte von Instagram (Meta) eingebunden werden. Dabei wird Ihre IP-Adresse an Meta übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Meta übermittelt.'],
+            'planity' => ['Online-Terminbuchung', 'Mit dem Laden stimmen Sie zu, dass das Buchungssystem von Planity (Planity SAS, Frankreich) eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an Planity und von Planity eingesetzte Dienstleister wie Amazon Web Services übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Planity übermittelt.'],
+            'dealerweb' => ['Aktionsbanner', 'Mit dem Laden stimmen Sie zu, dass ein Aktionsbanner der COmarketing GmbH (dealerweb-comarketing.de) eingebunden wird, das über die Website-Plattform Wix ausgeliefert wird. Dabei wird Ihre IP-Adresse an COmarketing und Wix übermittelt; Daten können auch außerhalb der EU verarbeitet werden.', 'Beim Laden werden Daten an COmarketing und Wix übermittelt.'],
         ];
-        [$name, $notice] = $texts[$service];
+        [$name, $notice, $short] = $texts[$service];
+        // Small embeds (e.g. a footer map) get the compact layout before any JavaScript runs.
+        $height = (int) ($config['height'] ?? 0);
+        $size = $height ? ' style="--bbmc-h:' . $height . 'px"' : '';
+        $compact = $height && $height < 260 ? ' bbmc-compact' : '';
         $privacy = get_privacy_policy_url();
         $link = $privacy ? ' <a href="' . esc_url($privacy) . '">Datenschutzerklärung</a>' : '';
-        return '<section class="bbmc" data-service="' . esc_attr($service) . '" data-bbmc="' . esc_attr(wp_json_encode($config)) . '"><div class="bbmc-placeholder"><strong>' . $name . ' ist deaktiviert</strong><p>' . $notice . $link . '</p><label><input type="checkbox" class="bbmc-remember"> Freigabe für 30 Tage auf diesem Gerät merken</label><button type="button" class="bbmc-allow">' . $name . ' laden</button><noscript>Zum Freigeben des Inhalts ist JavaScript erforderlich.</noscript></div><div class="bbmc-target" hidden></div><button type="button" class="bbmc-revoke" hidden>Einwilligung widerrufen</button><p class="bbmc-status" role="status"></p></section>';
+        return '<section class="bbmc' . $compact . '" data-service="' . esc_attr($service) . '"' . $size . ' data-bbmc="' . esc_attr(wp_json_encode($config)) . '"><div class="bbmc-placeholder"><strong>' . $name . ' ist deaktiviert</strong><p class="bbmc-long">' . $notice . $link . '</p><p class="bbmc-short">' . $short . $link . '</p><label><input type="checkbox" class="bbmc-remember"> <span class="bbmc-long">Freigabe für 30 Tage auf diesem Gerät merken</span><span class="bbmc-short">30 Tage merken</span></label><button type="button" class="bbmc-allow">' . $name . ' laden</button><noscript>Zum Freigeben des Inhalts ist JavaScript erforderlich.</noscript></div><div class="bbmc-target" hidden></div><button type="button" class="bbmc-revoke" hidden>Einwilligung widerrufen</button><p class="bbmc-status" role="status"></p></section>';
     }
     public static function divi($return, $tag, $attrs, $match) {
         if (!in_array($tag, ['et_pb_map', 'et_pb_fullwidth_map'], true) || $return !== false) { return $return; }
@@ -179,7 +183,7 @@ final class BB_Map_Consent {
                 return self::box(['service' => 'dealerweb', 'kind' => 'iframe', 'src' => self::dealerweb_url($src), 'title' => self::attribute($tag, 'title') ?: 'Aktionsbanner', 'height' => max(100, min(1000, (int)(self::attribute($tag, 'height') ?: 300))), 'width' => $width >= 100 ? min(2000, $width) : 0]);
             }
             if (self::iframe_url($src)) {
-                return self::box(['kind' => 'iframe', 'src' => $src, 'title' => self::attribute($tag, 'title') ?: 'Google Maps', 'height' => max(200, min(1000, (int)(self::attribute($tag, 'height') ?: 400)))]);
+                return self::box(['kind' => 'iframe', 'src' => $src, 'title' => self::attribute($tag, 'title') ?: 'Google Maps', 'height' => max(150, min(1000, (int)(self::attribute($tag, 'height') ?: 400)))]);
             }
             return $tag;
         }, $html);

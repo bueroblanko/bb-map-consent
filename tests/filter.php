@@ -17,5 +17,8 @@
  ['<script>const x = "<iframe src=bad>";</script>', 'const x', 'data-bbmc='],
  ['<!-- <iframe src="https://google.com/maps/embed"></iframe> -->', '<!--', 'data-bbmc=']
  ];
+ $small=BB_Map_Consent::filter_html('<iframe src="https://www.google.com/maps/embed?pb=abc" height="170"></iframe>');
+ if(strpos($small,'class="bbmc bbmc-compact"')===false || strpos($small,'style="--bbmc-h:170px"')===false || strpos($small,'class="bbmc-short"')===false){throw new Exception('Compact placeholder failed: '.$small);}
+ if(strpos(BB_Map_Consent::filter_html('<iframe src="https://www.google.com/maps/embed?pb=abc" height="450"></iframe>'),'bbmc-compact')!==false){throw new Exception('Large map marked compact');}
  foreach($cases as $i=>$c){$o=BB_Map_Consent::filter_html($c[0]); if(strpos($o,$c[1])===false || strpos($o,$c[2])!==false){throw new Exception('Case '.$i.' failed: '.$o);}}
  echo count($cases)." server-side regression checks passed\n";
