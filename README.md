@@ -124,3 +124,8 @@ Korrektur für DealerWeb-Banner in 0.5.1: Prozentbreiten wie Divis Tablet-/Handy
 ## Fehlerkorrektur 0.5.2
 
 Divi-Karten lesen den Google-Maps-API-Schlüssel über Divis eigene Funktion et_pb_get_google_api_key und als Fallback aus der globalen Einstellung et_google_api_settings. Die bisherige Suche nur unter divi_google_api_key konnte vorhandene Schlüssel übersehen. Nach dem Update Seiten-, Divi- und CDN-Caches leeren. Die Sperre bis zur Einwilligung bleibt bestehen.
+
+
+## Fehlerkorrektur 0.5.3
+
+Klassische Divi-Karten werden nach dem Rendern über do_shortcode_tag verarbeitet. Zentrum, Zoom und Pins werden aus Divis tatsächlich erzeugten data-Attributen übernommen, statt unbekannte Shortcode-Feldnamen mit 0,0 zu ersetzen. Beide Kartenarten und die beiden Heidelberger Kartenpositionen sind durch Regressionstests abgedeckt. Fehlende Koordinaten führen zu einem Hinweis statt zu einer Karte bei 0,0. Der äußere Modul-Container mit Klassen und ID bleibt erhalten. Ein Browser-Test mit simulierter Google-Maps-API bestätigt Einwilligungssperre, Kartenoptionen, Pin und Widerrufsbutton. Live-Test mit echter Google-API auf der WordPress-Installation weiterhin erforderlich.

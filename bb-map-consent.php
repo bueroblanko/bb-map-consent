@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner und Planity-Terminbuchung.
- * Version: 0.5.2
+ * Version: 0.5.3
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,11 +11,11 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.5.2');
+define('BBMC_VERSION', '0.5.3');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
-        add_filter('pre_do_shortcode_tag', [__CLASS__, 'divi'], 10, 4);
+        add_filter('do_shortcode_tag', [__CLASS__, 'divi'], 10, 4);
         add_action('template_redirect', function () {
             if (!is_feed() && !is_admin() && !wp_doing_ajax()) { ob_start([__CLASS__, 'filter_html']); }
         }, 0);
@@ -25,8 +25,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.5.2');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.5.2', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.5.3');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.5.3', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -100,19 +100,43 @@ final class BB_Map_Consent {
         $key = function_exists('et_get_option') ? et_get_option('divi_google_api_key', '') : '';
         return is_string($key) ? trim($key) : '';
     }
-    public static function divi($return, $tag, $attrs, $match) {
-        if (!in_array($tag, ['et_pb_map', 'et_pb_fullwidth_map'], true) || $return !== false) { return $return; }
+    public static function divi($output, $tag, $attrs, $match) {
+        if (!in_array($tag, ['et_pb_map', 'et_pb_fullwidth_map'], true) || !is_string($output)) { return $output; }
+        // Read Divi's resolved HTML, including presets and its actual coordinate field names.
+        preg_match_all('~<div\b[^>]*>~i', $output, $tags, PREG_OFFSET_CAPTURE);
+        $center = null;
         $pins = [];
-        preg_match_all('/\[et_pb_map_pin\b([^\]]*)\](.*?)\[\/et_pb_map_pin\]/s', $match[5] ?? '', $matches, PREG_SET_ORDER);
-        foreach ($matches as $pin) {
-            $a = shortcode_parse_atts($pin[1]);
-            if (isset($a['map_pin_address_lat'], $a['map_pin_address_lng']) && is_numeric($a['map_pin_address_lat']) && is_numeric($a['map_pin_address_lng'])) {
-                $pins[] = ['lat' => (float)$a['map_pin_address_lat'], 'lng' => (float)$a['map_pin_address_lng'], 'title' => sanitize_text_field($a['title'] ?? ''), 'text' => wp_strip_all_tags($pin[2])];
+        foreach ($tags[0] as $entry) {
+            [$element, $offset] = $entry;
+            $class = self::attribute($element, 'class');
+            if (preg_match('/(?:^|\s)et_pb_map(?:\s|$)/', $class)) {
+                $lat = self::attribute($element, 'data-center-lat');
+                $lng = self::attribute($element, 'data-center-lng');
+                if (is_numeric($lat) && is_numeric($lng)) {
+                    $center = ['lat' => (float)$lat, 'lng' => (float)$lng, 'zoom' => max(1, min(20, (int) self::attribute($element, 'data-zoom')))];
+                }
+            }
+            if (preg_match('/(?:^|\s)et_pb_map_pin(?:\s|$)/', $class)) {
+                $lat = self::attribute($element, 'data-lat');
+                $lng = self::attribute($element, 'data-lng');
+                if (!is_numeric($lat) || !is_numeric($lng)) { continue; }
+                $text = '';
+                $tail = substr($output, $offset + strlen($element));
+                if (preg_match('~^\s*(?:<h3\b[^>]*>.*?</h3>\s*)?<div\b[^>]*class=["\x27]infowindow["\x27][^>]*>(.*?)</div>~is', $tail, $body)) {
+                    $text = html_entity_decode(wp_strip_all_tags(preg_replace('~<br\s*/?>~i', "\n", $body[1])), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                }
+                $pins[] = ['lat' => (float)$lat, 'lng' => (float)$lng, 'title' => self::attribute($element, 'data-title'), 'text' => $text];
             }
         }
-        $key = self::divi_api_key();
-        $config = ['kind' => 'divi', 'key' => $key, 'pins' => $pins, 'lat' => (float)($attrs['map_center_lat'] ?? 0), 'lng' => (float)($attrs['map_center_lng'] ?? 0), 'zoom' => max(1, min(20, (int)($attrs['zoom_level'] ?? 14)))];
-        return self::box($config);
+        if ($center === null && $pins) { $center = ['lat' => $pins[0]['lat'], 'lng' => $pins[0]['lng'], 'zoom' => 14]; }
+        if ($center === null) {
+            return self::box(['kind' => 'divi', 'key' => self::divi_api_key(), 'pins' => [], 'lat' => null, 'lng' => null, 'zoom' => 14]);
+        }
+        $config = array_merge(['kind' => 'divi', 'key' => self::divi_api_key(), 'pins' => $pins], $center);
+        // Retain Divi's module classes and ID so existing layout selectors still apply.
+        $box = self::box($config);
+        if (preg_match('~^\s*(<div\b[^>]*>)~i', $output, $wrapper)) { return $wrapper[1] . $box . '</div>'; }
+        return $box;
     }
     /** Replace complete Smash Balloon feed containers before the browser sees any media. */
     public static function feeds($html) {

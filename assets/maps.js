@@ -89,6 +89,7 @@
         frame.allowFullscreen = true; frame.src = config.src; target.append(frame);
       } else {
         if (reserved > 400) target.style.minHeight = reserved + 'px';
+        if (!Number.isFinite(config.lat) || !Number.isFinite(config.lng)) throw new Error('Die Divi-Karte enthält keine gültigen Standort-Koordinaten.');
         await googleApi(config.key);
         const map = new google.maps.Map(target, {center: {lat: config.lat, lng: config.lng}, zoom: config.zoom});
         // As a native control the button never collides with the fullscreen control.
