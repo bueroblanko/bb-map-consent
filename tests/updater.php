@@ -25,3 +25,12 @@ BBMC_Updater::release(); check($GLOBALS['requests']===1);
 unset($GLOBALS['release_cache']); $GLOBALS['http']=['code'=>403,'body'=>'{}']; check(BBMC_Updater::release()===[]);
 unset($GLOBALS['release_cache']); $GLOBALS['http']=new Exception('Timeout'); check(BBMC_Updater::release()===[]);
 echo "Updater: valid release, draft, prerelease, invalid asset/tag, foreign plugin, caching, HTTP failure and timeout passed\n";
+function current_user_can($capability) { return $GLOBALS['can_update'] ?? false; }
+function admin_url($path) { return 'https://example.com/wp-admin/'.$path; }
+function wp_nonce_url($url, $action) { return $url.'&_wpnonce=test'; }
+$GLOBALS['can_update']=false;
+check(BBMC_Updater::links([], 'bb-map-consent/bb-map-consent.php')===[]);
+$GLOBALS['can_update']=true;
+check(count(BBMC_Updater::links([], 'bb-map-consent/bb-map-consent.php'))===1);
+check(BBMC_Updater::links([], 'other/plugin.php')===[]);
+echo "Manual update link: permissions and plugin identity passed\n";

@@ -1,4 +1,4 @@
-# BB Consent 0.3.1
+# BB Consent 0.4.0
 
 Installierbare erste Testversion für WordPress ab 6.2 / PHP ab 7.4. GPL-2.0-or-later.
 
@@ -76,7 +76,7 @@ Unterstützt werden klassische Instagram-Embed-Codes mit `blockquote.instagram-m
 
 Instagram hat eine eigene Freigabe, einen eigenen optionalen 30-Tage-Eintrag in localStorage und einen separaten Widerruf. Bereits gespeicherte Maps-Freigaben gelten weiterhin ausschließlich für Karten. Optionaler Shortcode für die Datenschutzerklärung: `[bb_instagram_revoke]`. Beim Widerruf lädt die Seite neu; die gespeicherte Einwilligung des jeweils anderen Dienstes bleibt erhalten.
 
-Nicht unterstützte Instagram-URLs in erkannten Embed-Elementen bleiben gesperrt und zeigen nach dem Freigabeversuch einen Hinweis. Profile, Stories und dynamisch eingefügte Feed-Plugins (z. B. Smash Balloon), Social-Walls oder Proxy-Dienste werden nicht unterstützt. Normale Instagram-Links bleiben unverändert. Das Plugin beschafft keine Beiträge und ersetzt keine oEmbed-Anbindung: Der Embed-Code muss bereits in der WordPress-Ausgabe vorhanden sein. Private oder vom Betreiber für Einbettungen gesperrte Inhalte kann Instagram nicht anzeigen. Die Datenschutzerklärung um Instagram/Meta ergänzen.
+Nicht unterstützte Instagram-URLs in erkannten Embed-Elementen bleiben gesperrt und zeigen nach dem Freigabeversuch einen Hinweis. Profile, Stories und andere dynamisch eingefügte Feed-Plugins, Social-Walls oder Proxy-Dienste werden nicht unterstützt. Normale Instagram-Links bleiben unverändert. Das Plugin beschafft keine Beiträge und ersetzt keine oEmbed-Anbindung: Der Embed-Code muss bereits in der WordPress-Ausgabe vorhanden sein. Private oder vom Betreiber für Einbettungen gesperrte Inhalte kann Instagram nicht anzeigen. Die Datenschutzerklärung um Instagram/Meta ergänzen.
 
 Zusätzliche Abnahme: Seite mit Karte und Instagram gemeinsam öffnen, vor Freigabe Netzwerk prüfen, Instagram freigeben (Karte bleibt gesperrt), optional speichern, neu laden und Instagram widerrufen. Danach umgekehrt mit Kartenfreigabe testen. Getrennte Freigaben, Speichern, Ablauf und Widerruf sind mit JavaScript-Test-Doubles geprüft; ein echter Browser-/WordPress-Test auf einer Instagram-Zielseite steht noch aus.
 
@@ -84,3 +84,12 @@ Zusätzliche Abnahme: Seite mit Karte und Instagram gemeinsam öffnen, vor Freig
 ## Umbenennung ab 0.3.1
 
 Der sichtbare Plugin-Name lautet BB Consent. Plugin-Ordner, Hauptdatei, Repository und Update-Adresse behalten aus Kompatibilitätsgründen ihre bisherigen Namen. Bestehende Installationen bekommen die Umbenennung als normales Update.
+
+
+## Smash Balloon und manuelle Update-Prüfung ab 0.4.0
+
+Smash Balloon Instagram Feed mit dem im HTML ausgegebenen Container `div#sb_instagram` wird unterstützt. Das komplette Feed-HTML wird vor Auslieferung in eine inaktive, kodierte Konfiguration verschoben. Die zugehörigen `sbi_`-Skript-Tags und Skripte aus instagram-feed/instagram-feed-pro werden zurückgehalten. Nach Instagram-Freigabe werden alle Feeds wieder eingesetzt und die Feed-Skripte in ursprünglicher Reihenfolge ausgeführt. Lokale Stylesheets bleiben aktiv. Die serverseitige Feed-Beschaffung durch Smash Balloon wird dadurch nicht abgeschaltet. Dessen Einstellungen und andere Consent-Integrationen können das spätere Laden beeinflussen. Getestete Ausgabe: Smash Balloon Free 6.14.0. Für Pro, individuell initialisierte und per AJAX nachträglich eingefügte Feeds ist keine vollständige Kompatibilität bestätigt.
+
+In der Plugin-Zeile erscheint für Administratoren mit Update-Berechtigung „Nach Updates suchen“. Dieser Link prüft mit Nonce und Berechtigungsprüfung, leert den GitHub- und WordPress-Update-Cache und startet die WordPress-Update-Prüfung sofort. Anschließend wird gemeldet, ob die Version aktuell, ein Update verfügbar oder GitHub nicht erreichbar ist. Der Link installiert kein Update automatisch.
+
+Browser-Test mit dem öffentlich ausgelieferten HTML von hiffelder-carneval.de und dessen echtem Smash-Balloon-Skript: vor Freigabe keine Feed-/Instagram-Medienanfragen, nach Freigabe Feed-Initialisierung und Wiederherstellung aller 16 Beiträge bestätigt. Sonstige Website-Ressourcen waren im Test blockiert; dies ersetzt keine vollständige Live-Abnahme nach Plugin-Installation.

@@ -7,6 +7,40 @@ final class BBMC_Updater {
     const CACHE = 'bbmc_release_v1';
     public static function boot() {
         add_filter('update_plugins_github.com', [__CLASS__, 'update'], 10, 4);
+        add_filter('plugin_row_meta', [__CLASS__, 'links'], 10, 2);
+        add_action('admin_post_bbmc_check_updates', [__CLASS__, 'check_now']);
+        add_action('admin_notices', [__CLASS__, 'notice']);
+        add_action('network_admin_notices', [__CLASS__, 'notice']);
+    }
+    public static function links($links, $file) {
+        if ($file === plugin_basename(dirname(__DIR__) . '/bb-map-consent.php') && current_user_can('update_plugins')) {
+            $url = wp_nonce_url(admin_url('admin-post.php?action=bbmc_check_updates'), 'bbmc_check_updates');
+            $links[] = '<a href="' . esc_url($url) . '">Nach Updates suchen</a>';
+        }
+        return $links;
+    }
+    public static function check_now() {
+        if (!current_user_can('update_plugins')) { wp_die('Keine Berechtigung.'); }
+        check_admin_referer('bbmc_check_updates');
+        delete_site_transient(self::CACHE);
+        delete_site_transient('update_plugins');
+        wp_update_plugins();
+        $release = get_site_transient(self::CACHE);
+        $state = !$release ? 'error' : (version_compare($release['version'], BBMC_VERSION, '>') ? 'available' : 'current');
+        wp_safe_redirect(add_query_arg('bbmc_update_check', $state, self_admin_url('plugins.php')));
+        exit;
+    }
+    public static function notice() {
+        if (!current_user_can('update_plugins')) { return; }
+        $state = isset($_GET['bbmc_update_check']) && is_string($_GET['bbmc_update_check']) ? $_GET['bbmc_update_check'] : '';
+        $messages = [
+            'error' => 'BB Consent: GitHub konnte nicht geprüft werden. Bitte später erneut versuchen.',
+            'available' => 'BB Consent: Eine neue Version ist verfügbar. Sie können das Update jetzt in der Plugin-Liste installieren.',
+            'current' => 'BB Consent: Die installierte Version ist aktuell.'
+        ];
+        if (isset($messages[$state])) {
+            echo '<div class="notice notice-info is-dismissible"><p>' . esc_html($messages[$state]) . '</p></div>';
+        }
     }
     public static function release() {
         $cached = get_site_transient(self::CACHE);

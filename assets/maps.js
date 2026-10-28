@@ -2,7 +2,7 @@
   'use strict';
   const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1'};
   const consent = {};
-  let api;
+  let api, feedScripts;
   Object.entries(keys).forEach(([service, key]) => {
     try {
       const saved = JSON.parse(localStorage.getItem(key));
@@ -25,6 +25,37 @@
     });
     return api;
   }
+  function decode(value) {
+    const bytes = Uint8Array.from(atob(value), char => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+  function loadFeedScripts() {
+    if (!feedScripts) feedScripts = (async () => {
+      for (const holder of document.querySelectorAll('.bbmc-feed-script')) {
+        const template = document.createElement('template');
+        template.innerHTML = decode(holder.dataset.script);
+        const original = template.content.querySelector('script');
+        if (!original) continue;
+        const script = document.createElement('script');
+        for (const attribute of original.attributes) {
+          if (!['async', 'defer'].includes(attribute.name)) script.setAttribute(attribute.name, attribute.value);
+        }
+        script.async = false;
+        if (original.hasAttribute('src')) {
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Das Instagram-Feed-Skript konnte nicht geladen werden.'));
+            document.head.append(script);
+          });
+        } else {
+          script.textContent = original.textContent;
+          document.head.append(script);
+        }
+        holder.remove();
+      }
+    })();
+    return feedScripts;
+  }
   async function load(box) {
     if (box.dataset.loaded) return;
     box.dataset.loaded = 'yes';
@@ -34,7 +65,12 @@
     box.querySelector('.bbmc-revoke').hidden = false;
     target.hidden = false;
     try {
-      if (config.kind === 'iframe') {
+      if (config.kind === 'smashballoon') {
+        target.innerHTML = decode(config.html);
+        // The whole group is restored synchronously before the SDK starts scanning.
+        await Promise.resolve();
+        await loadFeedScripts();
+      } else if (config.kind === 'iframe') {
         if (!config.src) throw new Error('Diese Instagram-Einbettung wird noch nicht unterstützt. Bitte einen öffentlichen Beitrag oder ein Reel einbetten.');
         const frame = document.createElement('iframe');
         frame.title = config.title; frame.height = config.height;
@@ -77,5 +113,7 @@
     boxes(service).forEach(load);
   });
   window.addEventListener('storage', event => { if (Object.values(keys).includes(event.key) && !event.newValue) location.reload(); });
-  Object.keys(keys).forEach(service => { if (consent[service]) boxes(service).forEach(load); });
+  const restore = () => Object.keys(keys).forEach(service => { if (consent[service]) boxes(service).forEach(load); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restore, {once: true});
+  else restore();
 })();

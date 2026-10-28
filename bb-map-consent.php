@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten und Instagram.
- * Version: 0.3.1
+ * Version: 0.4.0
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,6 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
+define('BBMC_VERSION', '0.4.0');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
@@ -22,8 +23,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_maps_revoke', function () { return '<button type="button" class="bbmc-revoke">Google-Maps-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.3.1');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.3.1', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.4.0');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.4.0', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -78,9 +79,39 @@ final class BB_Map_Consent {
         $config = ['kind' => 'divi', 'key' => $key, 'pins' => $pins, 'lat' => (float)($attrs['map_center_lat'] ?? 0), 'lng' => (float)($attrs['map_center_lng'] ?? 0), 'zoom' => max(1, min(20, (int)($attrs['zoom_level'] ?? 14)))];
         return self::box($config);
     }
+    /** Replace complete Smash Balloon feed containers before the browser sees any media. */
+    public static function feeds($html) {
+        preg_match_all('~<!--.*?-->|<(script|style|textarea)\b[^>]*>.*?</\1\s*>|</?div\b[^>]*>~is', $html, $tokens, PREG_OFFSET_CAPTURE);
+        $ranges = [];
+        $start = null;
+        $depth = 0;
+        foreach ($tokens[0] as $token) {
+            [$tag, $offset] = $token;
+            if (!preg_match('~^</?div\b~i', $tag)) { continue; }
+            $closing = stripos($tag, '</div') === 0;
+            if ($start === null && !$closing && self::attribute($tag, 'id') === 'sb_instagram') {
+                $start = $offset;
+                $depth = 1;
+            } elseif ($start !== null) {
+                $depth += $closing ? -1 : 1;
+                if ($depth === 0) {
+                    $ranges[] = [$start, $offset + strlen($tag) - $start];
+                    $start = null;
+                }
+            }
+        }
+        // Work backwards so recorded byte offsets remain valid.
+        foreach (array_reverse($ranges) as $range) {
+            [$offset, $length] = $range;
+            $feed = substr($html, $offset, $length);
+            $html = substr_replace($html, self::box(['service' => 'instagram', 'kind' => 'smashballoon', 'html' => base64_encode($feed)]), $offset, $length);
+        }
+        return [$html, count($ranges)];
+    }
     public static function filter_html($html) {
+        [$html, $feeds] = self::feeds($html);
         // Tokenise tags without reserialising the document or touching script strings.
-        return preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>~is', function ($m) {
+        return preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>~is', function ($m) use ($feeds) {
             $tag = $m[0];
             if (strpos($tag, '<!--') === 0) { return $tag; }
             if (stripos($tag, '<blockquote') === 0) {
@@ -98,6 +129,10 @@ final class BB_Map_Consent {
             }
             if (stripos($tag, '<script') === 0) {
                 $src = self::attribute($tag, 'src');
+                $id = self::attribute($tag, 'id');
+                if ($feeds && (preg_match('~/(?:instagram-feed|instagram-feed-pro)/.*\.js(?:[?]|$)~i', $src) || preg_match('/^sbi_[a-z0-9_-]+$/i', $id))) {
+                    return '<template class="bbmc-feed-script" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
+                }
                 if (self::map_url($src) || (self::instagram_host($src) && preg_match('~^/embed\.js(?:[?#]|$)~', (string) wp_parse_url(strpos($src, '//') === 0 ? 'https:' . $src : $src, PHP_URL_PATH)))) { return ''; }
                 return $tag;
             }
