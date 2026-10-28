@@ -1,9 +1,16 @@
 (() => {
   'use strict';
-  const key = 'bbmc-consent-v1';
-  let consent = false, api;
-  try { const saved = JSON.parse(localStorage.getItem(key)); consent = saved?.expires > Date.now(); if (!consent) localStorage.removeItem(key); } catch (_) {}
-  const boxes = () => [...document.querySelectorAll('.bbmc')];
+  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1'};
+  const consent = {};
+  let api;
+  Object.entries(keys).forEach(([service, key]) => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(key));
+      consent[service] = saved?.expires > Date.now();
+      if (!consent[service]) localStorage.removeItem(key);
+    } catch (_) { consent[service] = false; }
+  });
+  const boxes = (service) => [...document.querySelectorAll('.bbmc')].filter(box => !service || box.dataset.service === service);
   function googleApi(apiKey) {
     if (window.google?.maps?.Map) return Promise.resolve();
     if (!api) api = new Promise((resolve, reject) => {
@@ -28,6 +35,7 @@
     target.hidden = false;
     try {
       if (config.kind === 'iframe') {
+        if (!config.src) throw new Error('Diese Instagram-Einbettung wird noch nicht unterstützt. Bitte einen öffentlichen Beitrag oder ein Reel einbetten.');
         const frame = document.createElement('iframe');
         frame.title = config.title; frame.height = config.height;
         frame.referrerPolicy = 'strict-origin-when-cross-origin';
@@ -49,23 +57,25 @@
       box.querySelector('.bbmc-status').textContent = error.message;
     }
   }
-  function revoke() {
-    consent = false;
-    try { localStorage.removeItem(key); } catch (_) {}
+  function revoke(service) {
+    consent[service] = false;
+    try { localStorage.removeItem(keys[service]); } catch (_) {}
     // Reload destroys running Maps scripts, connections and all map instances.
     location.reload();
   }
   document.addEventListener('click', event => {
     const button = event.target.closest('button');
     if (!button) return;
-    if (button.classList.contains('bbmc-revoke')) { revoke(); return; }
+    const service = button.closest('.bbmc')?.dataset.service || button.dataset.service || 'maps';
+    if (!keys[service]) return;
+    if (button.classList.contains('bbmc-revoke')) { revoke(service); return; }
     if (!button.classList.contains('bbmc-allow')) return;
-    consent = true;
+    consent[service] = true;
     if (button.closest('.bbmc').querySelector('.bbmc-remember').checked) {
-      try { localStorage.setItem(key, JSON.stringify({expires: Date.now() + 30 * 86400000})); } catch (_) {}
+      try { localStorage.setItem(keys[service], JSON.stringify({expires: Date.now() + 30 * 86400000})); } catch (_) {}
     }
-    boxes().forEach(load);
+    boxes(service).forEach(load);
   });
-  window.addEventListener('storage', event => { if (event.key === key && !event.newValue) location.reload(); });
-  if (consent) boxes().forEach(load);
+  window.addEventListener('storage', event => { if (Object.values(keys).includes(event.key) && !event.newValue) location.reload(); });
+  Object.keys(keys).forEach(service => { if (consent[service]) boxes(service).forEach(load); });
 })();

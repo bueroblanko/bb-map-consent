@@ -14,6 +14,8 @@ jobs:
           find . -name '*.php' -not -path './.git/*' -exec php -l {} \;
           php tests/filter.php
           php tests/updater.php
+          php tests/instagram.php
+          node tests/consent.js
           node --check assets/maps.js
       - name: Build and check tag
         run: |

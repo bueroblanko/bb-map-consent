@@ -1,4 +1,4 @@
-# BB Map Consent 0.1.1
+# BB Map Consent 0.3.0
 
 Installierbare erste Testversion für WordPress ab 6.2 / PHP ab 7.4. GPL-2.0-or-later.
 
@@ -9,7 +9,7 @@ Installierbare erste Testversion für WordPress ab 6.2 / PHP ab 7.4. GPL-2.0-or-
 3. Seiten-, Divi-, Optimierungs-, CDN- und Browser-Cache vollständig leeren.
 4. Zunächst auf einer Testinstallation prüfen. Borlabs erst nach erfolgreicher Prüfung auf der jeweiligen Installation entfernen. Vorher prüfen, welche weiteren Dienste Borlabs dort blockiert.
 
-Es gibt kein zusätzliches Cookie-Banner und keine externe Bibliothek. Der Klick erlaubt sämtliche vom Plugin verwalteten Google-Karten auf der aktuellen Seite. Ohne gesetztes Häkchen gilt die Freigabe nur für die aktuelle Seitenansicht. Optional wird sie für 30 Tage in localStorage gespeichert. Die gespeicherte Freigabe wird bei jedem Seitenaufruf clientseitig ausgewertet; das vom Server erzeugte HTML bleibt immer gesperrt und kann deshalb auch gecacht werden.
+Es gibt kein zusätzliches Cookie-Banner und keine externe Bibliothek. Der Klick erlaubt sämtliche vom Plugin verwalteten Inhalte desselben Dienstes auf der aktuellen Seite. Google Maps und Instagram haben getrennte Freigaben. Ohne gesetztes Häkchen gilt die Freigabe nur für die aktuelle Seitenansicht. Optional wird sie für 30 Tage in localStorage gespeichert. Die gespeicherte Freigabe wird bei jedem Seitenaufruf clientseitig ausgewertet; das vom Server erzeugte HTML bleibt immer gesperrt und kann deshalb auch gecacht werden.
 
 ## Unterstützt
 
@@ -68,3 +68,14 @@ Updates werden im normalen WordPress-Prüfintervall gefunden, mit einem zusätzl
 Der Updater akzeptiert nur stabile Versions-Tags und die passend benannte ZIP aus genau diesem Repository. Entwürfe und Vorabversionen werden nicht ausgeliefert. GitHub-Releases sollten unveränderlich behandelt werden: Korrekturen mit neuer Versionsnummer veröffentlichen. Zugang zum GitHub-Konto und Schreibrechte für das Repository schützen, da veröffentlichte Releases Code auf verbundenen Websites aktualisieren können.
 
 Validierung: automatisierte Tests für Release-Auswahl, fremde Plugins, ungültige Download-URLs, Cache, API-Fehler und Timeouts. Ein vollständiger WordPress-Upgrade-Durchlauf ist noch ausstehend.
+
+
+## Instagram ab 0.3.0
+
+Unterstützt werden klassische Instagram-Embed-Codes mit `blockquote.instagram-media` und `data-instgrm-permalink`, einem entsprechenden Beitragslink im Embed oder direkte Instagram-iframes. Beiträge, Reels und ältere /tv/-Beiträge werden erkannt. Die gesamte Vorschau einschließlich etwaiger externer Bilder wird serverseitig ersetzt; das Instagram-embed.js-Skript und Instagram-Resource-Hints werden entfernt. Nach Einwilligung wird ein Instagram-Embed-iframe mit der normalisierten Beitragsadresse geladen. Es wird kein Embed-HTML als ausführbarer Code wieder eingefügt. Das iframe hat zunächst 620 px Höhe; es gibt keine automatische Anpassung durch das Instagram-SDK.
+
+Instagram hat eine eigene Freigabe, einen eigenen optionalen 30-Tage-Eintrag in localStorage und einen separaten Widerruf. Bereits gespeicherte Maps-Freigaben gelten weiterhin ausschließlich für Karten. Optionaler Shortcode für die Datenschutzerklärung: `[bb_instagram_revoke]`. Beim Widerruf lädt die Seite neu; die gespeicherte Einwilligung des jeweils anderen Dienstes bleibt erhalten.
+
+Nicht unterstützte Instagram-URLs in erkannten Embed-Elementen bleiben gesperrt und zeigen nach dem Freigabeversuch einen Hinweis. Profile, Stories und dynamisch eingefügte Feed-Plugins (z. B. Smash Balloon), Social-Walls oder Proxy-Dienste werden nicht unterstützt. Normale Instagram-Links bleiben unverändert. Das Plugin beschafft keine Beiträge und ersetzt keine oEmbed-Anbindung: Der Embed-Code muss bereits in der WordPress-Ausgabe vorhanden sein. Private oder vom Betreiber für Einbettungen gesperrte Inhalte kann Instagram nicht anzeigen. Die Datenschutzerklärung um Instagram/Meta ergänzen.
+
+Zusätzliche Abnahme: Seite mit Karte und Instagram gemeinsam öffnen, vor Freigabe Netzwerk prüfen, Instagram freigeben (Karte bleibt gesperrt), optional speichern, neu laden und Instagram widerrufen. Danach umgekehrt mit Kartenfreigabe testen. Getrennte Freigaben, Speichern, Ablauf und Widerruf sind mit JavaScript-Test-Doubles geprüft; ein echter Browser-/WordPress-Test auf einer Instagram-Zielseite steht noch aus.
