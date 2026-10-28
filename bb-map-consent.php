@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: BB Map Consent
+ * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten und Instagram.
- * Version: 0.3.0
+ * Version: 0.3.1
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -22,8 +22,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_maps_revoke', function () { return '<button type="button" class="bbmc-revoke">Google-Maps-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.3.0');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.3.0', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.3.1');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.3.1', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));

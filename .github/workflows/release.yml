@@ -24,4 +24,4 @@ jobs:
       - name: Publish release with installable ZIP
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --verify-tag --title "BB Map Consent $GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --verify-tag --title "BB Consent $GITHUB_REF_NAME" --generate-notes

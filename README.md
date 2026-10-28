@@ -1,4 +1,4 @@
-# BB Map Consent 0.3.0
+# BB Consent 0.3.1
 
 Installierbare erste Testversion für WordPress ab 6.2 / PHP ab 7.4. GPL-2.0-or-later.
 
@@ -79,3 +79,8 @@ Instagram hat eine eigene Freigabe, einen eigenen optionalen 30-Tage-Eintrag in 
 Nicht unterstützte Instagram-URLs in erkannten Embed-Elementen bleiben gesperrt und zeigen nach dem Freigabeversuch einen Hinweis. Profile, Stories und dynamisch eingefügte Feed-Plugins (z. B. Smash Balloon), Social-Walls oder Proxy-Dienste werden nicht unterstützt. Normale Instagram-Links bleiben unverändert. Das Plugin beschafft keine Beiträge und ersetzt keine oEmbed-Anbindung: Der Embed-Code muss bereits in der WordPress-Ausgabe vorhanden sein. Private oder vom Betreiber für Einbettungen gesperrte Inhalte kann Instagram nicht anzeigen. Die Datenschutzerklärung um Instagram/Meta ergänzen.
 
 Zusätzliche Abnahme: Seite mit Karte und Instagram gemeinsam öffnen, vor Freigabe Netzwerk prüfen, Instagram freigeben (Karte bleibt gesperrt), optional speichern, neu laden und Instagram widerrufen. Danach umgekehrt mit Kartenfreigabe testen. Getrennte Freigaben, Speichern, Ablauf und Widerruf sind mit JavaScript-Test-Doubles geprüft; ein echter Browser-/WordPress-Test auf einer Instagram-Zielseite steht noch aus.
+
+
+## Umbenennung ab 0.3.1
+
+Der sichtbare Plugin-Name lautet BB Consent. Plugin-Ordner, Hauptdatei, Repository und Update-Adresse behalten aus Kompatibilitätsgründen ihre bisherigen Namen. Bestehende Installationen bekommen die Umbenennung als normales Update.
