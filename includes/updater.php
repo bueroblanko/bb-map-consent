@@ -6,11 +6,25 @@ final class BBMC_Updater {
     const URI = 'https://github.com/bueroblanko/bb-map-consent';
     const CACHE = 'bbmc_release_v1';
     public static function boot() {
+        add_filter('upgrader_source_selection', [__CLASS__, 'preserve_directory'], 10, 4);
         add_filter('update_plugins_github.com', [__CLASS__, 'update'], 10, 4);
         add_filter('plugin_row_meta', [__CLASS__, 'links'], 10, 2);
         add_action('admin_post_bbmc_check_updates', [__CLASS__, 'check_now']);
         add_action('admin_notices', [__CLASS__, 'notice']);
         add_action('network_admin_notices', [__CLASS__, 'notice']);
+    }
+    public static function preserve_directory($source, $remote_source, $upgrader, $hook_extra) {
+        $file = plugin_basename(dirname(__DIR__) . '/bb-map-consent.php');
+        if (($hook_extra['plugin'] ?? '') !== $file || !is_string($source)) { return $source; }
+        $directory = dirname($file);
+        if ($directory === '.' || basename(rtrim($source, '/\\')) === $directory) { return $source; }
+        global $wp_filesystem;
+        if (!$wp_filesystem) { return new WP_Error('bbmc_filesystem', 'BB Consent: Dateisystem nicht verfügbar. Update abgebrochen.'); }
+        $target = rtrim($remote_source, '/\\') . '/' . $directory . '/';
+        if ($wp_filesystem->exists($target) || !$wp_filesystem->move($source, $target)) {
+            return new WP_Error('bbmc_update_directory', 'BB Consent: Installationsordner konnte nicht erhalten werden. Update abgebrochen.');
+        }
+        return $target;
     }
     public static function links($links, $file) {
         if ($file === plugin_basename(dirname(__DIR__) . '/bb-map-consent.php') && current_user_can('update_plugins')) {

@@ -129,3 +129,10 @@ Divi-Karten lesen den Google-Maps-API-Schlüssel über Divis eigene Funktion et_
 ## Fehlerkorrektur 0.5.3
 
 Klassische Divi-Karten werden nach dem Rendern über do_shortcode_tag verarbeitet. Zentrum, Zoom und Pins werden aus Divis tatsächlich erzeugten data-Attributen übernommen, statt unbekannte Shortcode-Feldnamen mit 0,0 zu ersetzen. Beide Kartenarten und die beiden Heidelberger Kartenpositionen sind durch Regressionstests abgedeckt. Fehlende Koordinaten führen zu einem Hinweis statt zu einer Karte bei 0,0. Der äußere Modul-Container mit Klassen und ID bleibt erhalten. Ein Browser-Test mit simulierter Google-Maps-API bestätigt Einwilligungssperre, Kartenoptionen, Pin und Widerrufsbutton. Live-Test mit echter Google-API auf der WordPress-Installation weiterhin erforderlich.
+
+
+## Update-Ordner ab 0.5.4
+
+Der Updater erhält bei zukünftigen Updates den tatsächlich installierten Plugin-Ordner, auch bei Installationen aus GitHubs Quellcode-ZIP mit dem Suffix -main. Dadurch bleibt WordPress' gespeicherter Aktivierungspfad erhalten. Ordnerkonflikte oder fehlgeschlagenes Umbenennen brechen das Update ab, statt einen anderen Installationspfad zu verwenden.
+
+Wichtig zur erstmaligen Umstellung: Der Update-Prozess führt den bisher installierten Updater aus. Versionen vor 0.5.4 können deshalb beim ersten Update aus einem abweichenden Ordner noch einmal deaktiviert werden. Danach das Plugin in der Plugin-Liste einmal aktivieren. Empfohlene Erstinstallation: die angehängte ZIP unter Releases verwenden, nicht Code → Download ZIP. Eine bereits erfolgte Deaktivierung wird nicht automatisch rückgängig gemacht.

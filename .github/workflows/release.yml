@@ -16,6 +16,7 @@ jobs:
           php tests/divi-key.php
           php tests/divi-map.php
           php tests/updater.php
+          php tests/update-directory.php
           php tests/instagram.php
           php tests/feeds.php
           php tests/dealerweb.php
