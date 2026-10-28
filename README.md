@@ -1,4 +1,4 @@
-# BB Consent 0.4.0
+# BB Consent 0.5.0
 
 Installierbare erste Testversion für WordPress ab 6.2 / PHP ab 7.4. GPL-2.0-or-later.
 
@@ -93,3 +93,12 @@ Smash Balloon Instagram Feed mit dem im HTML ausgegebenen Container `div#sb_inst
 In der Plugin-Zeile erscheint für Administratoren mit Update-Berechtigung „Nach Updates suchen“. Dieser Link prüft mit Nonce und Berechtigungsprüfung, leert den GitHub- und WordPress-Update-Cache und startet die WordPress-Update-Prüfung sofort. Anschließend wird gemeldet, ob die Version aktuell, ein Update verfügbar oder GitHub nicht erreichbar ist. Der Link installiert kein Update automatisch.
 
 Browser-Test mit dem öffentlich ausgelieferten HTML von hiffelder-carneval.de und dessen echtem Smash-Balloon-Skript: vor Freigabe keine Feed-/Instagram-Medienanfragen, nach Freigabe Feed-Initialisierung und Wiederherstellung aller 16 Beiträge bestätigt. Sonstige Website-Ressourcen waren im Test blockiert; dies ersetzt keine vollständige Live-Abnahme nach Plugin-Installation.
+
+
+## DealerWeb-Aktionsbanner ab 0.5.0
+
+Iframes von dealerweb-comarketing.de (Aktionsbanner der COmarketing GmbH, ausgeliefert über Wix) werden serverseitig durch einen Platzhalter ersetzt. Erkannt werden src und data-src, auch protokollrelativ; http wird auf https umgestellt. Nach Einwilligung lädt das iframe mit der Originaladresse, der Originalhöhe (100–1000 px, Standard 300 px) und der Originalbreite als Maximalbreite. Der Banner hat eine eigene Freigabe, einen eigenen optionalen 30-Tage-Eintrag in localStorage und einen eigenen Widerruf unter dem Banner. Optionaler Shortcode für die Datenschutzerklärung: `[bb_dealerweb_revoke]`. Resource-Hints auf dealerweb-comarketing.de werden entfernt. Die Datenschutzerklärung muss COmarketing und Wix nennen.
+
+Divi legt bei Modulen mit geräteabhängiger Sichtbarkeit (zum Beispiel „auf Tablet/Handy ausblenden“) den Modulinhalt zusätzlich als JSON im Attribut `data-et-multi-view` ab und setzt ihn per JavaScript wieder ein. Dieses JSON wird jetzt ebenfalls gefiltert, für alle Dienste des Plugins. Vorher hätte ein so abgelegter iframe die Sperre umgehen können.
+
+Geprüft auf fahrzeugtechnik-sanfilippo.de (28.10.2026): Startseite (Banner in einem Divi-Code-Modul mit Multi-View-JSON) und Kontaktseite (Google-Maps-iframe) wurden aus dem öffentlich ausgelieferten HTML so nachgebaut, wie sie ohne Borlabs aussähen. Nach dem Filter ist kein externer iframe mehr im HTML oder im Divi-JSON. Das Kontaktformular hat kein reCAPTCHA aktiv, Schriften liegen lokal. Live mit Borlabs gab es vor Einwilligung keine externen Anfragen. Ein Browsertest mit installiertem Plugin steht noch aus.

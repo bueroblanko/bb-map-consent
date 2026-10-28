@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1'};
+  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1'};
   const consent = {};
   let api, feedScripts;
   Object.entries(keys).forEach(([service, key]) => {
@@ -61,8 +61,12 @@
     box.dataset.loaded = 'yes';
     const config = JSON.parse(box.dataset.bbmc);
     const target = box.querySelector('.bbmc-target');
-    box.querySelector('.bbmc-placeholder').hidden = true;
-    box.querySelector('.bbmc-revoke').hidden = false;
+    const placeholder = box.querySelector('.bbmc-placeholder');
+    const revokeButton = box.querySelector('.bbmc-revoke');
+    // Maps take over the placeholder's space so the layout does not jump.
+    const reserved = box.dataset.service === 'maps' ? placeholder.offsetHeight || 0 : 0;
+    placeholder.hidden = true;
+    revokeButton.hidden = false;
     target.hidden = false;
     try {
       if (config.kind === 'smashballoon') {
@@ -73,12 +77,17 @@
       } else if (config.kind === 'iframe') {
         if (!config.src) throw new Error('Diese Instagram-Einbettung wird noch nicht unterstützt. Bitte einen öffentlichen Beitrag oder ein Reel einbetten.');
         const frame = document.createElement('iframe');
-        frame.title = config.title; frame.height = config.height;
+        frame.title = config.title; frame.height = Math.max(config.height, reserved);
+        if (reserved) target.style.minHeight = '0';
+        if (config.width) frame.style.maxWidth = config.width + 'px';
         frame.referrerPolicy = 'strict-origin-when-cross-origin';
         frame.allowFullscreen = true; frame.src = config.src; target.append(frame);
       } else {
+        if (reserved > 400) target.style.minHeight = reserved + 'px';
         await googleApi(config.key);
         const map = new google.maps.Map(target, {center: {lat: config.lat, lng: config.lng}, zoom: config.zoom});
+        // As a native control the button never collides with the fullscreen control.
+        map.controls[google.maps.ControlPosition.TOP_RIGHT].push(revokeButton);
         config.pins.forEach(pin => {
           const marker = new google.maps.Marker({map, position: {lat: pin.lat, lng: pin.lng}, title: pin.title});
           const content = document.createElement('div');
@@ -113,7 +122,12 @@
     boxes(service).forEach(load);
   });
   window.addEventListener('storage', event => { if (Object.values(keys).includes(event.key) && !event.newValue) location.reload(); });
-  const restore = () => Object.keys(keys).forEach(service => { if (consent[service]) boxes(service).forEach(load); });
+  const restore = () => {
+    boxes().forEach(box => {
+      try { const height = JSON.parse(box.dataset.bbmc).height; if (height) box.style.setProperty('--bbmc-h', height + 'px'); } catch (_) {}
+    });
+    Object.keys(keys).forEach(service => { if (consent[service]) boxes(service).forEach(load); });
+  };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restore, {once: true});
   else restore();
 })();
