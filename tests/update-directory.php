@@ -9,7 +9,7 @@ class BBMC_Test_FS {
 }
 function directory_check($condition) { if (!$condition) throw new Exception('Update directory regression'); }
 $root='/wordpress/wp-content/upgrade/release/';
-foreach (['bb-map-consent','bb-map-consent-main','bb-map-consent-0.5.3'] as $directory) {
+foreach (['bb-consent','bb-map-consent','bb-map-consent-main','bb-map-consent-0.5.3'] as $directory) {
  $GLOBALS['installed_directory']=$directory; $wp_filesystem=new BBMC_Test_FS();
  $hook=['plugin'=>$directory.'/bb-map-consent.php'];
  $result=BBMC_Updater::preserve_directory($root.'bb-map-consent/',$root,null,$hook);

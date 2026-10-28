@@ -136,3 +136,10 @@ Klassische Divi-Karten werden nach dem Rendern über do_shortcode_tag verarbeite
 Der Updater erhält bei zukünftigen Updates den tatsächlich installierten Plugin-Ordner, auch bei Installationen aus GitHubs Quellcode-ZIP mit dem Suffix -main. Dadurch bleibt WordPress' gespeicherter Aktivierungspfad erhalten. Ordnerkonflikte oder fehlgeschlagenes Umbenennen brechen das Update ab, statt einen anderen Installationspfad zu verwenden.
 
 Wichtig zur erstmaligen Umstellung: Der Update-Prozess führt den bisher installierten Updater aus. Versionen vor 0.5.4 können deshalb beim ersten Update aus einem abweichenden Ordner noch einmal deaktiviert werden. Danach das Plugin in der Plugin-Liste einmal aktivieren. Empfohlene Erstinstallation: die angehängte ZIP unter Releases verwenden, nicht Code → Download ZIP. Eine bereits erfolgte Deaktivierung wird nicht automatisch rückgängig gemacht.
+
+
+## Fester Installationsordner ab 0.5.5
+
+Die Installationsdatei heißt bb-consent-VERSION.zip und enthält immer den Ordner bb-consent. Die Hauptdatei bb-map-consent.php und die GitHub-Repository-Adresse behalten ihre technischen Namen. Ein zusätzlicher gleichwertiger Release-Anhang mit dem bisherigen ZIP-Namen bleibt für ältere Updater verfügbar.
+
+Zur einmaligen Umstellung eine bestehende alte Installation deaktivieren und löschen, dann die ZIP bb-consent-VERSION.zip aus Releases installieren und aktivieren. Dieses Plugin hat keine uninstall-Routine, die Einstellungen oder Seiteninhalte löscht; lokale Browserfreigaben bleiben erhalten. Nicht zwei Kopien gleichzeitig aktivieren. Für bisherige Installationen in anderen Ordnern bewahrt der Updater weiterhin den bestehenden Ordner, um keine erneute Deaktivierung durch einen Pfadwechsel zu verursachen. Der neue feste Ordner wird durch die einmalige Neuinstallation übernommen.

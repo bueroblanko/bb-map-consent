@@ -72,11 +72,12 @@ final class BBMC_Updater {
         if (!is_array($data) || !empty($data['draft']) || !empty($data['prerelease']) ||
             !preg_match('/^v?(\d+\.\d+\.\d+)$/', $data['tag_name'] ?? '', $m)) { return []; }
         $version = $m[1];
-        $expected = self::URI . '/releases/download/' . $data['tag_name'] . '/bb-map-consent-' . $version . '.zip';
+        $base = self::URI . '/releases/download/' . $data['tag_name'] . '/';
+        $expected = [$base . 'bb-consent-' . $version . '.zip', $base . 'bb-map-consent-' . $version . '.zip'];
         foreach (($data['assets'] ?? []) as $asset) {
-            if (($asset['state'] ?? '') === 'uploaded' && ($asset['browser_download_url'] ?? '') === $expected) {
+            if (($asset['state'] ?? '') === 'uploaded' && in_array(($asset['browser_download_url'] ?? ''), $expected, true)) {
                 return ['id' => self::URI, 'slug' => 'bb-map-consent', 'version' => $version,
-                    'url' => self::URI . '/releases/tag/' . $data['tag_name'], 'package' => $expected];
+                    'url' => self::URI . '/releases/tag/' . $data['tag_name'], 'package' => $asset['browser_download_url']];
             }
         }
         return [];
