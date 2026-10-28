@@ -35,4 +35,8 @@ $plain='<div class="et_pb_text_inner" data-et-multi-view="'.htmlspecialchars(jso
 dw_check(BB_Map_Consent::filter_html($plain)===$plain, 'unrelated multi-view unchanged');
 $comment='<!-- <div data-et-multi-view="'.htmlspecialchars($multi,ENT_QUOTES).'"></div> -->';
 dw_check(BB_Map_Consent::filter_html($comment)===$comment, 'comment unchanged');
+// Divi's tablet/phone variants use percentage widths: no pixel limit, banner stays full width.
+$percent=BB_Map_Consent::filter_html('<iframe src="https://www.dealerweb-comarketing.de/aktionsbanner/DE45FE" height="150px" width="100%"></iframe>');
+dw_check(dw_config($percent)['width']===0 && strpos($percent,'max-width')===false, 'percentage width is full width');
+dw_check(strpos(BB_Map_Consent::filter_html($banner),'max-width:800px;margin-left:auto;margin-right:auto;')!==false, 'fixed banner centred');
 echo "DealerWeb: banner iframe, URL variants, foreign hosts, resource hints and Divi multi-view content passed\n";

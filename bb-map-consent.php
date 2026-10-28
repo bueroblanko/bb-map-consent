@@ -81,7 +81,10 @@ final class BB_Map_Consent {
         [$name, $notice, $short] = $texts[$service];
         // Small embeds (e.g. a footer map) get the compact layout before any JavaScript runs.
         $height = (int) ($config['height'] ?? 0);
-        $size = $height ? ' style="--bbmc-h:' . $height . 'px"' : '';
+        $width = (int) ($config['width'] ?? 0);
+        // Fixed-width embeds such as banners stay centred like the original inline iframe.
+        $styles = ($height ? '--bbmc-h:' . $height . 'px;' : '') . ($width ? 'max-width:' . $width . 'px;margin-left:auto;margin-right:auto;' : '');
+        $size = $styles ? ' style="' . $styles . '"' : '';
         $compact = $height && $height < 260 ? ' bbmc-compact' : '';
         $privacy = get_privacy_policy_url();
         $link = $privacy ? ' <a href="' . esc_url($privacy) . '">Datenschutzerklärung</a>' : '';
@@ -179,7 +182,8 @@ final class BB_Map_Consent {
                 return self::box(['service' => 'instagram', 'kind' => 'iframe', 'src' => self::instagram_embed($src), 'title' => 'Instagram-Beitrag', 'height' => 620]);
             }
             if (self::dealerweb_url($src)) {
-                $width = (int) self::attribute($tag, 'width');
+                // Only fixed pixel widths limit the banner; "100%" and similar stay full width.
+                $width = preg_match('~^\s*(\d+)\s*(?:px)?\s*$~i', self::attribute($tag, 'width'), $w) ? (int) $w[1] : 0;
                 return self::box(['service' => 'dealerweb', 'kind' => 'iframe', 'src' => self::dealerweb_url($src), 'title' => self::attribute($tag, 'title') ?: 'Aktionsbanner', 'height' => max(100, min(1000, (int)(self::attribute($tag, 'height') ?: 300))), 'width' => $width >= 100 ? min(2000, $width) : 0]);
             }
             if (self::iframe_url($src)) {
