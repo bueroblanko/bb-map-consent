@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: BB Consent
- * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram und DealerWeb-Aktionsbanner.
+ * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner und Planity-Terminbuchung.
  * Version: 0.5.0
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
@@ -21,6 +21,7 @@ final class BB_Map_Consent {
         }, 0);
         add_shortcode('bb_instagram_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="instagram">Instagram-Einwilligung widerrufen</button>'; });
         add_shortcode('bb_maps_revoke', function () { return '<button type="button" class="bbmc-revoke">Google-Maps-Einwilligung widerrufen</button>'; });
+        add_shortcode('bb_planity_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="planity">Einwilligung für die Online-Terminbuchung widerrufen</button>'; });
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
@@ -62,11 +63,19 @@ final class BB_Map_Consent {
             || !in_array(strtolower((string) wp_parse_url($normal, PHP_URL_SCHEME)), ['https', 'http'], true)) { return ''; }
         return preg_replace('~^http:~i', 'https:', html_entity_decode($normal, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
+    /** Planity booking widget: its CloudFront loader scripts or the inline window.planity configuration. */
+    public static function planity_script($tag) {
+        $src = self::attribute($tag, 'src');
+        if ($src === '') { return (bool) preg_match('~\bwindow\.planity\s*=~', $tag); }
+        $normal = strpos($src, '//') === 0 ? 'https:' . $src : $src;
+        return self::host($normal) === 'd2skjte8udjqxw.cloudfront.net' && strpos((string) wp_parse_url($normal, PHP_URL_PATH), '/widget/') === 0;
+    }
     public static function box($config) {
         $service = $config['service'] ?? 'maps';
         $texts = [
             'maps' => ['Google Maps', 'Mit dem Laden stimmen Sie zu, dass Google Maps eingebunden wird (bei einer Snazzy-Maps-Karte auch über Snazzy Maps). Dabei wird Ihre IP-Adresse an Google übermittelt; Daten können auch in den USA verarbeitet werden.'],
             'instagram' => ['Instagram', 'Mit dem Laden stimmen Sie zu, dass Inhalte von Instagram (Meta) eingebunden werden. Dabei wird Ihre IP-Adresse an Meta übermittelt; Daten können auch in den USA verarbeitet werden.'],
+            'planity' => ['Online-Terminbuchung', 'Mit dem Laden stimmen Sie zu, dass das Buchungssystem von Planity (Planity SAS, Frankreich) eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an Planity und von Planity eingesetzte Dienstleister wie Amazon Web Services übermittelt; Daten können auch in den USA verarbeitet werden.'],
             'dealerweb' => ['Aktionsbanner', 'Mit dem Laden stimmen Sie zu, dass ein Aktionsbanner der COmarketing GmbH (dealerweb-comarketing.de) eingebunden wird, das über die Website-Plattform Wix ausgeliefert wird. Dabei wird Ihre IP-Adresse an COmarketing und Wix übermittelt; Daten können auch außerhalb der EU verarbeitet werden.'],
         ];
         [$name, $notice] = $texts[$service];
@@ -119,8 +128,9 @@ final class BB_Map_Consent {
     }
     public static function filter_html($html) {
         [$html, $feeds] = self::feeds($html);
+        $planity = false;
         // Tokenise tags without reserialising the document or touching script strings.
-        return preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>|<[a-z][a-z0-9]*\b[^>]*\sdata-et-multi-view\s*=[^>]*>~is', function ($m) use ($feeds) {
+        return preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>|<[a-z][a-z0-9]*\b[^>]*\sdata-et-multi-view\s*=[^>]*>~is', function ($m) use ($feeds, &$planity) {
             $tag = $m[0];
             if (strpos($tag, '<!--') === 0) { return $tag; }
             if (!preg_match('~^<(?:script|blockquote|iframe|link)\b~i', $tag)) { return self::multi_view($tag); }
@@ -141,7 +151,14 @@ final class BB_Map_Consent {
                 $src = self::attribute($tag, 'src');
                 $id = self::attribute($tag, 'id');
                 if ($feeds && (preg_match('~/(?:instagram-feed|instagram-feed-pro)/.*\.js(?:[?]|$)~i', $src) || preg_match('/^sbi_[a-z0-9_-]+$/i', $id))) {
-                    return '<template class="bbmc-feed-script" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
+                    return '<template class="bbmc-feed-script" data-service="instagram" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
+                }
+                if (self::planity_script($tag)) {
+                    // Keep configuration and loaders in order; one placeholder sits where the widget code started.
+                    $holder = '<template class="bbmc-feed-script" data-service="planity" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
+                    if ($planity) { return $holder; }
+                    $planity = true;
+                    return self::box(['service' => 'planity', 'kind' => 'scripts']) . $holder;
                 }
                 if (self::map_url($src) || (self::instagram_host($src) && preg_match('~^/embed\.js(?:[?#]|$)~', (string) wp_parse_url(strpos($src, '//') === 0 ? 'https:' . $src : $src, PHP_URL_PATH)))) { return ''; }
                 return $tag;
@@ -149,7 +166,7 @@ final class BB_Map_Consent {
             if (stripos($tag, '<link') === 0) {
                 $rel = self::attribute($tag, 'rel');
                 $href = self::attribute($tag, 'href');
-                if ((self::google($href) || self::instagram_host($href) || self::dealerweb_url($href)) && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
+                if ((self::google($href) || self::instagram_host($href) || self::dealerweb_url($href) || self::host($href) === 'd2skjte8udjqxw.cloudfront.net') && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
                 return $tag;
             }
             $src = self::attribute($tag, 'src');

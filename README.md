@@ -102,3 +102,12 @@ Iframes von dealerweb-comarketing.de (Aktionsbanner der COmarketing GmbH, ausgel
 Divi legt bei Modulen mit geräteabhängiger Sichtbarkeit (zum Beispiel „auf Tablet/Handy ausblenden“) den Modulinhalt zusätzlich als JSON im Attribut `data-et-multi-view` ab und setzt ihn per JavaScript wieder ein. Dieses JSON wird jetzt ebenfalls gefiltert, für alle Dienste des Plugins. Vorher hätte ein so abgelegter iframe die Sperre umgehen können.
 
 Geprüft auf fahrzeugtechnik-sanfilippo.de (28.10.2026): Startseite (Banner in einem Divi-Code-Modul mit Multi-View-JSON) und Kontaktseite (Google-Maps-iframe) wurden aus dem öffentlich ausgelieferten HTML so nachgebaut, wie sie ohne Borlabs aussähen. Nach dem Filter ist kein externer iframe mehr im HTML oder im Divi-JSON. Das Kontaktformular hat kein reCAPTCHA aktiv, Schriften liegen lokal. Live mit Borlabs gab es vor Einwilligung keine externen Anfragen. Ein Browsertest mit installiertem Plugin steht noch aus.
+
+
+## Planity-Terminbuchung ab 0.5.0
+
+Das Planity-Buchungswidget (Inline-Konfiguration mit `window.planity = …` und die Skripte von `d2skjte8udjqxw.cloudfront.net/widget/…`) wird serverseitig zurückgehalten. An der Stelle der Widget-Skripte erscheint ein Platzhalter „Online-Terminbuchung“. Der Widget-Container und das Widget-CSS bleiben im HTML. Nach Einwilligung werden Konfiguration und Skripte in der Originalreihenfolge eingefügt, das Widget rendert dann wie gewohnt in seinen Container. Eigene Freigabe, eigener optionaler 30-Tage-Eintrag, eigener Widerruf; optionaler Shortcode `[bb_planity_revoke]`. Die Datenschutzerklärung muss Planity (Planity SAS) und deren Dienstleister nennen. Laut Widget-Code kommen dabei unter anderem Amazon Web Services, Cloudinary, Google, Stripe und Algolia in Frage.
+
+Geprüft auf villa-haartrend-speyer.de/termin/ (28.10.2026): Der von Borlabs gesperrte Widget-Code wurde in eine lokale Testseite mit Plugin-Filter und -Skript übernommen. Vor dem Klick gab es keine externen Anfragen. Nach dem Klick luden CloudFront und Planity, und das Widget zeigte die Dienstleistungen. Mit gemerkter Freigabe lud es nach dem Neuladen automatisch.
+
+Nicht vom Plugin abgedeckt: Divi bettet dort Google Fonts als `@font-face` mit Adressen auf fonts.gstatic.com direkt ins CSS ein. Die Schriften laden auf jeder Seite ohne Einwilligung. Das muss über lokal gehostete Schriften gelöst werden, nicht über eine Einwilligung.

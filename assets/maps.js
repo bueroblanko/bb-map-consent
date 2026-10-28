@@ -1,8 +1,9 @@
 (() => {
   'use strict';
-  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1'};
+  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1', planity: 'bbmc-planity-consent-v1'};
   const consent = {};
-  let api, feedScripts;
+  const scriptLoads = {};
+  let api;
   Object.entries(keys).forEach(([service, key]) => {
     try {
       const saved = JSON.parse(localStorage.getItem(key));
@@ -29,9 +30,11 @@
     const bytes = Uint8Array.from(atob(value), char => char.charCodeAt(0));
     return new TextDecoder().decode(bytes);
   }
-  function loadFeedScripts() {
-    if (!feedScripts) feedScripts = (async () => {
-      for (const holder of document.querySelectorAll('.bbmc-feed-script')) {
+  // Restores held-back scripts of one service in their original order.
+  function loadScripts(service) {
+    if (!scriptLoads[service]) scriptLoads[service] = (async () => {
+      const holders = [...document.querySelectorAll('.bbmc-feed-script')].filter(holder => (holder.dataset.service || 'instagram') === service);
+      for (const holder of holders) {
         const template = document.createElement('template');
         template.innerHTML = decode(holder.dataset.script);
         const original = template.content.querySelector('script');
@@ -44,7 +47,7 @@
         if (original.hasAttribute('src')) {
           await new Promise((resolve, reject) => {
             script.onload = resolve;
-            script.onerror = () => reject(new Error('Das Instagram-Feed-Skript konnte nicht geladen werden.'));
+            script.onerror = () => reject(new Error('Ein Skript des Dienstes konnte nicht geladen werden.'));
             document.head.append(script);
           });
         } else {
@@ -54,7 +57,7 @@
         holder.remove();
       }
     })();
-    return feedScripts;
+    return scriptLoads[service];
   }
   async function load(box) {
     if (box.dataset.loaded) return;
@@ -73,7 +76,9 @@
         target.innerHTML = decode(config.html);
         // The whole group is restored synchronously before the SDK starts scanning.
         await Promise.resolve();
-        await loadFeedScripts();
+        await loadScripts('instagram');
+      } else if (config.kind === 'scripts') {
+        await loadScripts(config.service);
       } else if (config.kind === 'iframe') {
         if (!config.src) throw new Error('Diese Instagram-Einbettung wird noch nicht unterstützt. Bitte einen öffentlichen Beitrag oder ein Reel einbetten.');
         const frame = document.createElement('iframe');
