@@ -143,3 +143,8 @@ Wichtig zur erstmaligen Umstellung: Der Update-Prozess führt den bisher install
 Die Installationsdatei heißt bb-consent-VERSION.zip und enthält immer den Ordner bb-consent. Die Hauptdatei bb-map-consent.php und die GitHub-Repository-Adresse behalten ihre technischen Namen. Ein zusätzlicher gleichwertiger Release-Anhang mit dem bisherigen ZIP-Namen bleibt für ältere Updater verfügbar.
 
 Zur einmaligen Umstellung eine bestehende alte Installation deaktivieren und löschen, dann die ZIP bb-consent-VERSION.zip aus Releases installieren und aktivieren. Dieses Plugin hat keine uninstall-Routine, die Einstellungen oder Seiteninhalte löscht; lokale Browserfreigaben bleiben erhalten. Nicht zwei Kopien gleichzeitig aktivieren. Für bisherige Installationen in anderen Ordnern bewahrt der Updater weiterhin den bestehenden Ordner, um keine erneute Deaktivierung durch einen Pfadwechsel zu verursachen. Der neue feste Ordner wird durch die einmalige Neuinstallation übernommen.
+
+
+## Datenschutz-Link ab 0.5.6
+
+Wenn keine veröffentlichte Datenschutzseite in WordPress ausgewählt ist, verlinken die Platzhalter auf home_url('/datenschutz'). Eine konfigurierte Datenschutzseite hat weiterhin Vorrang.
