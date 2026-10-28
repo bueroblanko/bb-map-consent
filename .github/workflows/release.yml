@@ -13,6 +13,7 @@ jobs:
         run: |
           find . -name '*.php' -not -path './.git/*' -exec php -l {} \;
           php tests/filter.php
+          php tests/divi-key.php
           php tests/updater.php
           php tests/instagram.php
           php tests/feeds.php

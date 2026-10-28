@@ -119,3 +119,8 @@ Für schmale Spalten wie eine Footer-Karte. Ist die Box höchstens 360 px breit 
 
 Korrektur für DealerWeb-Banner in 0.5.1: Prozentbreiten wie Divis Tablet-/Handy-Variante `width="100%"` wurden in 0.5.0 als 100 px gelesen. Der Banner war nach der Freigabe dort nur 100 px breit. Nur feste Pixelbreiten begrenzen jetzt die Breite. Banner mit fester Breite werden mitsamt Platzhalter mittig gesetzt wie das ursprüngliche iframe. Geprüft mit Headless-Chrome an einem Nachbau der Startseite von fahrzeugtechnik-sanfilippo.de: Desktop 800 px mittig, Tablet und Handy in voller Breite mit Divis Höhen 200 bzw. 150 px, keine externen Anfragen vor dem Klick.
 
+
+
+## Fehlerkorrektur 0.5.2
+
+Divi-Karten lesen den Google-Maps-API-Schlüssel über Divis eigene Funktion et_pb_get_google_api_key und als Fallback aus der globalen Einstellung et_google_api_settings. Die bisherige Suche nur unter divi_google_api_key konnte vorhandene Schlüssel übersehen. Nach dem Update Seiten-, Divi- und CDN-Caches leeren. Die Sperre bis zur Einwilligung bleibt bestehen.

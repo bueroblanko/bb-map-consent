@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner und Planity-Terminbuchung.
- * Version: 0.5.1
+ * Version: 0.5.2
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,7 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.5.1');
+define('BBMC_VERSION', '0.5.2');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
@@ -25,8 +25,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.5.1');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.5.1', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.5.2');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.5.2', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -90,6 +90,16 @@ final class BB_Map_Consent {
         $link = $privacy ? ' <a href="' . esc_url($privacy) . '">Datenschutzerklärung</a>' : '';
         return '<section class="bbmc' . $compact . '" data-service="' . esc_attr($service) . '"' . $size . ' data-bbmc="' . esc_attr(wp_json_encode($config)) . '"><div class="bbmc-placeholder"><strong>' . $name . ' ist deaktiviert</strong><p class="bbmc-long">' . $notice . $link . '</p><p class="bbmc-short">' . $short . $link . '</p><label><input type="checkbox" class="bbmc-remember"> <span class="bbmc-long">Freigabe für 30 Tage auf diesem Gerät merken</span><span class="bbmc-short">30 Tage merken</span></label><button type="button" class="bbmc-allow">' . $name . ' laden</button><noscript>Zum Freigeben des Inhalts ist JavaScript erforderlich.</noscript></div><div class="bbmc-target" hidden></div><button type="button" class="bbmc-revoke" hidden>Einwilligung widerrufen</button><p class="bbmc-status" role="status"></p></section>';
     }
+    public static function divi_api_key() {
+        // Use the same accessor as Divi itself; its setting is global, not theme-prefixed.
+        $key = function_exists('et_pb_get_google_api_key') ? et_pb_get_google_api_key() : '';
+        if (is_string($key) && trim($key) !== '') { return trim($key); }
+        $settings = get_option('et_google_api_settings', []);
+        $key = is_array($settings) ? ($settings['api_key'] ?? '') : '';
+        if (is_string($key) && trim($key) !== '') { return trim($key); }
+        $key = function_exists('et_get_option') ? et_get_option('divi_google_api_key', '') : '';
+        return is_string($key) ? trim($key) : '';
+    }
     public static function divi($return, $tag, $attrs, $match) {
         if (!in_array($tag, ['et_pb_map', 'et_pb_fullwidth_map'], true) || $return !== false) { return $return; }
         $pins = [];
@@ -100,7 +110,7 @@ final class BB_Map_Consent {
                 $pins[] = ['lat' => (float)$a['map_pin_address_lat'], 'lng' => (float)$a['map_pin_address_lng'], 'title' => sanitize_text_field($a['title'] ?? ''), 'text' => wp_strip_all_tags($pin[2])];
             }
         }
-        $key = function_exists('et_get_option') ? et_get_option('divi_google_api_key', '') : '';
+        $key = self::divi_api_key();
         $config = ['kind' => 'divi', 'key' => $key, 'pins' => $pins, 'lat' => (float)($attrs['map_center_lat'] ?? 0), 'lng' => (float)($attrs['map_center_lng'] ?? 0), 'zoom' => max(1, min(20, (int)($attrs['zoom_level'] ?? 14)))];
         return self::box($config);
     }
