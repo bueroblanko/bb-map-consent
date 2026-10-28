@@ -15,7 +15,7 @@ Es gibt kein zusätzliches Cookie-Banner und keine externe Bibliothek. Der Klick
 
 - Statisch im HTML ausgelieferte Google-Maps-iframes mit src oder data-src, einschließlich der üblichen google.com/maps/embed- und maps.google.de/maps-Adressen.
 - Klassische Divi-Shortcodes et_pb_map und et_pb_fullwidth_map einschließlich et_pb_map_pin mit gespeicherten Koordinaten. Das Plugin ersetzt die Divi-Ausgabe durch eine eigene Google-Maps-Darstellung. Kartenzentrum, Zoom, Pin-Koordinaten, Titel und reiner Beschreibungstext werden übernommen. Es benötigt den vorhandenen Divi-Google-API-Schlüssel mit für die Domain freigeschalteter Maps JavaScript API.
-- Ein Widerrufsbutton direkt unter jeder geladenen Karte. Optional kann [bb_maps_revoke] zusätzlich in einem Shortcode- oder Textbereich der Datenschutzerklärung stehen. Nicht direkt als Text in ein WordPress-Navigationsmenü einfügen.
+- Ein Widerrufsbutton oben rechts auf jeder geladenen Karte (bei Divi-Karten als Google-Maps-Bedienelement, auf schmalen Bildschirmen unten links). Die geladene Karte übernimmt mindestens die Höhe des Platzhalters, damit sich das Layout beim Freigeben nicht verschiebt. Optional kann [bb_maps_revoke] zusätzlich in einem Shortcode- oder Textbereich der Datenschutzerklärung stehen. Nicht direkt als Text in ein WordPress-Navigationsmenü einfügen.
 
 ## Grenzen dieser Version
 
