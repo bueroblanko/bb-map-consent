@@ -13,7 +13,7 @@
  ['<iframe data-src="https://www.google.com/maps/embed?pb=abc"></iframe>', 'data-bbmc=', '<iframe'],
  ['<script src="https://maps.googleapis.com/maps/api/js?key=x"></script><p>Hallo</p>', '<p>Hallo</p>', '<script'],
  ['<link rel="preconnect" href="https://maps.gstatic.com"><p>OK</p>', '<p>OK</p>', '<link'],
- ['<iframe src="https://www.youtube.com/embed/x"></iframe>', 'youtube.com', 'data-bbmc='],
+ ['<iframe src="https://player.vimeo.com/video/123"></iframe>', 'player.vimeo.com', 'data-bbmc='],
  ['<script>const x = "<iframe src=bad>";</script>', 'const x', 'data-bbmc='],
  ['<!-- <iframe src="https://google.com/maps/embed"></iframe> -->', '<!--', 'data-bbmc=']
  ];

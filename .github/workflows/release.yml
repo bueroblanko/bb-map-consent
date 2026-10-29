@@ -19,6 +19,7 @@ jobs:
           php tests/update-directory.php
           php tests/instagram.php
           php tests/elfsight.php
+          php tests/youtube-tramino.php
           php tests/feeds.php
           php tests/dealerweb.php
           php tests/planity.php

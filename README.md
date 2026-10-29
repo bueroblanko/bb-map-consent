@@ -157,3 +157,12 @@ Der gemeinsame Elfsight-Lader https://static.elfsight.com/platform/platform.js w
 Wird nur der Lader ohne Widget-Container gefunden, erscheint ein allgemeiner Elfsight-Platzhalter am Seitenende, damit kein sichtbarer Inhalt in den head eingefügt wird. Der Lader alleine enthält keine Feed-ID und erstellt keinen konkreten Feed. Für einen Platzhalter direkt am Feed den vollständigen Elfsight-Code einschließlich div.elfsight-app-ID einfügen. Inline-Skripte, die Elfsight eigenständig dynamisch laden, sowie andere Twitter-Feed-Plugins und direkte Twitter-Embeds sind nicht Teil dieser Integration. Ein vorhandener Borlabs-Blocker muss beim Wechsel gesondert entfernt werden, sonst bleibt dessen kodierter Inhalt unverändert gesperrt.
 
 Geprüft: PHP-Regressionen und Browser-Lebenszyklus mit simuliertem Elfsight-SDK, einschließlich freigegebenem Neuladen und Widerruf. Live-Test mit der tatsächlichen Widget-ID noch erforderlich.
+
+
+## YouTube und Tramino ab 0.7.0
+
+Direkte iframe-Einbettungen von youtube.com/embed und youtube-nocookie.com/embed sowie iframe-Widgets von tramino.de und dessen Subdomains werden serverseitig durch Platzhalter ersetzt. YouTube und Tramino haben jeweils eigene Freigaben, optionales Speichern für 30 Tage und Widerruf. Shortcodes: [bb_youtube_revoke] und [bb_tramino_revoke]. Die originale iframe-Adresse, Höhe und Titel bleiben erhalten; die Breite wird responsiv. Der YouTube-Player erhält die üblichen Player-Berechtigungen einschließlich Vollbild und Picture-in-Picture.
+
+Auf fewo-almwiese.de wurden ein Tramino-Bewertungswidget (/api/widgets/rating/) und ein YouTube-nocookie-Video festgestellt und deren Sperre am aktuellen HTML geprüft. Die Tramino-Integration umfasst iframe-Widgets; eigenständige JavaScript-Widgets oder nachträglich dynamisch eingefügte Inhalte sind nicht pauschal abgedeckt. Externe Video-Vorschaubilder außerhalb des iframe werden nicht automatisch blockiert. Alte Borlabs-Platzhalter dürfen beim Wechsel keine zusätzliche Sperre um die Inhalte behalten. Bunny Fonts und Bilder von anderen Domains werden durch diese Erweiterung nicht lokalisiert.
+
+Automatisierte Prüfungen decken Host-Erkennung, Protokolle, Trennung der Dienste und Ressourcenvorladungen ab. Browser-Lebenszyklus mit simulierten iframe-Antworten geprüft; abschließende Prüfung auf der Live-Installation nach Update erforderlich.

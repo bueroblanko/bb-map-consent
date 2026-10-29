@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1', planity: 'bbmc-planity-consent-v1', elfsight: 'bbmc-elfsight-consent-v1'};
+  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1', planity: 'bbmc-planity-consent-v1', elfsight: 'bbmc-elfsight-consent-v1', youtube: 'bbmc-youtube-consent-v1', tramino: 'bbmc-tramino-consent-v1'};
   const consent = {};
   const scriptLoads = {};
   let api;
@@ -86,6 +86,7 @@
         if (reserved) target.style.minHeight = '0';
         if (config.width) frame.style.maxWidth = config.width + 'px';
         frame.referrerPolicy = 'strict-origin-when-cross-origin';
+        if (config.service === 'youtube') frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
         frame.allowFullscreen = true; frame.src = config.src; target.append(frame);
       } else {
         if (reserved > 400) target.style.minHeight = reserved + 'px';
