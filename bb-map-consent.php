@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: BB Consent
- * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner und Planity-Terminbuchung.
- * Version: 0.5.6
+ * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung und Elfsight-Widgets.
+ * Version: 0.6.0
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,7 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.5.6');
+define('BBMC_VERSION', '0.6.0');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
@@ -19,14 +19,15 @@ final class BB_Map_Consent {
         add_action('template_redirect', function () {
             if (!is_feed() && !is_admin() && !wp_doing_ajax()) { ob_start([__CLASS__, 'filter_html']); }
         }, 0);
+        add_shortcode('bb_elfsight_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="elfsight">Elfsight-Einwilligung widerrufen</button>'; });
         add_shortcode('bb_instagram_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="instagram">Instagram-Einwilligung widerrufen</button>'; });
         add_shortcode('bb_maps_revoke', function () { return '<button type="button" class="bbmc-revoke">Google-Maps-Einwilligung widerrufen</button>'; });
         add_shortcode('bb_planity_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="planity">Einwilligung für die Online-Terminbuchung widerrufen</button>'; });
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.5.6');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.5.6', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.6.0');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.6.0', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -74,6 +75,7 @@ final class BB_Map_Consent {
         $service = $config['service'] ?? 'maps';
         $texts = [
             'maps' => ['Google Maps', 'Mit dem Laden stimmen Sie zu, dass Google Maps eingebunden wird (bei einer Snazzy-Maps-Karte auch über Snazzy Maps). Dabei wird Ihre IP-Adresse an Google übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Google übermittelt.'],
+            'elfsight' => ['Elfsight-Inhalte (z. B. Twitter / X)', 'Mit dem Laden stimmen Sie zu, dass externe Inhalte über Elfsight eingebunden werden. Dabei wird Ihre IP-Adresse an Elfsight und die Anbieter der Inhalte, bei einem Twitter-/X-Feed an X, übermittelt; Daten können auch außerhalb der EU verarbeitet werden.', 'Beim Laden werden Daten an Elfsight und den Inhaltsanbieter übermittelt.'],
             'instagram' => ['Instagram', 'Mit dem Laden stimmen Sie zu, dass Inhalte von Instagram (Meta) eingebunden werden. Dabei wird Ihre IP-Adresse an Meta übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Meta übermittelt.'],
             'planity' => ['Online-Terminbuchung', 'Mit dem Laden stimmen Sie zu, dass das Buchungssystem von Planity (Planity SAS, Frankreich) eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an Planity und von Planity eingesetzte Dienstleister wie Amazon Web Services übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Planity übermittelt.'],
             'dealerweb' => ['Aktionsbanner', 'Mit dem Laden stimmen Sie zu, dass ein Aktionsbanner der COmarketing GmbH (dealerweb-comarketing.de) eingebunden wird, das über die Website-Plattform Wix ausgeliefert wird. Dabei wird Ihre IP-Adresse an COmarketing und Wix übermittelt; Daten können auch außerhalb der EU verarbeitet werden.', 'Beim Laden werden Daten an COmarketing und Wix übermittelt.'],
@@ -167,11 +169,40 @@ final class BB_Map_Consent {
         }
         return [$html, count($ranges)];
     }
+    public static function elfsight_script($tag) {
+        $src = self::attribute($tag, 'src');
+        $normal = strpos($src, '//') === 0 ? 'https:' . $src : $src;
+        return self::host($normal) === 'static.elfsight.com'
+            && wp_parse_url($normal, PHP_URL_PATH) === '/platform/platform.js';
+    }
+    public static function elfsight_containers($html) {
+        preg_match_all('~<!--.*?-->|<(script|style|textarea)\b[^>]*>.*?</\1\s*>|</?div\b[^>]*>~is', $html, $tokens, PREG_OFFSET_CAPTURE);
+        $ranges = []; $start = null; $depth = 0;
+        foreach ($tokens[0] as $token) {
+            [$tag, $offset] = $token;
+            if (!preg_match('~^</?div\b~i', $tag)) { continue; }
+            $closing = stripos($tag, '</div') === 0;
+            if ($start === null && !$closing && preg_match('/(?:^|\s)elfsight-app-[a-f0-9-]+(?:\s|$)/i', self::attribute($tag, 'class'))) {
+                $start = $offset; $depth = 1;
+            } elseif ($start !== null) {
+                $depth += $closing ? -1 : 1;
+                if ($depth === 0) { $ranges[] = [$start, $offset + strlen($tag) - $start]; $start = null; }
+            }
+        }
+        foreach (array_reverse($ranges) as $range) {
+            [$offset, $length] = $range;
+            $widget = substr($html, $offset, $length);
+            $html = substr_replace($html, self::box(['service' => 'elfsight', 'kind' => 'html-scripts', 'html' => base64_encode($widget)]), $offset, $length);
+        }
+        return [$html, count($ranges)];
+    }
     public static function filter_html($html) {
+        [$html, $elfsight_widgets] = self::elfsight_containers($html);
+        $elfsight_loader = false;
         [$html, $feeds] = self::feeds($html);
         $planity = false;
         // Tokenise tags without reserialising the document or touching script strings.
-        return preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>|<[a-z][a-z0-9]*\b[^>]*\sdata-et-multi-view\s*=[^>]*>~is', function ($m) use ($feeds, &$planity) {
+        $html = preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>|<[a-z][a-z0-9]*\b[^>]*\sdata-et-multi-view\s*=[^>]*>~is', function ($m) use ($feeds, &$planity, &$elfsight_loader) {
             $tag = $m[0];
             if (strpos($tag, '<!--') === 0) { return $tag; }
             if (!preg_match('~^<(?:script|blockquote|iframe|link)\b~i', $tag)) { return self::multi_view($tag); }
@@ -191,6 +222,11 @@ final class BB_Map_Consent {
             if (stripos($tag, '<script') === 0) {
                 $src = self::attribute($tag, 'src');
                 $id = self::attribute($tag, 'id');
+                if (self::elfsight_script($tag)) {
+                    if ($elfsight_loader) { return ''; }
+                    $elfsight_loader = true;
+                    return '<template class="bbmc-feed-script" data-service="elfsight" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
+                }
                 if ($feeds && (preg_match('~/(?:instagram-feed|instagram-feed-pro)/.*\.js(?:[?]|$)~i', $src) || preg_match('/^sbi_[a-z0-9_-]+$/i', $id))) {
                     return '<template class="bbmc-feed-script" data-service="instagram" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
                 }
@@ -207,7 +243,7 @@ final class BB_Map_Consent {
             if (stripos($tag, '<link') === 0) {
                 $rel = self::attribute($tag, 'rel');
                 $href = self::attribute($tag, 'href');
-                if ((self::google($href) || self::instagram_host($href) || self::dealerweb_url($href) || self::host($href) === 'd2skjte8udjqxw.cloudfront.net') && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
+                if ((self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href) === 'static.elfsight.com' || self::google($href) || self::instagram_host($href) || self::dealerweb_url($href) || self::host($href) === 'd2skjte8udjqxw.cloudfront.net') && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
                 return $tag;
             }
             $src = self::attribute($tag, 'src');
@@ -225,6 +261,13 @@ final class BB_Map_Consent {
             }
             return $tag;
         }, $html);
+        if ($elfsight_loader && !$elfsight_widgets) {
+            // A loader in <head> must not insert a visible section into the head.
+            $box = self::box(['service' => 'elfsight', 'kind' => 'scripts']);
+            $pos = strripos($html, '</body>');
+            $html = $pos === false ? $html . $box : substr_replace($html, $box, $pos, 0);
+        }
+        return $html;
     }
     /**
      * Divi keeps per-device module content as JSON in data-et-multi-view and writes it back

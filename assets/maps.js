@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1', planity: 'bbmc-planity-consent-v1'};
+  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1', planity: 'bbmc-planity-consent-v1', elfsight: 'bbmc-elfsight-consent-v1'};
   const consent = {};
   const scriptLoads = {};
   let api;
@@ -72,11 +72,11 @@
     revokeButton.hidden = false;
     target.hidden = false;
     try {
-      if (config.kind === 'smashballoon') {
+      if (config.kind === 'smashballoon' || config.kind === 'html-scripts') {
         target.innerHTML = decode(config.html);
         // The whole group is restored synchronously before the SDK starts scanning.
         await Promise.resolve();
-        await loadScripts('instagram');
+        await loadScripts(config.service || 'instagram');
       } else if (config.kind === 'scripts') {
         await loadScripts(config.service);
       } else if (config.kind === 'iframe') {

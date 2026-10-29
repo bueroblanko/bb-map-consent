@@ -148,3 +148,12 @@ Zur einmaligen Umstellung eine bestehende alte Installation deaktivieren und lö
 ## Datenschutz-Link ab 0.5.6
 
 Wenn keine veröffentlichte Datenschutzseite in WordPress ausgewählt ist, verlinken die Platzhalter auf home_url('/datenschutz'). Eine konfigurierte Datenschutzseite hat weiterhin Vorrang.
+
+
+## Elfsight ab 0.6.0
+
+Der gemeinsame Elfsight-Lader https://static.elfsight.com/platform/platform.js wird bis zur Elfsight-Freigabe gesperrt. Container mit Klasse elfsight-app-ID werden einschließlich vorhandener Bilder durch Platzhalter ersetzt. Nach Freigabe werden die Container wieder eingesetzt und das originale SDK mit data-use-service-core geladen. Mehrfach eingebundene Lader werden einmal ausgeführt. Die Elfsight-Freigabe umfasst alle so eingebundenen Elfsight-Widgets der Seite, nicht nur Twitter/X: Der gemeinsame Lader kann verschiedene Widget-Arten laden. Andere Dienste bleiben unabhängig gesperrt. Optional 30 Tage merken und Widerruf über [bb_elfsight_revoke].
+
+Wird nur der Lader ohne Widget-Container gefunden, erscheint ein allgemeiner Elfsight-Platzhalter am Seitenende, damit kein sichtbarer Inhalt in den head eingefügt wird. Der Lader alleine enthält keine Feed-ID und erstellt keinen konkreten Feed. Für einen Platzhalter direkt am Feed den vollständigen Elfsight-Code einschließlich div.elfsight-app-ID einfügen. Inline-Skripte, die Elfsight eigenständig dynamisch laden, sowie andere Twitter-Feed-Plugins und direkte Twitter-Embeds sind nicht Teil dieser Integration. Ein vorhandener Borlabs-Blocker muss beim Wechsel gesondert entfernt werden, sonst bleibt dessen kodierter Inhalt unverändert gesperrt.
+
+Geprüft: PHP-Regressionen und Browser-Lebenszyklus mit simuliertem Elfsight-SDK, einschließlich freigegebenem Neuladen und Widerruf. Live-Test mit der tatsächlichen Widget-ID noch erforderlich.

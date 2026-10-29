@@ -18,6 +18,7 @@ jobs:
           php tests/updater.php
           php tests/update-directory.php
           php tests/instagram.php
+          php tests/elfsight.php
           php tests/feeds.php
           php tests/dealerweb.php
           php tests/planity.php
