@@ -20,6 +20,7 @@ jobs:
           php tests/instagram.php
           php tests/elfsight.php
           php tests/youtube-tramino.php
+          php tests/bookings.php
           php tests/feeds.php
           php tests/dealerweb.php
           php tests/planity.php

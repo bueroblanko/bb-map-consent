@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1', planity: 'bbmc-planity-consent-v1', elfsight: 'bbmc-elfsight-consent-v1', youtube: 'bbmc-youtube-consent-v1', tramino: 'bbmc-tramino-consent-v1'};
+  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1', planity: 'bbmc-planity-consent-v1', elfsight: 'bbmc-elfsight-consent-v1', youtube: 'bbmc-youtube-consent-v1', tramino: 'bbmc-tramino-consent-v1', bookings: 'bbmc-bookings-consent-v1'};
   const consent = {};
   const scriptLoads = {};
   let api;

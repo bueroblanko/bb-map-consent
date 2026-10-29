@@ -166,3 +166,10 @@ Direkte iframe-Einbettungen von youtube.com/embed und youtube-nocookie.com/embed
 Auf fewo-almwiese.de wurden ein Tramino-Bewertungswidget (/api/widgets/rating/) und ein YouTube-nocookie-Video festgestellt und deren Sperre am aktuellen HTML geprüft. Die Tramino-Integration umfasst iframe-Widgets; eigenständige JavaScript-Widgets oder nachträglich dynamisch eingefügte Inhalte sind nicht pauschal abgedeckt. Externe Video-Vorschaubilder außerhalb des iframe werden nicht automatisch blockiert. Alte Borlabs-Platzhalter dürfen beim Wechsel keine zusätzliche Sperre um die Inhalte behalten. Bunny Fonts und Bilder von anderen Domains werden durch diese Erweiterung nicht lokalisiert.
 
 Automatisierte Prüfungen decken Host-Erkennung, Protokolle, Trennung der Dienste und Ressourcenvorladungen ab. Browser-Lebenszyklus mit simulierten iframe-Antworten geprüft; abschließende Prüfung auf der Live-Installation nach Update erforderlich.
+
+
+## Microsoft Bookings ab 0.8.0
+
+Microsoft-Bookings-iframes auf outlook.office365.com und outlook.office.com werden bei klassischen /owa/calendar/…/bookings/-Adressen und /book/…-Adressen erkannt. Bookings besitzt eine eigene Einwilligung mit optionalem 30-Tage-Speichern und Widerruf. Shortcode: [bb_bookings_revoke]. Andere Outlook-Seiten werden nicht umgeschrieben. Die ursprüngliche Buchungsadresse einschließlich Parametern und die numerische Höhe bleiben erhalten; ohne Höhenangabe gilt 800 px.
+
+Geprüft mit dem originalen Microsoft-Bookings-iframe von rn-systems.de/termin-vereinbaren/. Auf dieser Website liegt es derzeit in einer Borlabs-kodierten Sperre. Beim Wechsel zuerst die originale Einbettung wieder ausgeben lassen; BB Consent entfernt nicht automatisch den Schutz anderer Consent-Plugins. Die Bookings-Freigabe steuert kein Matomo und keine sonstigen Statistik-Skripte. Browser-Prüfung mit simuliertem iframe bestätigt Trennung von Maps, Freigabe, Speichern, Neuladen und Widerruf. Ein tatsächlicher Buchungsvorgang wurde nicht durchgeführt.

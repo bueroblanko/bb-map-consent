@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: BB Consent
- * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung, Elfsight, YouTube und Tramino.
- * Version: 0.7.0
+ * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung, Elfsight, YouTube, Tramino und Microsoft Bookings.
+ * Version: 0.8.0
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,7 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.7.0');
+define('BBMC_VERSION', '0.8.0');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
@@ -19,7 +19,7 @@ final class BB_Map_Consent {
         add_action('template_redirect', function () {
             if (!is_feed() && !is_admin() && !wp_doing_ajax()) { ob_start([__CLASS__, 'filter_html']); }
         }, 0);
-        foreach (['youtube' => 'YouTube', 'tramino' => 'Tramino'] as $service => $label) {
+        foreach (['youtube' => 'YouTube', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings'] as $service => $label) {
             add_shortcode('bb_' . $service . '_revoke', function () use ($service, $label) { return '<button type="button" class="bbmc-revoke" data-service="' . esc_attr($service) . '">' . $label . '-Einwilligung widerrufen</button>'; });
         }
         add_shortcode('bb_elfsight_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="elfsight">Elfsight-Einwilligung widerrufen</button>'; });
@@ -29,8 +29,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.7.0');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.7.0', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.8.0');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.8.0', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -82,6 +82,8 @@ final class BB_Map_Consent {
         if (in_array($host, ['youtube.com', 'www.youtube.com', 'www.youtube-nocookie.com', 'youtube-nocookie.com'], true)
             && preg_match('~^/embed/[A-Za-z0-9_-]+(?:/|$)~', $path)) { return 'youtube'; }
         if (preg_match('/(?:^|\.)tramino\.de$/', $host)) { return 'tramino'; }
+        if (in_array($host, ['outlook.office365.com', 'outlook.office.com'], true)
+            && preg_match('~^/(?:owa/calendar/[^/]+/bookings(?:/|$)|book/[^/]+(?:/|$))~i', $path)) { return 'bookings'; }
         return '';
     }
     public static function box($config) {
@@ -89,6 +91,7 @@ final class BB_Map_Consent {
         $texts = [
             'maps' => ['Google Maps', 'Mit dem Laden stimmen Sie zu, dass Google Maps eingebunden wird (bei einer Snazzy-Maps-Karte auch über Snazzy Maps). Dabei wird Ihre IP-Adresse an Google übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Google übermittelt.'],
             'youtube' => ['YouTube', 'Mit dem Laden stimmen Sie zu, dass ein Video von YouTube (Google) eingebunden wird. Dabei wird Ihre IP-Adresse an Google übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an YouTube / Google übermittelt.'],
+            'bookings' => ['Microsoft Bookings', 'Mit dem Laden stimmen Sie zu, dass das Terminbuchungssystem Microsoft Bookings eingebunden wird. Dabei wird Ihre IP-Adresse an Microsoft übermittelt. Bei einer Buchung werden auch die von Ihnen eingegebenen Daten verarbeitet; Daten können außerhalb der EU verarbeitet werden.', 'Beim Laden werden Daten an Microsoft übermittelt.'],
             'tramino' => ['Tramino-Inhalte', 'Mit dem Laden stimmen Sie zu, dass externe Inhalte wie Bewertungen oder Buchungswidgets von Tramino eingebunden werden. Dabei wird Ihre IP-Adresse an den Anbieter übermittelt.', 'Beim Laden werden Daten an Tramino übermittelt.'],
             'elfsight' => ['Elfsight-Inhalte (z. B. Twitter / X)', 'Mit dem Laden stimmen Sie zu, dass externe Inhalte über Elfsight eingebunden werden. Dabei wird Ihre IP-Adresse an Elfsight und die Anbieter der Inhalte, bei einem Twitter-/X-Feed an X, übermittelt; Daten können auch außerhalb der EU verarbeitet werden.', 'Beim Laden werden Daten an Elfsight und den Inhaltsanbieter übermittelt.'],
             'instagram' => ['Instagram', 'Mit dem Laden stimmen Sie zu, dass Inhalte von Instagram (Meta) eingebunden werden. Dabei wird Ihre IP-Adresse an Meta übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Meta übermittelt.'],
@@ -258,16 +261,18 @@ final class BB_Map_Consent {
             if (stripos($tag, '<link') === 0) {
                 $rel = self::attribute($tag, 'rel');
                 $href = self::attribute($tag, 'href');
-                if ((self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href) === 'static.elfsight.com' || self::extra_iframe_service($href) || preg_match('/(?:^|\.)(youtube(?:-nocookie)?\.com|ytimg\.com|googlevideo\.com|tramino\.de)$/', self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href)) || self::google($href) || self::instagram_host($href) || self::dealerweb_url($href) || self::host($href) === 'd2skjte8udjqxw.cloudfront.net') && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
+                if ((self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href) === 'static.elfsight.com' || in_array(self::host($href), ['outlook.office365.com', 'outlook.office.com'], true) || self::extra_iframe_service($href) || preg_match('/(?:^|\.)(youtube(?:-nocookie)?\.com|ytimg\.com|googlevideo\.com|tramino\.de)$/', self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href)) || self::google($href) || self::instagram_host($href) || self::dealerweb_url($href) || self::host($href) === 'd2skjte8udjqxw.cloudfront.net') && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
                 return $tag;
             }
             $src = self::attribute($tag, 'src');
             if (!$src) { $src = self::attribute($tag, 'data-src'); }
             $extra_service = self::extra_iframe_service($src);
             if ($extra_service) {
+                $titles = ['youtube' => 'YouTube-Video', 'tramino' => 'Tramino-Inhalte', 'bookings' => 'Microsoft Bookings'];
+                $heights = ['youtube' => 450, 'tramino' => 400, 'bookings' => 800];
                 return self::box(['service' => $extra_service, 'kind' => 'iframe', 'src' => $src,
-                    'title' => self::attribute($tag, 'title') ?: ($extra_service === 'youtube' ? 'YouTube-Video' : 'Tramino-Inhalte'),
-                    'height' => max(150, min(1200, (int)(self::attribute($tag, 'height') ?: ($extra_service === 'youtube' ? 450 : 400))))]);
+                    'title' => self::attribute($tag, 'title') ?: $titles[$extra_service],
+                    'height' => max(150, min(1200, (int)(self::attribute($tag, 'height') ?: $heights[$extra_service])))]);
             }
             if (self::instagram_host($src)) {
                 return self::box(['service' => 'instagram', 'kind' => 'iframe', 'src' => self::instagram_embed($src), 'title' => 'Instagram-Beitrag', 'height' => 620]);
