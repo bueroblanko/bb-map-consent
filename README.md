@@ -179,3 +179,27 @@ Geprüft mit dem originalen Microsoft-Bookings-iframe von rn-systems.de/termin-v
 
 Divi setzt in `.et_pb_video_box` `line-height:0`. Über `font:inherit` hat der Platzhalter das geerbt, alle Textzeilen lagen übereinander (gesehen bei fewo-almwiese.de). Der Platzhalter hat jetzt eine eigene Zeilenhöhe von 1.5. YouTube-Platzhalter und geladene Videos behalten außerdem das Seitenverhältnis aus `width`/`height` des Einbettungscodes, ohne Pixelbreite 16:9, statt der festen Höhe. Auf dem Handy war das Video sonst 312 × 608 px hoch. Geprüft mit Headless-Chrome an der Startseite von fewo-almwiese.de mit ausgetauschtem Plugin-Stand: Desktop 605 × 340, Tablet 656 × 369, Handy 312 × 176, vor und nach der Freigabe.
 
+
+
+## Eigenes CSS ab 0.9.0
+
+Unter Einstellungen → BB Consent steht ein CSS-Feld für die gesamte WordPress-Installation zur Verfügung. Ein Link „Einstellungen“ erscheint auch in der Plugin-Zeile. Das Feld ist für Benutzer mit edit_theme_options zugänglich. Es wird die normale WordPress Settings API verwendet.
+
+Beim Bearbeiten einer WordPress-Seite gibt es zusätzlich die Box „BB Consent – Seiten-CSS“. Dort gespeichertes CSS wird ausschließlich beim Aufruf dieser Seite ausgegeben, nach dem Website-CSS. Die normalen CSS-Spezifitätsregeln gelten weiter. Im Divi-Frontend-Builder ist diese WordPress-Metabox nicht sichtbar; dafür die normale Seitenbearbeitung öffnen. Ein leeres Feld entfernt die seitenbezogene Anpassung. Änderungen an anderen Seiten oder Saves ohne diese Felder überschreiben nichts.
+
+Beispiel für die Website:
+
+```css
+.bbmc { --bbmc-accent: #113262; }
+.bbmc-placeholder { background: #f5f8fd; border-radius: 12px; }
+```
+
+Gezielt einen Dienst gestalten:
+
+```css
+.bbmc[data-service="youtube"] .bbmc-allow { background: #b00; }
+```
+
+Nur CSS eingeben, keine style-Tags. HTML-Markup wird entfernt. Das Feld ist kein Editor für PHP oder JavaScript. Die Regeln sollten mit .bbmc beginnen, damit sie nur Content-Blocker betreffen. Globale Regeln sind technisch möglich und beeinflussen dann entsprechend die übrige Website. Die CSS-Daten bleiben bei Plugin-Deaktivierung und normalen Updates erhalten. Nach Änderungen ggf. den Seiten-/CDN-Cache leeren.
+
+Validierung: automatisierte Tests für Berechtigungen, Nonce, unveränderte Daten bei fehlenden Feldern, Löschen leerer Overrides und Ausgabe-Reihenfolge von Website- und Seiten-CSS. Kein vollständiger Admin-Speicherdurchlauf in einer echten WordPress-Installation durchgeführt. Die Divi-Video-Darstellungskorrektur aus 0.8.1 ist enthalten und wurde auf fewo-almwiese.de mit nicht überlappenden Texten beobachtet.
