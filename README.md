@@ -173,3 +173,9 @@ Automatisierte Prüfungen decken Host-Erkennung, Protokolle, Trennung der Dienst
 Microsoft-Bookings-iframes auf outlook.office365.com und outlook.office.com werden bei klassischen /owa/calendar/…/bookings/-Adressen und /book/…-Adressen erkannt. Bookings besitzt eine eigene Einwilligung mit optionalem 30-Tage-Speichern und Widerruf. Shortcode: [bb_bookings_revoke]. Andere Outlook-Seiten werden nicht umgeschrieben. Die ursprüngliche Buchungsadresse einschließlich Parametern und die numerische Höhe bleiben erhalten; ohne Höhenangabe gilt 800 px.
 
 Geprüft mit dem originalen Microsoft-Bookings-iframe von rn-systems.de/termin-vereinbaren/. Auf dieser Website liegt es derzeit in einer Borlabs-kodierten Sperre. Beim Wechsel zuerst die originale Einbettung wieder ausgeben lassen; BB Consent entfernt nicht automatisch den Schutz anderer Consent-Plugins. Die Bookings-Freigabe steuert kein Matomo und keine sonstigen Statistik-Skripte. Browser-Prüfung mit simuliertem iframe bestätigt Trennung von Maps, Freigabe, Speichern, Neuladen und Widerruf. Ein tatsächlicher Buchungsvorgang wurde nicht durchgeführt.
+
+
+## Korrektur 0.8.1: Platzhalter in Divi-Videomodulen
+
+Divi setzt in `.et_pb_video_box` `line-height:0`. Über `font:inherit` hat der Platzhalter das geerbt, alle Textzeilen lagen übereinander (gesehen bei fewo-almwiese.de). Der Platzhalter hat jetzt eine eigene Zeilenhöhe von 1.5. YouTube-Platzhalter und geladene Videos behalten außerdem das Seitenverhältnis aus `width`/`height` des Einbettungscodes, ohne Pixelbreite 16:9, statt der festen Höhe. Auf dem Handy war das Video sonst 312 × 608 px hoch. Geprüft mit Headless-Chrome an der Startseite von fewo-almwiese.de mit ausgetauschtem Plugin-Stand: Desktop 605 × 340, Tablet 656 × 369, Handy 312 × 176, vor und nach der Freigabe.
+

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung, Elfsight, YouTube, Tramino und Microsoft Bookings.
- * Version: 0.8.0
+ * Version: 0.8.1
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,7 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.8.0');
+define('BBMC_VERSION', '0.8.1');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
@@ -29,8 +29,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.8.0');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.8.0', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.8.1');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.8.1', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -103,7 +103,8 @@ final class BB_Map_Consent {
         $height = (int) ($config['height'] ?? 0);
         $width = (int) ($config['width'] ?? 0);
         // Fixed-width embeds such as banners stay centred like the original inline iframe.
-        $styles = ($height ? '--bbmc-h:' . $height . 'px;' : '') . ($width ? 'max-width:' . $width . 'px;margin-left:auto;margin-right:auto;' : '');
+        $ratio = preg_match('~^\d+/\d+$~', (string) ($config['ratio'] ?? '')) ? $config['ratio'] : '';
+        $styles = ($ratio ? '--bbmc-ratio:' . $ratio . ';' : ($height ? '--bbmc-h:' . $height . 'px;' : '')) . ($width ? 'max-width:' . $width . 'px;margin-left:auto;margin-right:auto;' : '');
         $size = $styles ? ' style="' . $styles . '"' : '';
         $compact = $height && $height < 260 ? ' bbmc-compact' : '';
         $privacy = get_privacy_policy_url() ?: home_url('/datenschutz');
@@ -270,9 +271,16 @@ final class BB_Map_Consent {
             if ($extra_service) {
                 $titles = ['youtube' => 'YouTube-Video', 'tramino' => 'Tramino-Inhalte', 'bookings' => 'Microsoft Bookings'];
                 $heights = ['youtube' => 450, 'tramino' => 400, 'bookings' => 800];
-                return self::box(['service' => $extra_service, 'kind' => 'iframe', 'src' => $src,
+                $config = ['service' => $extra_service, 'kind' => 'iframe', 'src' => $src,
                     'title' => self::attribute($tag, 'title') ?: $titles[$extra_service],
-                    'height' => max(150, min(1200, (int)(self::attribute($tag, 'height') ?: $heights[$extra_service])))]);
+                    'height' => max(150, min(1200, (int)(self::attribute($tag, 'height') ?: $heights[$extra_service])))];
+                if ($extra_service === 'youtube') {
+                    // Videos scale like Divi/FitVids: keep the embed's aspect ratio instead of its fixed height.
+                    $w = (int) self::attribute($tag, 'width');
+                    $h = (int) self::attribute($tag, 'height');
+                    $config['ratio'] = $w > 0 && $h > 0 && preg_match('~^\s*\d+\s*(?:px)?\s*$~i', self::attribute($tag, 'width')) ? $w . '/' . $h : '16/9';
+                }
+                return self::box($config);
             }
             if (self::instagram_host($src)) {
                 return self::box(['service' => 'instagram', 'kind' => 'iframe', 'src' => self::instagram_embed($src), 'title' => 'Instagram-Beitrag', 'height' => 620]);
