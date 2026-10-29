@@ -203,3 +203,16 @@ Gezielt einen Dienst gestalten:
 Nur CSS eingeben, keine style-Tags. HTML-Markup wird entfernt. Das Feld ist kein Editor für PHP oder JavaScript. Die Regeln sollten mit .bbmc beginnen, damit sie nur Content-Blocker betreffen. Globale Regeln sind technisch möglich und beeinflussen dann entsprechend die übrige Website. Die CSS-Daten bleiben bei Plugin-Deaktivierung und normalen Updates erhalten. Nach Änderungen ggf. den Seiten-/CDN-Cache leeren.
 
 Validierung: automatisierte Tests für Berechtigungen, Nonce, unveränderte Daten bei fehlenden Feldern, Löschen leerer Overrides und Ausgabe-Reihenfolge von Website- und Seiten-CSS. Kein vollständiger Admin-Speicherdurchlauf in einer echten WordPress-Installation durchgeführt. Die Divi-Video-Darstellungskorrektur aus 0.8.1 ist enthalten und wurde auf fewo-almwiese.de mit nicht überlappenden Texten beobachtet.
+
+## Rechtstext-Modul (in Arbeit, noch in keinem Release)
+
+Anbindung an die Rechtstexte-Zentrale legal.bbkd.de. Das Modul liegt in `includes/legal/` und ist technisch vom Content-Blocker getrennt. Es ist **standardmäßig ausgeschaltet**, ein Update allein ändert auf keiner Website etwas.
+
+- **Einstellungen → Rechtstexte:** Modul einschalten, Zentrale (Standard `https://legal.bbkd.de`), Projekt-ID und Seitenschlüssel eintragen. Der Schlüssel wird nicht wieder angezeigt. Hier nie Admin- oder Freigabe-Token der Zentrale eintragen.
+- **Ausgabe:** übernimmt die eRecht24-Shortcodes `[erecht24 type="imprint|privacy_policy|social_media" lang="de|en" strip_title="true"]`, `[erecht24_widget]`, `[impressum]`, `[datenschutz]`, die Blöcke `erecht24/erecht24` und `erecht24/legal-text` sowie ein Elementor-Widget. Solange ein anderer Anbieter (z. B. das eRecht24-Plugin) diese Shortcodes belegt, bleibt er zuständig und nichts wird überschrieben.
+- **Synchronisation:** Texte werden lokal gespeichert (ohne Autoload) und ohne Abruf der Zentrale ausgeliefert. Die Zentrale meldet Neues signiert an `POST /wp-json/bb-legal/v1/push` (mit Schutz gegen Wiederholung), zusätzlich fragt WP-Cron alle 15 Minuten nach (`bb_legal_poll`). Fällt die Zentrale aus, bleibt die letzte gültige Fassung. Eine Anzeige-Bestätigung (`ack`) geht nur für Texte raus, die tatsächlich öffentlich ausgegeben wurden.
+- **Eingaben:** Der Fragebogen ist im Backend bearbeitbar. Ohne Verbindung wird ein lokaler Entwurf gespeichert. Antworten der Zentrale (zusammengeführt, Konflikt, wartet auf Freigabe) werden angezeigt.
+- **Spätere Übergabe an BB Basic:** Beide Plugins melden sich über `bb_legal_register_provider()` an. Ein aktiviertes, kompatibles Modul in BB Basic übernimmt mit unveränderten Optionen, Seitenschlüssel und lokalen Texten; ist es aus, bleibt BB Consent zuständig. Ein inkompatibles Schema wird nicht zurückmigriert.
+- **Öffentliches Repository:** keine Seitenschlüssel, Tokens oder echten Rechtstexte in Code, Tests oder Issues.
+
+Prüfungen: `php tests/legal.php` (Modul) und `bash tests/wordpress/run.sh` (lädt ein Wegwerf-WordPress und prüft Shortcodes, Blöcke, Push, Ausfall der Zentrale, Fremdanbieter und Übergabe an BB Basic). Beide laufen auch in GitHub Actions. Vor einem Release: Pilot auf dev.bueroblanko.de.
