@@ -59,23 +59,29 @@ final class Client {
             return $result['status'];
         } catch (\Throwable $e) { Store::status('draft_saved'); return 'draft'; }
     }
-    /**
-     * Fertigen Text frei bearbeitet an die Zentrale senden. Der Text bekommt danach keine automatischen Aktualisierungen mehr.
-     * Ist die Zentrale nicht erreichbar, bleibt die Fassung als lokaler Entwurf erhalten.
-     */
-    public function editText($type, $lang, $title, $html, $base) {
+    /** Bausteinfolge eines Textes live aus der Zentrale (für den Editor). */
+    public function segments($type, $lang) {
         if (!in_array($type, ['imprint','privacy_policy','social_media'], true) || !in_array($lang, ['de','en'], true)) { throw new \RuntimeException('Unbekannter Text.'); }
+        $reply = $this->request('GET', 'segments/' . $type . '/' . $lang);
+        if (!is_array($reply['segments'] ?? null)) { throw new \RuntimeException('Ungültige Antwort der Zentrale.'); }
+        return $reply['segments'];
+    }
+    /**
+     * Geänderte Bausteine, eigene Texte und Rücksetzungen senden. Unveränderte Bausteine erkennt die Zentrale selbst.
+     * Ist sie nicht erreichbar, bleibt alles als lokaler Entwurf erhalten.
+     */
+    public function saveSegments($type, $lang, $blocks, $inserts, $reset) {
         $key = $type . '/' . $lang;
-        $drafts = Store::get('text_drafts'); $drafts = is_array($drafts) ? $drafts : [];
-        $drafts[$key] = ['title'=>$title,'html'=>$html,'base_output_id'=>$base,'at'=>time(),'identity'=>Store::identity()];
-        Store::put('text_drafts', $drafts);
+        $drafts = Store::get('segment_drafts'); $drafts = is_array($drafts) ? $drafts : [];
+        $drafts[$key] = ['blocks'=>$blocks,'inserts'=>$inserts,'reset'=>$reset,'at'=>time(),'identity'=>Store::identity()];
+        Store::put('segment_drafts', $drafts);
         try {
-            $result = $this->request('PUT', 'texts/' . $type . '/' . $lang, ['title'=>$title,'html'=>$html,'base_output_id'=>$base]);
-            if (($result['status'] ?? '') !== 'ok') { throw new \RuntimeException('Unbekannter Status.'); }
-            unset($drafts[$key]); Store::put('text_drafts', $drafts);
+            $result = $this->request('PUT', 'segments/' . $type . '/' . $lang, ['blocks'=>(object)$blocks,'inserts'=>(object)$inserts,'reset'=>array_values($reset)]);
+            if (!in_array($result['status'] ?? '', ['ok','unchanged'], true)) { throw new \RuntimeException('Unbekannter Status.'); }
+            unset($drafts[$key]); Store::put('segment_drafts', $drafts);
             $this->sync();
-            return 'text_ok';
-        } catch (\Throwable $e) { Store::status('draft_saved'); return 'text_draft'; }
+            return 'segments_' . $result['status'];
+        } catch (\Throwable $e) { Store::status('draft_saved'); return 'segments_draft'; }
     }
     public function acknowledge() {
         $observed = Store::get('observed'); $cache = Store::get('cache');
