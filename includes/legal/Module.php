@@ -31,6 +31,7 @@ final class Module {
         add_action('bb_legal_clear_replay', function ($sig) { delete_option('bb_legal_replay_' . $sig); });
         add_action('wp_loaded', [__CLASS__, 'activate'], 100);
         add_action('elementor/widgets/register', [__CLASS__, 'elementor']);
+        Deactivate::boot();
     }
     public static function owner() { return self::$owner; }
     public static function adminProvider() { return self::$admin; }
