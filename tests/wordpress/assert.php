@@ -43,4 +43,25 @@ if($case==='off'){
  verify(Module::active()&&Module::owner()['id']==='consent','Consent übernimmt bei ausgeschaltetem Basic-Legal-Modul');verify(hash('sha256',Store::key())===get_option('bb_legal_test_key_fingerprint'),'Schlüssel beim Rückwechsel erhalten');
 }elseif($case==='incompatible'){
  verify(!Module::active(),'Inkompatibles Schema wird nicht zurückmigriert');verify(count(Store::get('cache')['outputs'])===3,'Daten trotz inkompatiblem Schema erhalten');
+}elseif($case==='freeze'){
+ require_once ABSPATH.'wp-admin/includes/plugin.php';wp_set_current_user(1);$D='BB\Legal\V1\Deactivate';
+ $short=wp_insert_post(['post_type'=>'page','post_status'=>'publish','post_title'=>'Impressum','post_content'=>'<p>Vorher</p>[et_pb_text][impressum][/et_pb_text]']);
+ $block=wp_insert_post(['post_type'=>'page','post_status'=>'publish','post_title'=>'Datenschutz','post_content'=>'<!-- wp:erecht24/erecht24 {"type":"privacy_policy","strip_title":true} /-->']);
+ $el=wp_insert_post(['post_type'=>'page','post_status'=>'publish','post_title'=>'Elementor','post_content'=>'']);
+ update_post_meta($el,'_elementor_data',wp_slash(wp_json_encode([['id'=>'a1','elType'=>'section','elements'=>[['id'=>'b2','elType'=>'widget','widgetType'=>'erecht24_legal_text','settings'=>['type'=>'social_media','strip_title'=>'true'],'elements'=>[]]]]])));
+ $plain=wp_insert_post(['post_type'=>'page','post_status'=>'publish','post_title'=>'Ohne','post_content'=>'<p>Kein Rechtstext</p>']);
+ $found=$D::usages();verify(in_array($short,$found,true)&&in_array($block,$found,true)&&in_array($el,$found,true)&&!in_array($plain,$found,true),'Seiten mit Shortcode, Block und Elementor-Widget gefunden');
+ $links=apply_filters('plugin_action_links',['deactivate'=>'<a href="x">Deaktivieren</a>'],plugin_basename(WP_PLUGIN_DIR.'/bb-consent/bb-map-consent.php'));verify(strpos($links['deactivate'],'bb_legal_deactivate=1')!==false,'Deaktivieren führt zuerst zur Abfrage');
+ $other=apply_filters('plugin_action_links',['deactivate'=>'<a href="x">Deaktivieren</a>'],'akismet/akismet.php');verify($other['deactivate']==='<a href="x">Deaktivieren</a>','Andere Plugins unverändert');
+ $GLOBALS['pagenow']='plugins.php';$_GET['bb_legal_deactivate']='1';ob_start();$D::notice();$notice=ob_get_clean();
+ verify(strpos($notice,'Letzten Stand fest einsetzen und deaktivieren')!==false&&strpos($notice,'Ohne Sichern deaktivieren')!==false&&strpos($notice,'action=deactivate')!==false,'Abfrage mit beiden Wegen');
+ $cache=Store::get('cache');Store::put('cache',[]);list($plan,$problems)=$D::plan();Store::put('cache',$cache);verify(count($problems)===3&&!$plan,'Ohne gültige Texte wird nichts geändert');
+ list($plan,$problems)=$D::plan();verify(!$problems&&count($plan)===3,'Alle Stellen vorbereitet');$D::apply($plan);
+ $c=get_post($short)->post_content;verify(strpos($c,'<p>Vorher</p>[et_pb_text]<div class="bb-legal-text')!==false&&strpos($c,'Neutraler Testtext imprint')!==false&&substr($c,-13)==='[/et_pb_text]','Shortcode fest eingesetzt, Divi-Hülle bleibt');
+ $c=get_post($block)->post_content;verify(strpos($c,'<!-- wp:html -->')===0&&strpos($c,'Neutraler Testtext privacy_policy')!==false&&strpos($c,'<h1>')===false,'Block wird HTML-Block, Titel ausgeblendet wie vorher');
+ $data=json_decode(get_post_meta($el,'_elementor_data',true),true);$w=$data[0]['elements'][0];verify($w['widgetType']==='text-editor'&&$w['id']==='b2'&&strpos($w['settings']['editor'],'Neutraler Testtext social_media')!==false,'Elementor-Widget wird Text-Widget');
+ verify(count(wp_get_post_revisions($short))>=1,'Vorherige Fassung als Revision erhalten');
+ verify(!array_intersect([$short,$block,$el],$D::usages()),'Danach keine Seite mehr vom Plugin abhängig');
+ $links=apply_filters('plugin_action_links',['deactivate'=>'<a href="x">Deaktivieren</a>'],plugin_basename(WP_PLUGIN_DIR.'/bb-consent/bb-map-consent.php'));verify($links['deactivate']==='<a href="x">Deaktivieren</a>','Ohne Rechtstext-Seiten normales Deaktivieren');
+ foreach([$short,$block,$el,$plain] as $id){wp_delete_post($id,true);}
 }else{throw new Exception('Unbekannter Testfall');}

@@ -338,6 +338,6 @@ BB_Map_Consent::boot();
 require_once __DIR__ . '/includes/legal/bootstrap.php';
 add_action('plugins_loaded', function () { bb_legal_register_provider([
     'id'=>'consent','version'=>'1.0.0','schema'=>1,
-    'path'=>__DIR__ . '/includes/legal','url'=>plugins_url('includes/legal',__FILE__),
+    'path'=>__DIR__ . '/includes/legal','url'=>plugins_url('includes/legal',__FILE__),'plugin'=>plugin_basename(__FILE__),
     'enabled'=>(bool)get_option('bb_legal_enabled_consent',false),
 ]); }, 1);

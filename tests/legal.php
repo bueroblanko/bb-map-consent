@@ -29,7 +29,7 @@ function shortcode_atts($defaults,$actual,$tag=''){return array_merge($defaults,
 function esc_html($v){return htmlspecialchars($v,ENT_QUOTES,'UTF-8');}function esc_attr($v){return esc_html($v);}function wp_kses_post($v){return preg_replace('~<script.*?</script>~s','',$v);}
 function wp_validate_boolean($v){return !in_array($v,[false,'false','0','',0],true);}
 function is_admin(){return $GLOBALS['admin']??false;}function is_preview(){return $GLOBALS['preview']??false;}function is_feed(){return false;}
-foreach(['Store','Client','Module','Admin'] as $file)require __DIR__.'/../includes/legal/'.$file.'.php';
+foreach(['Store','Client','Module','Admin','Deactivate'] as $file)require __DIR__.'/../includes/legal/'.$file.'.php';
 use BB\Legal\V1\{Store,Client,Module,Admin};
 $passed=0;
 function check($v,$message){global $passed;if(!$v)throw new Exception($message);$passed++;echo 'OK '.$message."\n";}

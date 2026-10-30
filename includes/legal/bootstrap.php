@@ -14,7 +14,7 @@ if (!function_exists('bb_legal_register_provider')) {
             $file = $provider['path'] . '/Module.php';
             if (!is_file($file)) { continue; }
             if (!class_exists('BB\\Legal\\V1\\Module', false)) {
-                foreach (['Store', 'Client', 'Module', 'Admin'] as $class) { require_once $provider['path'] . '/' . $class . '.php'; }
+                foreach (['Store', 'Client', 'Module', 'Admin', 'Deactivate'] as $class) { require_once $provider['path'] . '/' . $class . '.php'; }
             }
             \BB\Legal\V1\Module::boot($providers, $provider);
             return;
