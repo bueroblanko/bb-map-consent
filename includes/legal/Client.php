@@ -59,6 +59,24 @@ final class Client {
             return $result['status'];
         } catch (\Throwable $e) { Store::status('draft_saved'); return 'draft'; }
     }
+    /**
+     * Fertigen Text frei bearbeitet an die Zentrale senden. Der Text bekommt danach keine automatischen Aktualisierungen mehr.
+     * Ist die Zentrale nicht erreichbar, bleibt die Fassung als lokaler Entwurf erhalten.
+     */
+    public function editText($type, $lang, $title, $html, $base) {
+        if (!in_array($type, ['imprint','privacy_policy','social_media'], true) || !in_array($lang, ['de','en'], true)) { throw new \RuntimeException('Unbekannter Text.'); }
+        $key = $type . '/' . $lang;
+        $drafts = Store::get('text_drafts'); $drafts = is_array($drafts) ? $drafts : [];
+        $drafts[$key] = ['title'=>$title,'html'=>$html,'base_output_id'=>$base,'at'=>time(),'identity'=>Store::identity()];
+        Store::put('text_drafts', $drafts);
+        try {
+            $result = $this->request('PUT', 'texts/' . $type . '/' . $lang, ['title'=>$title,'html'=>$html,'base_output_id'=>$base]);
+            if (($result['status'] ?? '') !== 'ok') { throw new \RuntimeException('Unbekannter Status.'); }
+            unset($drafts[$key]); Store::put('text_drafts', $drafts);
+            $this->sync();
+            return 'text_ok';
+        } catch (\Throwable $e) { Store::status('draft_saved'); return 'text_draft'; }
+    }
     public function acknowledge() {
         $observed = Store::get('observed'); $cache = Store::get('cache');
         if (($cache['identity'] ?? '') !== Store::identity() || !$observed) { return false; }

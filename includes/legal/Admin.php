@@ -16,7 +16,7 @@ final class Admin {
     public static function screen() {
         if (!current_user_can('manage_options')) { return; }
         $p=Module::adminProvider(); $id=$p['id']; $cache=Store::get('cache'); $status=Store::get('status'); $owner=Module::owner();
-        $messages=['saved'=>'Einstellungen gespeichert.','synced'=>'Veröffentlichte Texte lokal gespeichert; noch keine Anzeige-Bestätigung gesendet.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Eingaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Eingaben synchronisiert.','merged'=>'Parallele Änderungen wurden zusammengeführt.','conflict'=>'Eingaben synchronisiert; Feldkonflikte siehe unten.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.'];
+        $messages=['saved'=>'Einstellungen gespeichert.','synced'=>'Veröffentlichte Texte lokal gespeichert; noch keine Anzeige-Bestätigung gesendet.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Eingaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Eingaben synchronisiert.','merged'=>'Parallele Änderungen wurden zusammengeführt.','conflict'=>'Eingaben synchronisiert; Feldkonflikte siehe unten.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.','text_ok'=>'Text gespeichert. Er bekommt ab jetzt keine automatischen Aktualisierungen mehr.','text_draft'=>'Zentrale nicht erreichbar. Der Text ist lokal als Entwurf gespeichert und wird beim nächsten Speichern erneut gesendet.'];
         echo '<div class="wrap"><h1>Rechtstexte</h1><p>Verbindung zu legal.bbkd.de. Dieses Modul ist unabhängig vom Content-Blocker und standardmäßig ausgeschaltet.</p>';
         $message=isset($_GET['bb_legal_result'])?sanitize_key(wp_unslash($_GET['bb_legal_result'])):'';
         if(isset($messages[$message])) { echo '<div class="notice notice-info"><p>'.esc_html($messages[$message]).'</p></div>'; }
@@ -31,12 +31,26 @@ final class Admin {
         self::form('sync');submit_button('Texte und Eingaben abrufen','secondary');echo '</form>';
         self::form('toggle');echo '<label><input type="checkbox" name="enabled" value="1" '.checked((bool)Store::get('enabled_'.$id,false),true,false).'> Rechtstext-Modul in '.esc_html($id==='consent'?'BB Consent':'BB Basic').' aktivieren</label><p class="description">Erst nach Abruf und Vergleich der Vorschau aktivieren. Solange eRecht24 oder ein anderer Anbieter die Handler belegt, bleibt dieser zuständig. Beim kontrollierten Deaktivieren des bisherigen Anbieters übernimmt das vorbereitete Modul beim nächsten Seitenaufruf. Bestehende Texte zuvor sichern.</p>';submit_button('Aktivierung speichern');echo '</form>';
         echo '<h2>Lokale Vorschau</h2><p>Die Vorschau bestätigt noch keine öffentliche Anzeige.</p>';
-        if(($cache['identity']??'')===Store::identity()) foreach($cache['outputs']??[] as $row) {
-            $v=$row['payload'];echo '<details><summary>'.esc_html($v['title'].' · '.$v['language'].' · Version '.$row['id']).'</summary><pre style="white-space:pre-wrap">'.esc_html($v['html']).'</pre></details>';
-        }
+        if(($cache['identity']??'')===Store::identity()) foreach($cache['outputs']??[] as $row) { self::textEditor($row); }
         $ack=Store::get('acknowledged');echo '<p>Zuletzt nach öffentlichem Rendern bestätigt: '.esc_html(implode(', ',$ack['ids']??[])?:'Noch keine Version').'</p>';
         echo '<p>Bei Seiten-Caches: Nach einer Veröffentlichung den Seiten-/CDN-Cache leeren. Die Bestätigung beschreibt den lokal gerenderten Stand, nicht jede bereits gespeicherte Cache-Kopie.</p>';
         self::inputs();echo '</div>';
+    }
+    /** Vorschau eines Textes und freie Bearbeitung mit dem WordPress-Editor. */
+    private static function textEditor($row) {
+        $v=$row['payload'];$key=$v['type'].'/'.$v['language'];
+        $drafts=Store::get('text_drafts');$draft=(is_array($drafts)&&isset($drafts[$key])&&($drafts[$key]['identity']??'')===Store::identity())?$drafts[$key]:null;
+        $custom=is_array($v['block_versions']??null)&&array_key_exists('individual',$v['block_versions']);
+        echo '<details><summary><strong>'.esc_html($v['title']).'</strong> · '.esc_html(strtoupper($v['language']).' · Version '.$row['id']).($custom?' · <em>frei bearbeitet</em>':'').'</summary>';
+        echo '<div style="max-width:900px;margin:10px 0 24px">';
+        if($custom) { echo '<p>Dieser Text wurde frei bearbeitet und bekommt keine automatischen Aktualisierungen. Zurückstellen kann Büro Blanko in der Zentrale.</p>'; }
+        if($draft) { echo '<div class="notice notice-warning inline"><p>Ungesendeter Entwurf vom '.esc_html(wp_date('d.m.Y H:i',$draft['at'])).'. Er steht unten im Editor und wird mit „Text speichern“ erneut gesendet.</p></div>'; }
+        self::form('text');
+        echo '<input type="hidden" name="text_type" value="'.esc_attr($v['type']).'"><input type="hidden" name="text_lang" value="'.esc_attr($v['language']).'"><input type="hidden" name="base_output_id" value="'.esc_attr((string)(int)$row['id']).'">';
+        echo '<p><label>Titel<br><input class="regular-text" name="text_title" value="'.esc_attr($draft['title']??$v['title']).'" required maxlength="200"></label></p>';
+        wp_editor($draft['html']??$v['html'],'bb_legal_text_'.preg_replace('/[^a-z]/','_',$key),['textarea_name'=>'text_html','textarea_rows'=>18,'media_buttons'=>false,'teeny'=>false,'quicktags'=>true]);
+        echo '<p><label><input type="checkbox" name="text_confirm" value="1" required> Mir ist klar: Nach dem Speichern bekommt dieser Text keine automatischen Aktualisierungen mehr (z. B. bei Gesetzesänderungen).</label></p>';
+        submit_button('Text speichern','primary','submit',false);echo '</form></div></details>';
     }
     private static function inputs() {
         $remote=Store::get('remote_inputs');if(($remote['identity']??'')!==Store::identity() || !isset($remote['schema']['payload']['fields'])) { return; }
@@ -97,13 +111,21 @@ final class Admin {
                 if($change&&(Module::owner()||Store::get('enabled_consent',false)||Store::get('enabled_basic',false))) { throw new \RuntimeException('Vor Projektwechsel Modul ausschalten'); }
                 if($change&&$key==='') { throw new \RuntimeException('Neuer Seitenschlüssel erforderlich'); }
                 if($key!=='') { Store::key($key); }
-                if($change) { foreach(['remote_inputs','draft','last_submission','observed','acknowledged'] as $name) { delete_option('bb_legal_'.$name); } }
+                if($change) { foreach(['remote_inputs','draft','text_drafts','last_submission','observed','acknowledged'] as $name) { delete_option('bb_legal_'.$name); } }
                 Store::put('endpoint',$endpoint);Store::put('site_id',$site);$result='saved';
             } elseif($operation==='sync') { $result=(new Client())->sync()?'synced':'failed'; }
             elseif($operation==='toggle') {
                 $enabled=isset($_POST['enabled'])&&$_POST['enabled']==='1';
                 if($enabled&&!Store::ready()) { throw new \RuntimeException('Zuerst vollständige Texte abrufen'); }
                 Store::put('enabled_'.$provider['id'],$enabled);$result=$enabled?'enabled':'disabled';
+            } elseif($operation==='text') {
+                $type=isset($_POST['text_type'])&&is_string($_POST['text_type'])?sanitize_key(wp_unslash($_POST['text_type'])):'';
+                $lang=isset($_POST['text_lang'])&&is_string($_POST['text_lang'])?sanitize_key(wp_unslash($_POST['text_lang'])):'';
+                $title=isset($_POST['text_title'])&&is_string($_POST['text_title'])?sanitize_text_field(wp_unslash($_POST['text_title'])):'';
+                $html=isset($_POST['text_html'])&&is_string($_POST['text_html'])?wp_kses_post(wp_unslash($_POST['text_html'])):'';
+                $base=isset($_POST['base_output_id'])?(int)$_POST['base_output_id']:0;
+                if(($_POST['text_confirm']??'')!=='1'||$title===''||trim(wp_strip_all_tags($html))==='') { throw new \RuntimeException('Angaben unvollständig'); }
+                $result=(new Client())->editText($type,$lang,$title,$html,$base?:null);
             } elseif($operation==='inputs') {
                 $token=isset($_POST['form_token'])&&is_string($_POST['form_token'])?wp_unslash($_POST['form_token']):'';
                 if(!preg_match('/^[A-Za-z0-9]{32}$/',$token)) { throw new \RuntimeException('Formular veraltet'); }

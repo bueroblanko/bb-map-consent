@@ -57,4 +57,12 @@ class PushRequest{private $body;private $headers;public function __construct($bo
 $_SERVER['REQUEST_URI']='/wp-json/bb-legal/v1/push';$body=json_encode(['site_id'=>Store::get('site_id'),'output_id'=>2]);$timestamp=(string)time();$signature=hash_hmac('sha256',"POST\n".$_SERVER['REQUEST_URI']."\n".$timestamp."\n".$body,$key);$request=new PushRequest($body,['x-bb-site'=>Store::get('site_id'),'x-bb-timestamp'=>$timestamp,'x-bb-signature'=>$signature]);check(Module::verifyPush($request)===true,'Signierter Push akzeptiert');check(Module::verifyPush($request) instanceof WP_Error,'Push-Replay abgewehrt');check(Module::push($request)->status===202,'Push plant asynchronen Abruf');
 check(Admin::parseFields(['fields'=>[['id'=>'enabled','type'=>'bool'],['id'=>'services','type'=>'multiselect']]],['enabled'=>'1','services'=>['youtube']],['other'=>'Erhalten'])===['other'=>'Erhalten','enabled'=>true,'services'=>['youtube']],'Fragebogen behält unbekannte bestehende Felder');
 $GLOBALS['shortcode_tags']['erecht24']='foreign_callback';check(Module::conflicts(),'Fremde Handler erkannt');Module::activate();check($GLOBALS['shortcode_tags']['erecht24']==='foreign_callback','Fremde Handler nicht überschrieben');
+$GLOBALS['requests']=[];queueSync([row(5),row(2,'privacy_policy')]);array_unshift($GLOBALS['http'],reply(['status'=>'ok','detached'=>true]));
+check((new Client())->editText('imprint','de','Impressum','<p>Kundentext</p>',1)==='text_ok','Freier Text an die Zentrale gesendet');
+[$url,$args]=$GLOBALS['requests'][0];$sent=json_decode($args['body'],true);
+check($args['method']==='PUT'&&str_ends_with(parse_url($url,PHP_URL_PATH),'/texts/imprint/de')&&$sent['html']==='<p>Kundentext</p>'&&$sent['base_output_id']===1,'Text mit Grundlage signiert per PUT');
+check(empty(Store::get('text_drafts')['imprint/de']),'Gesendeter Text hinterlässt keinen Entwurf');
+check(Store::get('cache')['outputs'][0]['id']===5,'Nach dem Senden neue Fassung abgeholt');
+$GLOBALS['http']=[new WP_Error('offline')];check((new Client())->editText('privacy_policy','de','Datenschutz','<p>Offline</p>',2)==='text_draft','Offline bleibt der Text als Entwurf');
+check(Store::get('text_drafts')['privacy_policy/de']['html']==='<p>Offline</p>','Entwurf enthält den bearbeiteten Text');
 echo "$passed Legal-Regressionsprüfungen bestanden\n";

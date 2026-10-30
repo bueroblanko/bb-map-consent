@@ -22,6 +22,11 @@ if($case==='off'){
  $all=wp_load_alloptions();verify(!isset($all['bb_legal_site_key'])&&!isset($all['bb_legal_cache']),'Schlüssel und Texte ohne Autoload');
  $cache=Store::get('cache');update_option('bb_legal_test_offline',true,false);verify(!(new Client())->sync()&&Store::get('cache')===$cache,'Verbindungsausfall erhält lokale Texte');delete_option('bb_legal_test_offline');
  $request=new WP_REST_Request('POST','/bb-legal/v1/push');$body=wp_json_encode(['site_id'=>Store::get('site_id'),'output_id'=>2]);$request->set_body($body);$timestamp=(string)time();$_SERVER['REQUEST_URI']='/wp-json/bb-legal/v1/push';$request->set_header('x-bb-site',Store::get('site_id'));$request->set_header('x-bb-timestamp',$timestamp);$request->set_header('x-bb-signature',hash_hmac('sha256',"POST\n".$_SERVER['REQUEST_URI']."\n".$timestamp."\n".$body,Store::key()));verify(Module::verifyPush($request)===true,'WordPress-REST-Push-Signatur akzeptiert');verify(is_wp_error(Module::verifyPush($request)),'WordPress-Push-Replay verhindert');
+}elseif($case==='editor'){
+ require_once ABSPATH.'wp-admin/includes/template.php';require_once ABSPATH.'wp-admin/includes/plugin.php';wp_set_current_user(1);
+ ob_start();\BB\Legal\V1\Admin::screen();$screen=ob_get_clean();
+ verify(strpos($screen,'name="text_html"')!==false&&strpos($screen,'name="text_confirm"')!==false,'Admin-Seite zeigt Editor mit Bestätigung je Text');
+ verify(strpos($screen,'Neutraler Testtext imprint')!==false&&strpos($screen,'name="base_output_id"')!==false,'Editor ist mit aktuellem Text und Grundlage vorbelegt');
 }elseif($case==='ack'){
  verify((new Client())->acknowledge(),'Öffentlich gerenderte Ausgaben bestätigt');verify(count(get_option('bb_legal_test_last_ack')['output_ids'])===3,'Bestätigung umfasst nur öffentlich gerenderte Ausgaben');
 }elseif($case==='foreign'){
