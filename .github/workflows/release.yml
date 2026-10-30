@@ -26,9 +26,11 @@ jobs:
           php tests/feeds.php
           php tests/dealerweb.php
           php tests/planity.php
+          php tests/cmp.php
           node tests/consent.js
           node --check assets/maps.js
           node --check includes/legal/editor.js
+          node --check includes/cmp/cmp.js
       - name: Build and check tag
         run: |
           VERSION=$(python3 tools/package.py)

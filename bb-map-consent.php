@@ -330,6 +330,8 @@ final class BB_Map_Consent {
 }
 require_once __DIR__ . '/includes/updater.php';
 require_once __DIR__ . '/includes/custom-css.php';
+// Default-off cookie banner for tracking (CookieConsent, bundled).
+require_once __DIR__ . '/includes/cmp/Cmp.php';
 BB_Map_Consent::boot();
 
 // Default-off legal module; registration does not enable or replace any existing text provider.
