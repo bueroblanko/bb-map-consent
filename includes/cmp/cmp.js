@@ -38,6 +38,12 @@
       preferencesModal: {layout: 'box', equalWeightButtons: true, flipButtons: false}
     },
     categories,
+    // Already running Google tags would rewrite their cookies when the page unloads for the reload.
+    onChange: () => {
+      if (typeof window.gtag !== 'function') return;
+      const state = (category) => (window.CookieConsent.acceptedCategory(category) ? 'granted' : 'denied');
+      window.gtag('consent', 'update', {analytics_storage: state('analytics'), ad_storage: state('marketing'), ad_user_data: state('marketing'), ad_personalization: state('marketing')});
+    },
     language: {default: 'de', translations: {de: {
       consentModal: {
         title: 'Datenschutz-Einstellungen',
