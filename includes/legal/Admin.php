@@ -17,13 +17,14 @@ final class Admin {
     private static function url($args=[]) { return add_query_arg(array_merge(['page'=>'bb-legal'],$args),admin_url('options-general.php')); }
     public static function screen() {
         if (!current_user_can('manage_options')) { return; }
-        $messages=['saved'=>'Einstellungen gespeichert.','synced'=>'Veröffentlichte Texte lokal gespeichert; noch keine Anzeige-Bestätigung gesendet.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Eingaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Eingaben synchronisiert.','merged'=>'Parallele Änderungen wurden zusammengeführt.','conflict'=>'Eingaben synchronisiert; Feldkonflikte siehe unten.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.','segments_ok'=>'Gespeichert. Geänderte Bausteine werden ab jetzt nicht mehr automatisch aktualisiert, alle anderen schon.','segments_unchanged'=>'Keine Änderungen.','segments_draft'=>'Zentrale nicht erreichbar. Deine Änderungen sind lokal gespeichert und stehen beim nächsten Öffnen wieder im Editor.'];
+        $messages=['saved'=>'Einstellungen gespeichert.','synced'=>'Veröffentlichte Texte lokal gespeichert; noch keine Anzeige-Bestätigung gesendet.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Eingaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Eingaben synchronisiert.','merged'=>'Parallele Änderungen wurden zusammengeführt.','conflict'=>'Eingaben synchronisiert; Feldkonflikte siehe unten.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.','segments_ok'=>'Gespeichert. Geänderte Bausteine werden ab jetzt nicht mehr automatisch aktualisiert, alle anderen schon.','segments_unchanged'=>'Keine Änderungen.','segments_draft'=>'Zentrale nicht erreichbar. Deine Änderungen sind lokal gespeichert und stehen beim nächsten Öffnen wieder im Editor.','selbst_an'=>'Der Text ist vom Abgleich ausgeschlossen und wird hier selbst gepflegt.','selbst_aus'=>'Der Text kommt wieder aus der Rechtstexte-Zentrale.','selbst_gespeichert'=>'Gespeichert. Der Text ist sofort auf der Website.'];
+        $problem=['failed'=>'error','invalid'=>'error','draft'=>'warning','segments_draft'=>'warning','conflict'=>'warning','pending'=>'warning'];
         $tab=isset($_GET['tab'])&&$_GET['tab']==='settings'?'settings':'texts';
         $edit=isset($_GET['edit'])&&is_string($_GET['edit'])&&preg_match('~^(imprint|privacy_policy|social_media)/(de|en)$~',wp_unslash($_GET['edit']))?wp_unslash($_GET['edit']):'';
         echo '<div class="wrap"><h1>Rechtstexte</h1>';
         echo '<nav class="nav-tab-wrapper"><a class="nav-tab'.($tab==='texts'?' nav-tab-active':'').'" href="'.esc_url(self::url()).'">Rechtsinhalte</a><a class="nav-tab'.($tab==='settings'?' nav-tab-active':'').'" href="'.esc_url(self::url(['tab'=>'settings'])).'">Einstellungen</a></nav>';
         $message=isset($_GET['bb_legal_result'])?sanitize_key(wp_unslash($_GET['bb_legal_result'])):'';
-        if(isset($messages[$message])) { echo '<div class="notice notice-info"><p>'.esc_html($messages[$message]).'</p></div>'; }
+        if(isset($messages[$message])) { echo '<div class="notice notice-'.($problem[$message]??'success').'"><p>'.esc_html($messages[$message]).'</p></div>'; }
         if($tab==='settings') { self::settings(); }
         elseif($edit!=='') { self::editor($edit); }
         else { self::texts(); }
@@ -38,7 +39,7 @@ final class Admin {
         foreach($cache['outputs'] as $row) {
             $v=$row['payload'];$key=$v['type'].'/'.$v['language'];
             $custom=count($v['customized_blocks']??[]);$inserts=count($v['inserts']??[]);
-            $info=$custom||$inserts?trim(($custom?$custom.' Baustein'.($custom===1?'':'e').' angepasst':'').($custom&&$inserts?', ':'').($inserts?$inserts.' eigene'.($inserts===1?'r':'').' Text'.($inserts===1?'':'e'):'')):'Keine';
+            $info=self::selbst($key)!==null?'Selbst gepflegt, kein Abgleich':($custom||$inserts?trim(($custom?$custom.' Baustein'.($custom===1?'':'e').' angepasst':'').($custom&&$inserts?', ':'').($inserts?$inserts.' eigene'.($inserts===1?'r':'').' Text'.($inserts===1?'':'e'):'')):'Keine');
             echo '<tr><td><strong>'.esc_html((self::TYPES[$v['type']]??$v['title']).($v['language']!=='de'?' ('.strtoupper($v['language']).')':'')).'</strong><div class="row-actions visible"><a href="'.esc_url(self::url(['edit'=>$key])).'">Bearbeiten</a> | <a href="#bb-legal-view-'.esc_attr(str_replace('/','-',$key)).'">Ansehen</a></div></td><td>'.esc_html(wp_date('d.m.Y',strtotime($v['stand']))).' · Version '.(int)$row['id'].'</td><td>'.esc_html($info).'</td></tr>';
         }
         echo '</tbody></table>';
@@ -47,12 +48,29 @@ final class Admin {
             echo '<details id="bb-legal-view-'.esc_attr($v['type'].'-'.$v['language']).'" style="max-width:1100px;margin-top:16px"><summary><strong>'.esc_html($v['title']).'</strong> ansehen</summary><div style="background:#fff;border:1px solid #dcdcde;padding:16px 24px;margin-top:8px">'.wp_kses_post($v['html']).'</div></details>';
         }
     }
+    /** Selbst gepflegter Text (vom Abgleich ausgeschlossen) oder null. */
+    public static function selbst($key) { $s=Store::get('selbst'); return is_array($s)&&isset($s[$key])?(string)$s[$key]:null; }
+    /** Text der Zentrale aus dem lokalen Stand, Ausgangspunkt fürs Selbstpflegen. */
+    private static function ausgabe($key) {
+        foreach(Store::get('cache')['outputs']??[] as $row) { if($row['payload']['type'].'/'.$row['payload']['language']===$key) { return (string)$row['payload']['html']; } }
+        return '';
+    }
     /** Ein Text als Folge von Bausteinen: jeder Baustein editierbar, dazwischen eigener Text. */
     private static function editor($key) {
         [$type,$lang]=explode('/',$key);
         echo '<p><a href="'.esc_url(self::url()).'">&larr; Zurück zu den Rechtsinhalten</a></p><h2>'.esc_html(self::TYPES[$type].($lang!=='de'?' ('.strtoupper($lang).')':'')).' bearbeiten</h2>';
+        $eigen=self::selbst($key);
+        if($eigen!==null) {
+            echo '<p style="max-width:900px">Selbst gepflegt: Dieser Text ist vom Abgleich mit der Rechtstexte-Zentrale ausgeschlossen. Was du hier speicherst, steht sofort auf der Website.</p>';
+            self::form('selbst_text');echo '<input type="hidden" name="text_key" value="'.esc_attr($key).'"><div style="max-width:960px">';
+            wp_editor($eigen,'bbs_'.md5($key),['textarea_name'=>'html','textarea_rows'=>20,'media_buttons'=>false]);
+            echo '</div>';submit_button('Speichern');echo '</form>';
+            self::form('selbst');echo '<input type="hidden" name="text_key" value="'.esc_attr($key).'"><input type="hidden" name="an" value="0">';
+            submit_button('Wieder aus der Rechtstexte-Zentrale beziehen','secondary','submit',false);echo ' <span class="description">Der Text der Zentrale ersetzt den selbst gepflegten.</span></form>';
+            return;
+        }
         try { $segments=(new Client())->segments($type,$lang); }
-        catch(\Throwable $e) { echo '<div class="notice notice-error"><p>Die Bausteine konnten nicht aus der Zentrale geladen werden. Bitte später erneut versuchen.</p></div>'; return; }
+        catch(\Throwable $e) { echo '<div class="notice notice-error"><p>Die Bausteine konnten nicht aus der Zentrale geladen werden. Bitte später erneut versuchen.</p></div>'; self::selbstKnopf($key); return; }
         $drafts=Store::get('segment_drafts');$draft=(is_array($drafts)&&isset($drafts[$key])&&($drafts[$key]['identity']??'')===Store::identity())?$drafts[$key]:null;
         if($draft) { echo '<div class="notice notice-warning inline"><p>Ungesendeter Entwurf vom '.esc_html(wp_date('d.m.Y H:i',$draft['at'])).' ist unten eingesetzt. Mit „Speichern“ erneut senden.</p></div>'; }
         $inserts=[];foreach($segments as $s) { if(($s['kind']??'')==='insert') { $inserts[$s['key']]=$s['html']; } }
@@ -74,6 +92,11 @@ final class Admin {
         }
         self::insertField('_end','Eigener Text am Ende',$inserts['_end']??'');
         echo '</div>';submit_button('Speichern');echo '</form>';
+        self::selbstKnopf($key);
+    }
+    private static function selbstKnopf($key) {
+        echo '<hr style="max-width:960px;margin:24px 0">';self::form('selbst');echo '<input type="hidden" name="text_key" value="'.esc_attr($key).'"><input type="hidden" name="an" value="1">';
+        submit_button('Vom Abgleich ausschließen und selbst pflegen','secondary','submit',false);echo ' <span class="description">Danach änderst du den ganzen Text frei. Die Zentrale aktualisiert ihn nicht mehr, auch nicht bei Gesetzesänderungen.</span></form>';
     }
     private static function insertField($key,$label,$html) {
         echo '<details style="margin:6px 0 6px 16px"'.($html!==''?' open':'').'><summary style="cursor:pointer;color:#2271b1">+ '.esc_html($label).'</summary><div style="margin-top:6px">';
@@ -183,6 +206,16 @@ final class Admin {
                 [$blocks,$inserts,$reset]=self::parseSegments(wp_unslash($_POST['blocks']??[]),wp_unslash($_POST['inserts']??[]),wp_unslash($_POST['reset']??[]));
                 $result=(new Client())->saveSegments($type,$lang,$blocks,$inserts,$reset);
                 if($result==='segments_draft') { $args=['edit'=>$key]; }
+            } elseif($operation==='selbst'||$operation==='selbst_text') {
+                $key=isset($_POST['text_key'])&&is_string($_POST['text_key'])?wp_unslash($_POST['text_key']):'';
+                if(!preg_match('~^(imprint|privacy_policy|social_media)/(de|en)$~',$key)) { throw new \RuntimeException('Unbekannter Text'); }
+                $selbst=Store::get('selbst');$selbst=is_array($selbst)?$selbst:[];$args=['edit'=>$key];
+                if($operation==='selbst_text') {
+                    if(!isset($selbst[$key])||!isset($_POST['html'])||!is_string($_POST['html'])) { throw new \RuntimeException('Nicht selbst gepflegt'); }
+                    $selbst[$key]=self::cleanText(wp_unslash($_POST['html']));$result='selbst_gespeichert';
+                } elseif(($_POST['an']??'')==='1') { $selbst[$key]=$selbst[$key]??self::ausgabe($key);$result='selbst_an'; }
+                else { unset($selbst[$key]);$result='selbst_aus'; }
+                Store::put('selbst',$selbst);
             } elseif($operation==='inputs') {
                 $token=isset($_POST['form_token'])&&is_string($_POST['form_token'])?wp_unslash($_POST['form_token']):'';
                 if(!preg_match('/^[A-Za-z0-9]{32}$/',$token)) { throw new \RuntimeException('Formular veraltet'); }

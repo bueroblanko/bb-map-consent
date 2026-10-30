@@ -80,6 +80,13 @@ final class Module {
         if ($a['type'] === 'privacy_policy_social_media') { $a['type']='social_media'; }
         if (!is_string($a['type']) || !is_string($a['lang']) || !in_array($a['type'], ['imprint','privacy_policy','social_media'], true) || !in_array($a['lang'], ['de','en'], true)) { return '<p>Der angeforderte Rechtstext ist nicht verfügbar.</p>'; }
         $cache = Store::get('cache');
+        // Selbst gepflegt: vom Abgleich ausgeschlossen, der Text der Website gilt.
+        $selbst = Store::get('selbst');
+        if (is_array($selbst) && isset($selbst[$a['type'] . '/' . $a['lang']])) {
+            $html = wp_kses_post($selbst[$a['type'] . '/' . $a['lang']]);
+            if (!wp_validate_boolean($a['strip_title'])) { $html = '<h1>' . esc_html(Admin::TYPES[$a['type']]) . '</h1>' . $html; }
+            return '<div class="bb-legal-text erecht24-legal-texts erecht24-legal-texts-' . esc_attr($a['type']) . '">' . $html . '</div>';
+        }
         if (($cache['identity'] ?? '') !== Store::identity()) { return '<p>Der Rechtstext ist derzeit nicht verfügbar.</p>'; }
         foreach ($cache['outputs'] ?? [] as $row) {
             $p = $row['payload'];
