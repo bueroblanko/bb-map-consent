@@ -152,41 +152,58 @@ final class BBMC_Cmp {
     public static function reset() {
         if (!current_user_can('manage_options') || !check_admin_referer('bbmc_cmp_reset')) { wp_die('Keine Berechtigung.'); }
         delete_option(self::SEEN);
-        wp_safe_redirect(admin_url('options-general.php?page=bb-consent'));
+        wp_safe_redirect(admin_url('options-general.php?page=bb-consent&bbmc_reset=1'));
         exit;
     }
+    /** Settings page sections: [title, hint, [[key, width of 6]]]. */
+    const TEXT_SECTIONS = [
+        ['Banner', 'Erscheint beim ersten Besuch.', [['title', 6], ['description', 6]]],
+        ['Buttons', '', [['accept_all', 3], ['accept_necessary', 3], ['preferences', 3], ['save', 3]]],
+        ['Einstellungen-Fenster', 'Öffnet sich über „Einstellungen“ oder den Link im Footer.', [['intro', 6], ['necessary', 6], ['analytics', 3], ['marketing', 3], ['more', 6]]],
+    ];
     public static function screen() {
         if (!current_user_can('manage_options')) { return; }
-        echo '<hr><h2 id="cookie-banner">Cookie-Banner für Tracking</h2>';
+        if (isset($_GET['bbmc_reset'])) { echo '<div class="notice notice-success is-dismissible"><p>Erkannte Dienste zurückgesetzt. Sie werden beim nächsten Seitenaufruf neu erkannt.</p></div>'; }
         $other = self::other_cmp();
         if ($other) { echo '<div class="notice notice-warning inline"><p>Ein anderes Cookie-Plugin ist aktiv (' . esc_html($other) . '). Das Banner bleibt aus, bis es deaktiviert ist.</p></div>'; }
-        echo '<p>Erkennt Google Analytics, Tag Manager, Google Ads, Meta-Pixel, LinkedIn, TikTok, Matomo, Hotjar, Mouseflow und Clarity im ausgelieferten HTML, lädt sie erst nach Zustimmung und zeigt dafür ein Banner. Externe Inhalte wie Karten und Videos behalten ihre Platzhalter. Im Footer <code>[bb_consent_settings]</code> oder einen Menülink auf <code>#bb-consent-settings</code> einsetzen.</p><form method="post" action="options.php">';
+        echo '<form method="post" action="options.php">';
         settings_fields('bbmc_cmp');
-        echo '<label><input type="checkbox" name="' . self::OPTION . '" value="1"' . checked((bool) get_option(self::OPTION, false), true, false) . '> Cookie-Banner aktivieren</label>';
         $address = get_option(self::ADDRESS, 'sie');
-        echo '<p><label for="bbmc_cmp_address">Anrede</label> <select id="bbmc_cmp_address" name="' . self::ADDRESS . '"><option value="sie"' . selected($address, 'sie', false) . '>Sie</option><option value="du"' . selected($address, 'du', false) . '>Du</option></select></p>';
-        echo '<h3>Eigene Texte</h3><p>Leere Felder nutzen die Standardtexte in der gewählten Anrede. Erlaubt sind Links und Fettschrift. Platzhalter: <code>{datenschutz}</code> (Link zur Datenschutzerklärung), <code>{impressum}</code>, <code>{einstellungen}</code> (Link, der die Einstellungen öffnet), <code>{kategorien}</code> (z. B. „Statistik- und Marketingdienste“), <code>{dienste}</code> (erkannte Dienste der Kategorie).</p><table class="form-table" role="presentation">';
+        echo '<section class="bb-card"><header><h2>Cookie-Banner für Tracking</h2><p>Erkennt Google Analytics, Tag Manager, Google Ads, Meta-Pixel, LinkedIn, TikTok, Matomo, Hotjar, Mouseflow und Clarity und lädt sie erst nach Zustimmung. Karten und Videos behalten ihre eigenen Platzhalter.</p></header><div class="bb-card-body"><div class="bb-grid">';
+        echo '<div class="bb-f w4"><label class="bb-switch"><input type="checkbox" name="' . self::OPTION . '" value="1"' . checked((bool) get_option(self::OPTION, false), true, false) . '><span><strong>Banner aktivieren</strong><small>Im Footer <code>[bb_consent_settings]</code> oder einen Menülink auf <code>#bb-consent-settings</code> einsetzen, damit Besucher ihre Auswahl ändern können.</small></span></label></div>';
+        echo '<div class="bb-f w2"><span class="bb-label">Anrede</span><div class="bb-seg" role="radiogroup" aria-label="Anrede">';
+        foreach (['sie' => 'Sie', 'du' => 'Du'] as $key => $label) { echo '<label><input type="radio" name="' . self::ADDRESS . '" value="' . $key . '"' . checked($address, $key, false) . '><span>' . $label . '</span></label>'; }
+        echo '</div></div></div></div><div class="bb-card-foot">';
+        submit_button('Speichern', 'primary', 'submit', false);
+        echo '</div></section>';
         $texts = (array) get_option(self::TEXTS, []);
-        foreach (self::TEXT_FIELDS as $key => $label) {
-            $id = 'bbmc_cmp_text_' . $key;
-            $value = isset($texts[$key]) ? (string) $texts[$key] : '';
-            $long = in_array($key, ['description', 'intro', 'necessary', 'analytics', 'marketing'], true);
-            echo '<tr><th scope="row"><label for="' . $id . '">' . esc_html($label) . '</label></th><td>' . ($long
-                ? '<textarea id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" rows="3" class="large-text">' . esc_textarea($value) . '</textarea>'
-                : '<input id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" type="text" class="regular-text" value="' . esc_attr($value) . '">') . '</td></tr>';
+        echo '<details class="bb-card"' . (array_filter($texts) ? ' open' : '') . '><summary class="bb-card-body" style="cursor:pointer"><strong>Eigene Texte</strong> <span class="bb-small">' . (array_filter($texts) ? count(array_filter($texts)) . ' angepasst' : 'leer = Standardtexte in der gewählten Anrede') . '</span></summary><div class="bb-card-body" style="padding-top:0">';
+        echo '<p class="bb-small" style="margin-top:0">Erlaubt sind Links und Fettschrift. Platzhalter:</p><p class="bb-chips"><code>{datenschutz}</code><code>{impressum}</code><code>{einstellungen}</code><code>{kategorien}</code><code>{dienste}</code></p>';
+        foreach (self::TEXT_SECTIONS as [$title, $hint, $fields]) {
+            echo '<div class="bb-section"><h3>' . esc_html($title) . '</h3>' . ($hint !== '' ? '<p class="bb-hint">' . esc_html($hint) . '</p>' : '') . '<div class="bb-grid">';
+            foreach ($fields as [$key, $width]) {
+                $id = 'bbmc_cmp_text_' . $key;
+                $value = isset($texts[$key]) ? (string) $texts[$key] : '';
+                $long = in_array($key, ['description', 'intro', 'necessary', 'analytics', 'marketing', 'more'], true);
+                echo '<div class="bb-f w' . $width . '"><label for="' . $id . '">' . esc_html(self::TEXT_FIELDS[$key]) . '</label>' . ($long
+                    ? '<textarea id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" rows="' . ($key === 'description' || $key === 'intro' ? 4 : 2) . '" placeholder="Standardtext">' . esc_textarea($value) . '</textarea>'
+                    : '<input id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" type="text" value="' . esc_attr($value) . '" placeholder="Standardtext">') . '</div>';
+            }
+            echo '</div></div>';
         }
-        echo '</table>';
-        submit_button('Speichern');
-        echo '</form>';
+        echo '</div><div class="bb-card-foot">';
+        submit_button('Texte speichern', 'primary', 'submit', false);
+        echo '</div></details></form>';
         $seen = (array) get_option(self::SEEN, []);
-        $labels = array_map(function ($id) { return self::SERVICES[$id][0] . ' (' . self::CATEGORIES[self::SERVICES[$id][1]] . ')'; }, array_intersect($seen, array_keys(self::SERVICES)));
-        echo '<p><strong>Bisher erkannt:</strong> ' . ($labels ? esc_html(implode(', ', $labels)) : 'noch nichts (Seiten im Frontend aufrufen)') . '</p>';
+        $labels = array_map(function ($id) { return self::SERVICES[$id][0] . ' · ' . self::CATEGORIES[self::SERVICES[$id][1]]; }, array_intersect($seen, array_keys(self::SERVICES)));
+        echo '<section class="bb-card"><header><h2>Erkannte Dienste</h2><p>Das Banner nennt alle Dienste, die bisher auf einer Seite gefunden wurden.</p></header><div class="bb-card-body">' . ($labels ? '<p class="bb-chips"><span>' . implode('</span><span>', array_map('esc_html', $labels)) . '</span></p>' : '<p class="bb-empty">Noch nichts erkannt. Seiten im Frontend aufrufen.</p>') . '</div>';
         if ($seen) {
-            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="bbmc_cmp_reset">';
+            echo '<div class="bb-card-foot"><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="bbmc_cmp_reset">';
             wp_nonce_field('bbmc_cmp_reset');
             submit_button('Erkannte Dienste zurücksetzen', 'secondary', 'submit', false);
-            echo ' <span class="description">Nach dem Entfernen eines Trackers. Danach Seiten-Cache leeren.</span></form>';
+            echo '</form><span class="bb-small">Nach dem Entfernen eines Trackers. Danach Seiten-Cache leeren.</span></div>';
         }
+        echo '</section>';
     }
 }
 BBMC_Cmp::boot();

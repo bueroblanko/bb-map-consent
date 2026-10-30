@@ -22,7 +22,10 @@ final class BBMC_Custom_CSS {
         add_filter('option_page_capability_bbmc_design', function () { return 'edit_theme_options'; });
     }
     public static function menu() {
-        add_options_page('BB Consent', 'BB Consent', 'edit_theme_options', 'bb-consent', [__CLASS__, 'screen']);
+        $hook = add_options_page('BB Consent', 'BB Consent', 'edit_theme_options', 'bb-consent', [__CLASS__, 'screen']);
+        add_action('admin_enqueue_scripts', function ($current) use ($hook) {
+            if ($current === $hook) { wp_enqueue_style('bb-ui-admin', plugins_url('includes/legal/admin.css', dirname(__DIR__) . '/bb-map-consent.php'), [], BBMC_VERSION); }
+        });
     }
     public static function settings_link($links, $file) {
         if ($file !== plugin_basename(dirname(__DIR__) . '/bb-map-consent.php')) { return $links; }
@@ -31,14 +34,20 @@ final class BBMC_Custom_CSS {
     }
     public static function screen() {
         if (!current_user_can('edit_theme_options')) { return; }
-        echo '<div class="wrap"><h1>BB Consent – Gestaltung</h1><p>Dieses CSS gilt für die Content-Blocker auf der gesamten Website. Abweichungen können Sie direkt beim Bearbeiten einer einzelnen WordPress-Seite eintragen.</p><form method="post" action="options.php">';
+        // Two tabs: cookie banner (when the module is loaded and the user may change it) and design.
+        $banner = has_action('bbmc_settings_screen') && current_user_can('manage_options');
+        $tab = $banner && (!isset($_GET['tab']) || $_GET['tab'] !== 'design') ? 'banner' : 'design';
+        $url = admin_url('options-general.php?page=bb-consent');
+        echo '<div class="wrap bb-ui"><h1>BB Consent</h1>';
+        if ($banner) { echo '<nav class="nav-tab-wrapper"><a class="nav-tab' . ($tab === 'banner' ? ' nav-tab-active' : '') . '" href="' . esc_url($url) . '">Cookie-Banner</a><a class="nav-tab' . ($tab === 'design' ? ' nav-tab-active' : '') . '" href="' . esc_url($url . '&tab=design') . '">Gestaltung</a></nav>'; }
+        if ($tab === 'banner') { do_action('bbmc_settings_screen'); echo '</div>'; return; }
+        echo '<form method="post" action="options.php">';
         settings_fields('bbmc_design');
-        echo '<h2><label for="bbmc_custom_css">Eigenes CSS</label></h2><p id="bbmc-css-help">Nutzen Sie <code>.bbmc</code> für den gesamten Blocker, <code>.bbmc-placeholder</code> für den Platzhalter und <code>.bbmc-allow</code> für den Freigabebutton. Beispiel: <code>.bbmc { --bbmc-accent: #113262; }</code></p><textarea id="bbmc_custom_css" name="' . self::OPTION . '" rows="18" class="large-text code" spellcheck="false" aria-describedby="bbmc-css-help">' . esc_textarea(self::sanitize(get_option(self::OPTION, ''))) . '</textarea>';
-        echo '<p>Das CSS wird nach den Plugin-Styles geladen. Seitenbezogenes CSS folgt danach; bei gleicher CSS-Spezifität hat es Vorrang. Änderungen können einen geleerten Seiten-Cache erfordern.</p>';
-        submit_button('CSS speichern');
-        echo '</form>';
-        do_action('bbmc_settings_screen');
-        echo '</div>';
+        echo '<section class="bb-card"><header><h2><label for="bbmc_custom_css">Eigenes CSS für die Content-Blocker</label></h2><p id="bbmc-css-help">Gilt auf der gesamten Website. <code>.bbmc</code> für den Blocker, <code>.bbmc-placeholder</code> für den Platzhalter, <code>.bbmc-allow</code> für den Freigabebutton. Beispiel: <code>.bbmc { --bbmc-accent: #113262; }</code></p></header>';
+        echo '<div class="bb-card-body"><textarea id="bbmc_custom_css" name="' . self::OPTION . '" rows="14" class="code" spellcheck="false" aria-describedby="bbmc-css-help">' . esc_textarea(self::sanitize(get_option(self::OPTION, ''))) . '</textarea>';
+        echo '<p class="bb-small">Wird nach den Plugin-Styles geladen. CSS für einzelne Seiten tragen Sie beim Bearbeiten der Seite ein, es hat bei gleicher Spezifität Vorrang. Danach eventuell den Seiten-Cache leeren.</p></div><div class="bb-card-foot">';
+        submit_button('CSS speichern', 'primary', 'submit', false);
+        echo '</div></section></form></div>';
     }
     public static function meta_box() {
         if (current_user_can('edit_theme_options')) { add_meta_box('bbmc-page-css', 'BB Consent – Seiten-CSS', [__CLASS__, 'page_field'], 'page', 'normal', 'default'); }
