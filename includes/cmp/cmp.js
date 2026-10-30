@@ -7,34 +7,34 @@
   const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
   const privacy = config.privacy ? '<a href="' + esc(config.privacy) + '">Datenschutzerklärung</a>' : 'Datenschutzerklärung';
   const imprint = config.imprint ? '<a href="' + esc(config.imprint) + '">Impressum</a>' : 'Impressum';
-  // Default texts per form of address, following the Borlabs Cookie 3.5 standard texts.
+  // Default texts per form of address. Banner short (mobile), details in the settings dialog.
   // Placeholders: {kategorien}, {datenschutz}, {impressum}, {einstellungen}, {dienste}.
   const defaults = {
     sie: {
-      title: 'Datenschutz-Präferenz',
-      description: 'Wir benötigen Ihre Einwilligung, bevor Sie unsere Website weiter besuchen können.<br><br>Wenn Sie unter 16 Jahre alt sind und Ihre Einwilligung zu optionalen Services geben möchten, müssen Sie Ihre Erziehungsberechtigten um Erlaubnis bitten.<br><br>Wir verwenden Cookies und andere Technologien auf unserer Website. Einige von ihnen sind essenziell, während andere uns helfen, diese Website und Ihre Erfahrung zu verbessern. Personenbezogene Daten können verarbeitet werden (z. B. IP-Adressen), z. B. für personalisierte Anzeigen und Inhalte oder die Messung von Anzeigen und Inhalten. Weitere Informationen über die Verwendung Ihrer Daten finden Sie in unserer {datenschutz}. Es besteht keine Verpflichtung, in die Verarbeitung Ihrer Daten einzuwilligen, um dieses Angebot zu nutzen. Sie können Ihre Auswahl jederzeit unter {einstellungen} widerrufen oder anpassen. Bitte beachten Sie, dass aufgrund individueller Einstellungen möglicherweise nicht alle Funktionen der Website verfügbar sind.<br><br>Einige Services verarbeiten personenbezogene Daten in den USA. Mit Ihrer Einwilligung zur Nutzung dieser Services willigen Sie auch in die Verarbeitung Ihrer Daten in den USA gemäß Art. 49 (1) lit. a DSGVO ein. Der EuGH stuft die USA als ein Land mit unzureichendem Datenschutz nach EU-Standards ein. Es besteht beispielsweise die Gefahr, dass US-Behörden personenbezogene Daten in Überwachungsprogrammen verarbeiten, ohne dass für Europäerinnen und Europäer eine Klagemöglichkeit besteht.',
-      accept_all: 'Ich akzeptiere alle',
-      accept_necessary: 'Nur essenzielle Cookies akzeptieren',
-      preferences: 'Individuelle Datenschutz-Präferenzen',
-      save: 'Speichern',
-      intro: 'Hier finden Sie eine Übersicht über alle verwendeten Services. Sie können Ihre Einwilligung für ganze Kategorien geben.',
-      necessary: 'Essenzielle Services ermöglichen grundlegende Funktionen und sind für das ordnungsgemäße Funktionieren der Website erforderlich.',
-      analytics: 'Statistik-Cookies sammeln Nutzungsdaten, die uns Aufschluss darüber geben, wie unsere Besucher mit unserer Website umgehen. Auf dieser Website: {dienste}.',
-      marketing: 'Marketing Services werden von Drittanbietern oder Herausgebern genutzt, um personalisierte Werbung anzuzeigen. Sie tun dies, indem sie Besucher über Websites hinweg verfolgen. Auf dieser Website: {dienste}.',
-      more: 'Weitere Informationen über die Verwendung Ihrer Daten finden Sie in unserer {datenschutz} und im {impressum}.'
+      title: 'Datenschutz-Einstellungen',
+      description: 'Wir möchten auf dieser Website {kategorien} nutzen. Diese werden erst geladen, wenn Sie einwilligen. Dabei können personenbezogene Daten wie Ihre IP-Adresse verarbeitet werden, teilweise auch in den USA. Ihre Einwilligung ist freiwillig und lässt sich jederzeit unter {einstellungen} widerrufen. Mehr in der {datenschutz}.',
+      accept_all: 'Alle akzeptieren',
+      accept_necessary: 'Nur essenzielle',
+      preferences: 'Einstellungen',
+      save: 'Auswahl speichern',
+      intro: 'Hier legen Sie fest, welche Dienste geladen werden dürfen. Essenzielle Funktionen sind immer aktiv. Eine Einwilligung ist nicht erforderlich, um die Website zu nutzen. Einige Dienste verarbeiten Daten in den USA. Mit Ihrer Einwilligung stimmen Sie auch dieser Verarbeitung zu (Art. 49 Abs. 1 lit. a DSGVO). Für die USA besteht nach Einschätzung des EuGH kein mit der EU vergleichbares Datenschutzniveau. Wenn Sie unter 16 Jahre alt sind, fragen Sie bitte Ihre Erziehungsberechtigten um Erlaubnis. Ihre Auswahl gilt 30 Tage.',
+      necessary: 'Ermöglichen grundlegende Funktionen der Website, zum Beispiel das Speichern dieser Auswahl in Ihrem Browser.',
+      analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website: {dienste}.',
+      marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website: {dienste}.',
+      more: 'Weitere Informationen finden Sie in der {datenschutz} und im {impressum}.'
     },
     du: {
-      title: 'Datenschutz-Präferenz',
-      description: 'Wir benötigen deine Einwilligung, bevor du unsere Website weiter besuchen kannst.<br><br>Wenn du unter 16 Jahre alt bist und deine Einwilligung zu optionalen Services geben möchtest, musst du deine Erziehungsberechtigten um Erlaubnis bitten.<br><br>Wir verwenden Cookies und andere Technologien auf unserer Website. Einige von ihnen sind essenziell, während andere uns helfen, diese Website und deine Erfahrung zu verbessern. Personenbezogene Daten können verarbeitet werden (z. B. IP-Adressen), z. B. für personalisierte Anzeigen und Inhalte oder die Messung von Anzeigen und Inhalten. Weitere Informationen über die Verwendung deiner Daten findest du in unserer {datenschutz}. Es besteht keine Verpflichtung, in die Verarbeitung deiner Daten einzuwilligen, um dieses Angebot zu nutzen. Du kannst deine Auswahl jederzeit unter {einstellungen} widerrufen oder anpassen. Bitte beachte, dass aufgrund individueller Einstellungen möglicherweise nicht alle Funktionen der Website verfügbar sind.<br><br>Einige Services verarbeiten personenbezogene Daten in den USA. Mit deiner Einwilligung zur Nutzung dieser Services willigst du auch in die Verarbeitung deiner Daten in den USA gemäß Art. 49 (1) lit. a DSGVO ein. Der EuGH stuft die USA als ein Land mit unzureichendem Datenschutz nach EU-Standards ein. Es besteht beispielsweise die Gefahr, dass US-Behörden personenbezogene Daten in Überwachungsprogrammen verarbeiten, ohne dass für Europäerinnen und Europäer eine Klagemöglichkeit besteht.',
-      accept_all: 'Alles akzeptieren',
-      accept_necessary: 'Alles ablehnen',
-      preferences: 'Individuelle Cookie-Einstellungen',
-      save: 'Meine Auswahl speichern',
-      intro: 'Hier findest du eine Übersicht über alle verwendeten Services. Du kannst deine Einwilligung für ganze Kategorien geben.',
-      necessary: 'Essenzielle Services ermöglichen grundlegende Funktionen und sind für das ordnungsgemäße Funktionieren der Website erforderlich.',
-      analytics: 'Statistik-Cookies sammeln Nutzungsdaten, die uns Aufschluss darüber geben, wie unsere Besucher mit unserer Website umgehen. Auf dieser Website: {dienste}.',
-      marketing: 'Marketing Services werden von Drittanbietern oder Herausgebern genutzt, um personalisierte Werbung anzuzeigen. Sie tun dies, indem sie Besucher über Websites hinweg verfolgen. Auf dieser Website: {dienste}.',
-      more: 'Weitere Informationen über die Verwendung deiner Daten findest du in unserer {datenschutz} und im {impressum}.'
+      title: 'Datenschutz-Einstellungen',
+      description: 'Wir möchten auf dieser Website {kategorien} nutzen. Diese werden erst geladen, wenn du einwilligst. Dabei können personenbezogene Daten wie deine IP-Adresse verarbeitet werden, teilweise auch in den USA. Deine Einwilligung ist freiwillig und lässt sich jederzeit unter {einstellungen} widerrufen. Mehr in der {datenschutz}.',
+      accept_all: 'Alle akzeptieren',
+      accept_necessary: 'Nur essenzielle',
+      preferences: 'Einstellungen',
+      save: 'Auswahl speichern',
+      intro: 'Hier legst du fest, welche Dienste geladen werden dürfen. Essenzielle Funktionen sind immer aktiv. Eine Einwilligung ist nicht erforderlich, um die Website zu nutzen. Einige Dienste verarbeiten Daten in den USA. Mit deiner Einwilligung stimmst du auch dieser Verarbeitung zu (Art. 49 Abs. 1 lit. a DSGVO). Für die USA besteht nach Einschätzung des EuGH kein mit der EU vergleichbares Datenschutzniveau. Wenn du unter 16 Jahre alt bist, frag bitte deine Erziehungsberechtigten um Erlaubnis. Deine Auswahl gilt 30 Tage.',
+      necessary: 'Ermöglichen grundlegende Funktionen der Website, zum Beispiel das Speichern dieser Auswahl in deinem Browser.',
+      analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website: {dienste}.',
+      marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website: {dienste}.',
+      more: 'Weitere Informationen findest du in der {datenschutz} und im {impressum}.'
     }
   };
   const base = defaults[config.address] || defaults.sie;
