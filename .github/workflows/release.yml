@@ -11,12 +11,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify PHP and regression tests
         run: |
-          find . -name '*.php' -not -path './.git/*' -exec php -l {} \;
+          find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
           php tests/filter.php
           php tests/divi-key.php
           php tests/divi-map.php
           php tests/updater.php
           php tests/custom-css.php
+          php tests/legal.php
           php tests/update-directory.php
           php tests/instagram.php
           php tests/elfsight.php
@@ -27,6 +28,7 @@ jobs:
           php tests/planity.php
           node tests/consent.js
           node --check assets/maps.js
+          node --check includes/legal/editor.js
       - name: Build and check tag
         run: |
           VERSION=$(python3 tools/package.py)

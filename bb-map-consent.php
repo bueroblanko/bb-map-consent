@@ -331,3 +331,11 @@ final class BB_Map_Consent {
 require_once __DIR__ . '/includes/updater.php';
 require_once __DIR__ . '/includes/custom-css.php';
 BB_Map_Consent::boot();
+
+// Default-off legal module; registration does not enable or replace any existing text provider.
+require_once __DIR__ . '/includes/legal/bootstrap.php';
+add_action('plugins_loaded', function () { bb_legal_register_provider([
+    'id'=>'consent','version'=>'1.0.0','schema'=>1,
+    'path'=>__DIR__ . '/includes/legal','url'=>plugins_url('includes/legal',__FILE__),
+    'enabled'=>(bool)get_option('bb_legal_enabled_consent',false),
+]); }, 1);
