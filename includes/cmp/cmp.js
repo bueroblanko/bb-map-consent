@@ -1,0 +1,62 @@
+(() => {
+  'use strict';
+  const node = document.getElementById('bbmc-cmp-config');
+  if (!node || !window.CookieConsent) return;
+  const config = JSON.parse(node.textContent);
+  const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+  const privacy = config.privacy ? '<a href="' + esc(config.privacy) + '">Datenschutzerklärung</a>' : 'Datenschutzerklärung';
+  const texts = {
+    analytics: ['Statistik', 'Hilft zu verstehen, wie die Website genutzt wird.'],
+    marketing: ['Marketing', 'Wird für Werbung und die Erfolgsmessung von Anzeigen genutzt.']
+  };
+  // Cookies these services set themselves; removed when consent is withdrawn.
+  const clear = {
+    analytics: [/^_ga/, /^_gid$/, /^_gat/, /^_pk_/, /^_hj/, /^mf_/, /^_clck$/, /^_clsk$/, /^MATOMO_/],
+    marketing: [/^_gcl/, /^_fbp$/, /^_fbc$/, /^_ttp$/, /^li_/, /^_uet/]
+  };
+  const categories = {necessary: {enabled: true, readOnly: true}};
+  const sections = [{description: 'Sie entscheiden, welche Dienste geladen werden. Ohne Zustimmung werden nur technisch notwendige Funktionen genutzt. Ihre Auswahl gilt 30 Tage und lässt sich jederzeit über „Datenschutz-Einstellungen“ ändern.'},
+    {title: 'Notwendig', description: 'Speichert Ihre Auswahl in diesem Browser.', linkedCategory: 'necessary'}];
+  const names = [];
+  Object.keys(texts).forEach((key) => {
+    const services = config.categories[key];
+    if (!services) return;
+    names.push(texts[key][0]);
+    categories[key] = {autoClear: {cookies: clear[key].map((name) => ({name})), reloadPage: true}};
+    sections.push({title: texts[key][0], description: texts[key][1] + ' Auf dieser Website: ' + services.map(esc).join(', ') + '.', linkedCategory: key});
+  });
+  sections.push({title: 'Weitere Informationen', description: 'Details finden Sie in der ' + privacy + '.'});
+  window.CookieConsent.run({
+    revision: config.revision,
+    cookie: {name: 'bbmc_cmp', useLocalStorage: true, expiresAfterDays: 30},
+    guiOptions: {
+      consentModal: {layout: 'box', position: 'bottom left', equalWeightButtons: true, flipButtons: false},
+      preferencesModal: {layout: 'box', equalWeightButtons: true, flipButtons: false}
+    },
+    categories,
+    language: {default: 'de', translations: {de: {
+      consentModal: {
+        title: 'Datenschutz-Einstellungen',
+        description: 'Diese Website möchte ' + (names.length > 1 ? names[0] + '- und ' + names[1] : names[0]) + 'dienste nutzen. Diese werden erst nach Ihrer Zustimmung geladen. Ihre Auswahl können Sie jederzeit über „Datenschutz-Einstellungen“ ändern. Mehr in der ' + privacy + '.',
+        acceptAllBtn: 'Alle akzeptieren',
+        acceptNecessaryBtn: 'Nur notwendige',
+        showPreferencesBtn: 'Einstellungen'
+      },
+      preferencesModal: {
+        title: 'Datenschutz-Einstellungen',
+        acceptAllBtn: 'Alle akzeptieren',
+        acceptNecessaryBtn: 'Nur notwendige',
+        savePreferencesBtn: 'Auswahl speichern',
+        closeIconLabel: 'Schließen',
+        sections
+      }
+    }}}
+  });
+  // Footer links: [bb_consent_settings] or any menu link to #bb-consent-settings.
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest && event.target.closest('a[href$="#bb-consent-settings"], .bbmc-cmp-settings');
+    if (!link) return;
+    event.preventDefault();
+    window.CookieConsent.showPreferences();
+  });
+})();

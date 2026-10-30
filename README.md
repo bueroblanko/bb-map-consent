@@ -217,3 +217,20 @@ Anbindung an die Rechtstexte-Zentrale legal.bbkd.de. Das Modul liegt in `include
 - **Öffentliches Repository:** keine Seitenschlüssel, Tokens oder echten Rechtstexte in Code, Tests oder Issues.
 
 Prüfungen: `php tests/legal.php` (Modul) und `bash tests/wordpress/run.sh` (lädt ein Wegwerf-WordPress und prüft Shortcodes, Blöcke, Push, Ausfall der Zentrale, Fremdanbieter und Übergabe an BB Basic). Beide laufen auch in GitHub Actions. Vor einem Release: Pilot auf dev.bueroblanko.de.
+
+
+## Cookie-Banner für Tracking (Modul `includes/cmp/`, Standard aus)
+
+Einschalten unter Einstellungen → BB Consent → „Cookie-Banner für Tracking“ (nur Administratoren). Ist Borlabs, Complianz, Real Cookie Banner, CookieYes, Cookiebot, Cookie Notice oder ein ähnliches Plugin aktiv, bleibt das Banner aus, damit nie zwei Banner parallel laufen.
+
+Das Modul erkennt im ausgelieferten HTML Google Analytics, Google Tag Manager, Google Ads, Meta-Pixel, LinkedIn Insight Tag, TikTok-Pixel, Matomo, Hotjar, Mouseflow und Microsoft Clarity (Skript-Adresse oder Inline-Code). Diese Skripte werden zu `<script type="text/plain" data-category="analytics|marketing">` und laufen erst nach Zustimmung. Tracking-Pixel in `<noscript>` und Resource-Hints zu diesen Diensten werden entfernt. Tag Manager und Google Ads zählen zu Marketing, weil darüber beliebige Tags laufen können.
+
+Einmal erkannte Dienste merkt sich die Website (Option `bbmc_cmp_seen`). Das Banner erscheint dann auf allen Seiten, nicht nur dort, wo der Tracker steht. Kommt ein neuer Dienst dazu, ändert sich die Einwilligungsversion und Besucher werden erneut gefragt. Nach dem Entfernen eines Trackers „Erkannte Dienste zurücksetzen“ klicken. Seiten ohne erkanntes Tracking bekommen kein Banner, nur die bisherigen Platzhalter.
+
+Technik: CookieConsent 3.1.0 von Orest Bida (MIT, `includes/cmp/vendor/`), lokal ausgeliefert, kein CDN. Banner mit „Alle akzeptieren“, „Nur notwendige“ (gleich gewichtet) und „Einstellungen“ (Statistik, Marketing). Die Entscheidung liegt 30 Tage in localStorage (`bbmc_cmp`), Zustimmung wie Ablehnung. Beim Widerruf werden die bekannten Cookies der Dienste gelöscht und die Seite neu geladen. Externe Inhalte (Karten, Videos, Feeds) stehen nicht im Banner und behalten ihre eigenen Freigaben.
+
+Footer: Shortcode `[bb_consent_settings]` oder ein Menü-Link auf `#bb-consent-settings` öffnet die Einstellungen. Gestaltung über das CSS-Feld oben mit `#cc-main` (z. B. `#cc-main { --cc-btn-primary-bg: #113262; }`).
+
+Grenzen: Tracker, die ein anderes Plugin erst per JavaScript nachlädt, ohne dass eines der Muster im HTML steht, werden nicht erkannt. Optimierungsplugins dürfen die Skripte mit `data-bbmc-cmp` nicht verzögern. Cookielos konfiguriertes Matomo wird trotzdem gesperrt. Texte sind neutrale Standardtexte und keine rechtliche Prüfung. Bots (z. B. Suchmaschinen) sehen kein Banner.
+
+Geprüft: `php tests/cmp.php` (13 Tracker-Varianten, unveränderte fremde Skripte, noscript, Resource-Hints, Versionswechsel, Schutz vor zweitem Cookie-Plugin) und Headless-Chrome mit gefiltertem Testseiten-HTML: vor der Entscheidung und nach „Nur notwendige“ keine Anfragen an Google oder Facebook, nach „Alle akzeptieren“ laden beide, nach Neuladen automatisch, nach Widerruf über den Footer-Link wieder keine.

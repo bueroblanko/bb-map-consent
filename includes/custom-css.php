@@ -36,7 +36,9 @@ final class BBMC_Custom_CSS {
         echo '<h2><label for="bbmc_custom_css">Eigenes CSS</label></h2><p id="bbmc-css-help">Nutzen Sie <code>.bbmc</code> für den gesamten Blocker, <code>.bbmc-placeholder</code> für den Platzhalter und <code>.bbmc-allow</code> für den Freigabebutton. Beispiel: <code>.bbmc { --bbmc-accent: #113262; }</code></p><textarea id="bbmc_custom_css" name="' . self::OPTION . '" rows="18" class="large-text code" spellcheck="false" aria-describedby="bbmc-css-help">' . esc_textarea(self::sanitize(get_option(self::OPTION, ''))) . '</textarea>';
         echo '<p>Das CSS wird nach den Plugin-Styles geladen. Seitenbezogenes CSS folgt danach; bei gleicher CSS-Spezifität hat es Vorrang. Änderungen können einen geleerten Seiten-Cache erfordern.</p>';
         submit_button('CSS speichern');
-        echo '</form></div>';
+        echo '</form>';
+        do_action('bbmc_settings_screen');
+        echo '</div>';
     }
     public static function meta_box() {
         if (current_user_can('edit_theme_options')) { add_meta_box('bbmc-page-css', 'BB Consent – Seiten-CSS', [__CLASS__, 'page_field'], 'page', 'normal', 'default'); }
