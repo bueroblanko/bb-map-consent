@@ -60,7 +60,7 @@ $GLOBALS['shortcode_tags']['erecht24']='foreign_callback';check(Module::conflict
 $GLOBALS['requests']=[];queueSync([row(5),row(2,'privacy_policy')]);array_unshift($GLOBALS['http'],reply(['status'=>'ok','detached'=>true]));
 check((new Client())->editText('imprint','de','Impressum','<p>Kundentext</p>',1)==='text_ok','Freier Text an die Zentrale gesendet');
 [$url,$args]=$GLOBALS['requests'][0];$sent=json_decode($args['body'],true);
-check($args['method']==='PUT'&&str_ends_with(parse_url($url,PHP_URL_PATH),'/texts/imprint/de')&&$sent['html']==='<p>Kundentext</p>'&&$sent['base_output_id']===1,'Text mit Grundlage signiert per PUT');
+check($args['method']==='PUT'&&substr(parse_url($url,PHP_URL_PATH),-16)==='/texts/imprint/de'&&$sent['html']==='<p>Kundentext</p>'&&$sent['base_output_id']===1,'Text mit Grundlage signiert per PUT');
 check(empty(Store::get('text_drafts')['imprint/de']),'Gesendeter Text hinterlässt keinen Entwurf');
 check(Store::get('cache')['outputs'][0]['id']===5,'Nach dem Senden neue Fassung abgeholt');
 $GLOBALS['http']=[new WP_Error('offline')];check((new Client())->editText('privacy_policy','de','Datenschutz','<p>Offline</p>',2)==='text_draft','Offline bleibt der Text als Entwurf');
