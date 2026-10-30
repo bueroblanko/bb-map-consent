@@ -55,6 +55,7 @@ cmp_check($seen === ['meta_pixel', 'matomo'] && $config['revision'] !== $r1, 'ne
 cmp_check($config['categories'] === ['marketing' => ['Meta-Pixel'], 'analytics' => ['Matomo']], 'categories '.json_encode($config));
 cmp_check(BBMC_Cmp::config([], '')['revision'] === 0, 'empty config');
 cmp_check(BBMC_Cmp::config(['matomo'], '')['address'] === 'sie' && BBMC_Cmp::config(['matomo'], '', [], 'du')['address'] === 'du' && BBMC_Cmp::config(['matomo'], '', [], 'x')['address'] === 'sie', 'address');
+cmp_check(BBMC_Cmp::config(['matomo'], '/d/', [], 'sie', '/impressum/')['imprint'] === '/impressum/', 'imprint');
 // Own texts: known keys only, empty dropped, scripts stripped; JSON stays an object.
 $texts = BBMC_Cmp::clean_texts(['title' => ' Cookies ', 'description' => 'Text <a href="/x">Link</a><script>alert(1)</script>', 'analytics' => '', 'evil' => 'x']);
 cmp_check($texts === ['title' => 'Cookies', 'description' => 'Text <a href="/x">Link</a>alert(1)'], 'texts '.json_encode($texts));
