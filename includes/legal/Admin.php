@@ -80,6 +80,11 @@ final class Admin {
         echo '<input type="hidden" name="text_key" value="'.esc_attr($key).'"><div style="max-width:960px">';
         self::insertField('_start','Eigener Text am Anfang',$inserts['_start']??'');
         foreach($segments as $s) {
+            if(($s['kind']??'')==='fixed') {
+                // Fester Text ohne Bausteine (z. B. Impressum): nur anzeigen, Ergänzungen davor und danach.
+                echo '<div style="background:#fff;border:1px solid #dcdcde;border-left:4px solid #2271b1;padding:12px 16px;margin:14px 0"><p style="margin:0 0 8px"><strong>Text der Zentrale</strong> <span style="color:#646970;font-size:12px">fester Text, Änderungen in der Zentrale</span></p>'.wp_kses_post($s['html']).'</div>';
+                continue;
+            }
             if(($s['kind']??'')!=='block') { continue; }
             $html=$draft['blocks'][$s['key']]??$s['html'];
             preg_match('~<h[1-6][^>]*>(.*?)</h[1-6]>~is',$s['html'],$m);$label=$m?wp_strip_all_tags($m[1]):preg_replace('~/(de|en)$~','',$s['key']);
