@@ -14,6 +14,7 @@
     analytics: [/^_ga/, /^_gid$/, /^_gat/, /^_pk_/, /^_hj/, /^mf_/, /^_clck$/, /^_clsk$/, /^MATOMO_/],
     marketing: [/^_gcl/, /^_fbp$/, /^_fbc$/, /^_ttp$/, /^li_/, /^_uet/]
   };
+  const root = location.hostname.split('.').slice(-2).join('.');
   const categories = {necessary: {enabled: true, readOnly: true}};
   const sections = [{description: 'Sie entscheiden, welche Dienste geladen werden. Ohne Zustimmung werden nur technisch notwendige Funktionen genutzt. Ihre Auswahl gilt 30 Tage und lässt sich jederzeit über „Datenschutz-Einstellungen“ ändern.'},
     {title: 'Notwendig', description: 'Speichert Ihre Auswahl in diesem Browser.', linkedCategory: 'necessary'}];
@@ -22,7 +23,10 @@
     const services = config.categories[key];
     if (!services) return;
     names.push(texts[key][0]);
-    categories[key] = {autoClear: {cookies: clear[key].map((name) => ({name})), reloadPage: true}};
+    // Trackers often set cookies on the main domain (.kunde.de), also when the site runs on a subdomain.
+    const cookies = clear[key].map((name) => ({name}));
+    if (root !== location.hostname.replace(/^www\./, '')) clear[key].forEach((name) => cookies.push({name, domain: root}));
+    categories[key] = {autoClear: {cookies, reloadPage: true}};
     sections.push({title: texts[key][0], description: texts[key][1] + ' Auf dieser Website: ' + services.map(esc).join(', ') + '.', linkedCategory: key});
   });
   sections.push({title: 'Weitere Informationen', description: 'Details finden Sie in der ' + privacy + '.'});
