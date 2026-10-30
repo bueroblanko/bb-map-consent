@@ -65,4 +65,5 @@ check(empty(Store::get('text_drafts')['imprint/de']),'Gesendeter Text hinterläs
 check(Store::get('cache')['outputs'][0]['id']===5,'Nach dem Senden neue Fassung abgeholt');
 $GLOBALS['http']=[new WP_Error('offline')];check((new Client())->editText('privacy_policy','de','Datenschutz','<p>Offline</p>',2)==='text_draft','Offline bleibt der Text als Entwurf');
 check(Store::get('text_drafts')['privacy_policy/de']['html']==='<p>Offline</p>','Entwurf enthält den bearbeiteten Text');
+check(Admin::cleanText('<p>Text</p><script>alert(1)</script><style>p{}</style>')==='<p>Text</p>','Skript- und Stilblöcke samt Inhalt entfernt');
 echo "$passed Legal-Regressionsprüfungen bestanden\n";

@@ -81,6 +81,10 @@ final class Admin {
         } else { echo '<input class="regular-text" type="'.esc_attr(in_array($f['type'],['email','url'],true)?$f['type']:'text').'" name="fields['.esc_attr($id).']" value="'.esc_attr($v).'">'; }
         echo '</label></p>';
     }
+    /** Skript- und Stilblöcke samt Inhalt entfernen (wp_kses_post ließe deren Text stehen), danach normale WordPress-Filterung. */
+    public static function cleanText($html) {
+        return wp_kses_post(preg_replace('#<(script|style|noscript|template)\b[^>]*>.*?</\1\s*>#is','',(string)$html));
+    }
     public static function parseFields($schema,$posted,$original) {
         if(!is_array($posted)) { throw new \RuntimeException('Ungültige Eingaben'); }
         $result=$original;
@@ -122,7 +126,7 @@ final class Admin {
                 $type=isset($_POST['text_type'])&&is_string($_POST['text_type'])?sanitize_key(wp_unslash($_POST['text_type'])):'';
                 $lang=isset($_POST['text_lang'])&&is_string($_POST['text_lang'])?sanitize_key(wp_unslash($_POST['text_lang'])):'';
                 $title=isset($_POST['text_title'])&&is_string($_POST['text_title'])?sanitize_text_field(wp_unslash($_POST['text_title'])):'';
-                $html=isset($_POST['text_html'])&&is_string($_POST['text_html'])?wp_kses_post(wp_unslash($_POST['text_html'])):'';
+                $html=isset($_POST['text_html'])&&is_string($_POST['text_html'])?self::cleanText(wp_unslash($_POST['text_html'])):'';
                 $base=isset($_POST['base_output_id'])?(int)$_POST['base_output_id']:0;
                 if(($_POST['text_confirm']??'')!=='1'||$title===''||trim(wp_strip_all_tags($html))==='') { throw new \RuntimeException('Angaben unvollständig'); }
                 $result=(new Client())->editText($type,$lang,$title,$html,$base?:null);
