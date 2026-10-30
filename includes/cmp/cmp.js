@@ -6,34 +6,59 @@
   const own = config.texts || {};
   const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
   const privacy = config.privacy ? '<a href="' + esc(config.privacy) + '">Datenschutzerklärung</a>' : 'Datenschutzerklärung';
-  const texts = {
-    analytics: ['Statistik', 'Hilft zu verstehen, wie die Website genutzt wird.'],
-    marketing: ['Marketing', 'Wird für Werbung und die Erfolgsmessung von Anzeigen genutzt.']
+  // Default texts per form of address. Banner short (mobile), details in the settings dialog.
+  // Placeholders: {kategorien}, {datenschutz}, {dienste}.
+  const defaults = {
+    sie: {
+      title: 'Datenschutz-Einstellungen',
+      description: 'Wir möchten auf dieser Website {kategorien} nutzen. Diese werden erst geladen, wenn Sie einwilligen. Dabei können personenbezogene Daten wie Ihre IP-Adresse verarbeitet werden, teilweise auch in den USA. Ihre Einwilligung ist freiwillig und lässt sich jederzeit über „Datenschutz-Einstellungen“ widerrufen. Mehr in der {datenschutz}.',
+      accept_all: 'Alle akzeptieren',
+      accept_necessary: 'Nur essenzielle',
+      preferences: 'Einstellungen',
+      save: 'Auswahl speichern',
+      intro: 'Hier legen Sie fest, welche Dienste geladen werden dürfen. Essenzielle Funktionen sind immer aktiv. Eine Einwilligung ist nicht erforderlich, um die Website zu nutzen. Einige Dienste verarbeiten Daten in den USA. Mit Ihrer Einwilligung stimmen Sie auch dieser Verarbeitung zu (Art. 49 Abs. 1 lit. a DSGVO). Für die USA besteht nach Einschätzung des EuGH kein mit der EU vergleichbares Datenschutzniveau. Wenn Sie unter 16 Jahre alt sind, fragen Sie bitte Ihre Erziehungsberechtigten um Erlaubnis. Ihre Auswahl gilt 30 Tage.',
+      necessary: 'Ermöglichen grundlegende Funktionen der Website, zum Beispiel das Speichern dieser Auswahl in Ihrem Browser.',
+      analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website: {dienste}.',
+      marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website: {dienste}.',
+      more: 'Weitere Informationen finden Sie in der {datenschutz}.'
+    },
+    du: {
+      title: 'Datenschutz-Einstellungen',
+      description: 'Wir möchten auf dieser Website {kategorien} nutzen. Diese werden erst geladen, wenn du einwilligst. Dabei können personenbezogene Daten wie deine IP-Adresse verarbeitet werden, teilweise auch in den USA. Deine Einwilligung ist freiwillig und lässt sich jederzeit über „Datenschutz-Einstellungen“ widerrufen. Mehr in der {datenschutz}.',
+      accept_all: 'Alle akzeptieren',
+      accept_necessary: 'Nur essenzielle',
+      preferences: 'Einstellungen',
+      save: 'Auswahl speichern',
+      intro: 'Hier legst du fest, welche Dienste geladen werden dürfen. Essenzielle Funktionen sind immer aktiv. Eine Einwilligung ist nicht erforderlich, um die Website zu nutzen. Einige Dienste verarbeiten Daten in den USA. Mit deiner Einwilligung stimmst du auch dieser Verarbeitung zu (Art. 49 Abs. 1 lit. a DSGVO). Für die USA besteht nach Einschätzung des EuGH kein mit der EU vergleichbares Datenschutzniveau. Wenn du unter 16 Jahre alt bist, frag bitte deine Erziehungsberechtigten um Erlaubnis. Deine Auswahl gilt 30 Tage.',
+      necessary: 'Ermöglichen grundlegende Funktionen der Website, zum Beispiel das Speichern dieser Auswahl in deinem Browser.',
+      analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website: {dienste}.',
+      marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website: {dienste}.',
+      more: 'Weitere Informationen findest du in der {datenschutz}.'
+    }
   };
+  const base = defaults[config.address] || defaults.sie;
+  const titles = {necessary: 'Essenziell', analytics: 'Statistik', marketing: 'Marketing'};
   // Cookies these services set themselves; removed when consent is withdrawn.
   const clear = {
     analytics: [/^_ga/, /^_gid$/, /^_gat/, /^_pk_/, /^_hj/, /^mf_/, /^_clck$/, /^_clsk$/, /^MATOMO_/],
     marketing: [/^_gcl/, /^_fbp$/, /^_fbc$/, /^_ttp$/, /^li_/, /^_uet/]
   };
   const root = location.hostname.split('.').slice(-2).join('.');
-  // Own texts (settings page) win; {datenschutz} and {dienste} are filled in.
-  const text = (key, fallback, services) => (own[key] ? own[key].replace(/\{datenschutz\}/g, privacy).replace(/\{dienste\}/g, services || '') : fallback);
+  const used = ['analytics', 'marketing'].filter((key) => config.categories[key]);
+  const kinds = used.map((key) => titles[key]);
+  const kategorien = (kinds.length > 1 ? kinds[0] + '- und ' + kinds[1] : kinds[0]) + 'dienste';
+  // Own texts (settings page) win over the defaults.
+  const text = (key, services) => (own[key] || base[key]).replace(/\{datenschutz\}/g, privacy).replace(/\{kategorien\}/g, kategorien).replace(/\{dienste\}/g, services || '');
   const categories = {necessary: {enabled: true, readOnly: true}};
-  const sections = [{description: text('intro', 'Sie entscheiden, welche Dienste geladen werden. Ohne Zustimmung werden nur technisch notwendige Funktionen genutzt. Ihre Auswahl gilt 30 Tage und lässt sich jederzeit über „Datenschutz-Einstellungen“ ändern.')},
-    {title: 'Notwendig', description: text('necessary', 'Speichert Ihre Auswahl in diesem Browser.'), linkedCategory: 'necessary'}];
-  const names = [];
-  Object.keys(texts).forEach((key) => {
-    const services = config.categories[key];
-    if (!services) return;
-    names.push(texts[key][0]);
+  const sections = [{description: text('intro')}, {title: titles.necessary, description: text('necessary'), linkedCategory: 'necessary'}];
+  used.forEach((key) => {
     // Trackers often set cookies on the main domain (.kunde.de), also when the site runs on a subdomain.
     const cookies = clear[key].map((name) => ({name}));
     if (root !== location.hostname.replace(/^www\./, '')) clear[key].forEach((name) => cookies.push({name, domain: root}));
     categories[key] = {autoClear: {cookies, reloadPage: true}};
-    const list = services.map(esc).join(', ');
-    sections.push({title: texts[key][0], description: text(key, texts[key][1] + ' Auf dieser Website: ' + list + '.', list), linkedCategory: key});
+    sections.push({title: titles[key], description: text(key, config.categories[key].map(esc).join(', ')), linkedCategory: key});
   });
-  sections.push({title: 'Weitere Informationen', description: 'Details finden Sie in der ' + privacy + '.'});
+  sections.push({title: 'Weitere Informationen', description: text('more')});
   window.CookieConsent.run({
     revision: config.revision,
     cookie: {name: 'bbmc_cmp', useLocalStorage: true, expiresAfterDays: 30},
@@ -50,17 +75,17 @@
     },
     language: {default: 'de', translations: {de: {
       consentModal: {
-        title: text('title', 'Datenschutz-Einstellungen'),
-        description: text('description', 'Diese Website möchte ' + (names.length > 1 ? names[0] + '- und ' + names[1] : names[0]) + 'dienste nutzen. Diese werden erst nach Ihrer Zustimmung geladen. Ihre Auswahl können Sie jederzeit über „Datenschutz-Einstellungen“ ändern. Mehr in der ' + privacy + '.'),
-        acceptAllBtn: text('accept_all', 'Alle akzeptieren'),
-        acceptNecessaryBtn: text('accept_necessary', 'Nur notwendige'),
-        showPreferencesBtn: text('preferences', 'Einstellungen')
+        title: text('title'),
+        description: text('description'),
+        acceptAllBtn: text('accept_all'),
+        acceptNecessaryBtn: text('accept_necessary'),
+        showPreferencesBtn: text('preferences')
       },
       preferencesModal: {
-        title: text('title', 'Datenschutz-Einstellungen'),
-        acceptAllBtn: text('accept_all', 'Alle akzeptieren'),
-        acceptNecessaryBtn: text('accept_necessary', 'Nur notwendige'),
-        savePreferencesBtn: text('save', 'Auswahl speichern'),
+        title: text('title'),
+        acceptAllBtn: text('accept_all'),
+        acceptNecessaryBtn: text('accept_necessary'),
+        savePreferencesBtn: text('save'),
         closeIconLabel: 'Schließen',
         sections
       }

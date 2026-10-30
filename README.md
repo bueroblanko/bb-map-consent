@@ -229,7 +229,9 @@ Einmal erkannte Dienste merkt sich die Website (Option `bbmc_cmp_seen`). Das Ban
 
 Technik: CookieConsent 3.1.0 von Orest Bida (MIT, `includes/cmp/vendor/`), lokal ausgeliefert, kein CDN. Banner mit „Alle akzeptieren“, „Nur notwendige“ (gleich gewichtet) und „Einstellungen“ (Statistik, Marketing). Die Entscheidung liegt 30 Tage in localStorage (`bbmc_cmp`), Zustimmung wie Ablehnung. Beim Widerruf werden die bekannten Cookies der Dienste gelöscht (auch auf der Hauptdomain, wenn die Website auf einer Subdomain läuft) und die Seite neu geladen. Externe Inhalte (Karten, Videos, Feeds) stehen nicht im Banner und behalten ihre eigenen Freigaben.
 
-Eigene Texte: Unter „Eigene Texte“ lassen sich Titel, Banner-Text, Buttons und die Beschreibungen je Kategorie pro Website ersetzen (Option `bbmc_cmp_texts`, Links und Fettschrift erlaubt). `{datenschutz}` setzt den Link zur Datenschutzerklärung ein, `{dienste}` die erkannten Dienste. Leere Felder nutzen die Standardtexte. Texte aus eRecht24 gehören dorthin und nicht ins öffentliche Repository.
+Anrede: Sie oder Du (Option `bbmc_cmp_address`, Standard Sie). Die Standardtexte decken inhaltlich ab, was übliche Banner (z. B. Borlabs 3.4) nennen: Freiwilligkeit, IP-Adresse, USA-Übermittlung nach Art. 49 DSGVO, Hinweis unter 16 Jahren, Widerruf, 30 Tage. Das Banner bleibt kurz, die Details stehen im Einstellungsdialog.
+
+Eigene Texte: Unter „Eigene Texte“ lassen sich Titel, Banner-Text, Buttons und die Beschreibungen je Kategorie pro Website ersetzen (Option `bbmc_cmp_texts`, Links und Fettschrift erlaubt). `{datenschutz}` setzt den Link zur Datenschutzerklärung ein, `{kategorien}` die Kategorien, `{dienste}` die erkannten Dienste. Leere Felder nutzen die Standardtexte. Texte aus eRecht24 gehören dorthin und nicht ins öffentliche Repository.
 
 Footer: Shortcode `[bb_consent_settings]` oder ein Menü-Link auf `#bb-consent-settings` öffnet die Einstellungen. Gestaltung über das CSS-Feld oben mit `#cc-main` (z. B. `#cc-main { --cc-btn-primary-bg: #113262; }`).
 
