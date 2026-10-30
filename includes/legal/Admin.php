@@ -2,24 +2,86 @@
 namespace BB\Legal\V1;
 if (!defined('ABSPATH')) { exit; }
 final class Admin {
+    const TYPES = ['imprint'=>'Impressum','privacy_policy'=>'Datenschutzerklärung','social_media'=>'Social-Media-Hinweise'];
     public static function menu() { add_options_page('Rechtstexte','Rechtstexte','manage_options','bb-legal',[__CLASS__,'screen']); }
     public static function notice() {
         if (!current_user_can('manage_options')) { return; }
         $p=Module::owner();
-        if ($p && !Module::active()) { echo '<div class="notice notice-warning"><p>BB Legal ist vorbereitet, ein anderer Anbieter belegt noch die Rechtstext-Ausgabe. Bestehende Handler bleiben unverändert. <a href="'.esc_url(admin_url('options-general.php?page=bb-legal')).'">Status prüfen</a></p></div>'; }
+        if ($p && !Module::active()) { echo '<div class="notice notice-warning"><p>BB Legal ist vorbereitet, ein anderer Anbieter belegt noch die Rechtstext-Ausgabe. Bestehende Handler bleiben unverändert. <a href="'.esc_url(admin_url('options-general.php?page=bb-legal&tab=settings')).'">Status prüfen</a></p></div>'; }
         if ((int)Store::get('schema_version',1)!==Store::SCHEMA) { echo '<div class="notice notice-error"><p>Die gespeicherten Rechtstexte benötigen eine andere Modulversion. Keine automatische Rückmigration.</p></div>'; }
     }
     private static function form($action) {
         echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
         echo '<input type="hidden" name="action" value="bb_legal_save"><input type="hidden" name="operation" value="'.esc_attr($action).'">'; wp_nonce_field('bb_legal_'.$action);
     }
+    private static function url($args=[]) { return add_query_arg(array_merge(['page'=>'bb-legal'],$args),admin_url('options-general.php')); }
     public static function screen() {
         if (!current_user_can('manage_options')) { return; }
-        $p=Module::adminProvider(); $id=$p['id']; $cache=Store::get('cache'); $status=Store::get('status'); $owner=Module::owner();
-        $messages=['saved'=>'Einstellungen gespeichert.','synced'=>'Veröffentlichte Texte lokal gespeichert; noch keine Anzeige-Bestätigung gesendet.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Eingaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Eingaben synchronisiert.','merged'=>'Parallele Änderungen wurden zusammengeführt.','conflict'=>'Eingaben synchronisiert; Feldkonflikte siehe unten.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.'];
-        echo '<div class="wrap"><h1>Rechtstexte</h1><p>Verbindung zu legal.bbkd.de. Dieses Modul ist unabhängig vom Content-Blocker und standardmäßig ausgeschaltet.</p>';
+        $messages=['saved'=>'Einstellungen gespeichert.','synced'=>'Veröffentlichte Texte lokal gespeichert; noch keine Anzeige-Bestätigung gesendet.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Eingaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Eingaben synchronisiert.','merged'=>'Parallele Änderungen wurden zusammengeführt.','conflict'=>'Eingaben synchronisiert; Feldkonflikte siehe unten.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.','segments_ok'=>'Gespeichert. Geänderte Bausteine werden ab jetzt nicht mehr automatisch aktualisiert, alle anderen schon.','segments_unchanged'=>'Keine Änderungen.','segments_draft'=>'Zentrale nicht erreichbar. Deine Änderungen sind lokal gespeichert und stehen beim nächsten Öffnen wieder im Editor.'];
+        $tab=isset($_GET['tab'])&&$_GET['tab']==='settings'?'settings':'texts';
+        $edit=isset($_GET['edit'])&&is_string($_GET['edit'])&&preg_match('~^(imprint|privacy_policy|social_media)/(de|en)$~',wp_unslash($_GET['edit']))?wp_unslash($_GET['edit']):'';
+        echo '<div class="wrap"><h1>Rechtstexte</h1>';
+        echo '<nav class="nav-tab-wrapper"><a class="nav-tab'.($tab==='texts'?' nav-tab-active':'').'" href="'.esc_url(self::url()).'">Rechtsinhalte</a><a class="nav-tab'.($tab==='settings'?' nav-tab-active':'').'" href="'.esc_url(self::url(['tab'=>'settings'])).'">Einstellungen</a></nav>';
         $message=isset($_GET['bb_legal_result'])?sanitize_key(wp_unslash($_GET['bb_legal_result'])):'';
         if(isset($messages[$message])) { echo '<div class="notice notice-info"><p>'.esc_html($messages[$message]).'</p></div>'; }
+        if($tab==='settings') { self::settings(); }
+        elseif($edit!=='') { self::editor($edit); }
+        else { self::texts(); }
+        echo '</div>';
+    }
+    /** Übersicht wie in bb-cms: Seite, Stand, Status, Bearbeiten | Ansehen. */
+    private static function texts() {
+        $cache=Store::get('cache');
+        echo '<p>Impressum und Datenschutzerklärung kommen aus Bausteinen der Rechtstexte-Zentrale und werden automatisch aktuell gehalten. Du kannst einzelne Bausteine anpassen oder eigenen Text ergänzen. Angepasste Bausteine werden danach nicht mehr automatisch aktualisiert.</p>';
+        if(($cache['identity']??'')!==Store::identity()||empty($cache['outputs'])) { echo '<p>Noch keine Texte abgerufen. Unter <a href="'.esc_url(self::url(['tab'=>'settings'])).'">Einstellungen</a> die Verbindung einrichten und Texte abrufen.</p>'; return; }
+        echo '<table class="widefat striped" style="max-width:1100px"><thead><tr><th>Seite</th><th>Stand</th><th>Anpassungen</th></tr></thead><tbody>';
+        foreach($cache['outputs'] as $row) {
+            $v=$row['payload'];$key=$v['type'].'/'.$v['language'];
+            $custom=count($v['customized_blocks']??[]);$inserts=count($v['inserts']??[]);
+            $info=$custom||$inserts?trim(($custom?$custom.' Baustein'.($custom===1?'':'e').' angepasst':'').($custom&&$inserts?', ':'').($inserts?$inserts.' eigene'.($inserts===1?'r':'').' Text'.($inserts===1?'':'e'):'')):'Keine';
+            echo '<tr><td><strong>'.esc_html((self::TYPES[$v['type']]??$v['title']).($v['language']!=='de'?' ('.strtoupper($v['language']).')':'')).'</strong><div class="row-actions visible"><a href="'.esc_url(self::url(['edit'=>$key])).'">Bearbeiten</a> | <a href="#bb-legal-view-'.esc_attr(str_replace('/','-',$key)).'">Ansehen</a></div></td><td>'.esc_html(wp_date('d.m.Y',strtotime($v['stand']))).' · Version '.(int)$row['id'].'</td><td>'.esc_html($info).'</td></tr>';
+        }
+        echo '</tbody></table>';
+        foreach($cache['outputs'] as $row) {
+            $v=$row['payload'];
+            echo '<details id="bb-legal-view-'.esc_attr($v['type'].'-'.$v['language']).'" style="max-width:1100px;margin-top:16px"><summary><strong>'.esc_html($v['title']).'</strong> ansehen</summary><div style="background:#fff;border:1px solid #dcdcde;padding:16px 24px;margin-top:8px">'.wp_kses_post($v['html']).'</div></details>';
+        }
+    }
+    /** Ein Text als Folge von Bausteinen: jeder Baustein editierbar, dazwischen eigener Text. */
+    private static function editor($key) {
+        [$type,$lang]=explode('/',$key);
+        echo '<p><a href="'.esc_url(self::url()).'">&larr; Zurück zu den Rechtsinhalten</a></p><h2>'.esc_html(self::TYPES[$type].($lang!=='de'?' ('.strtoupper($lang).')':'')).' bearbeiten</h2>';
+        try { $segments=(new Client())->segments($type,$lang); }
+        catch(\Throwable $e) { echo '<div class="notice notice-error"><p>Die Bausteine konnten nicht aus der Zentrale geladen werden. Bitte später erneut versuchen.</p></div>'; return; }
+        $drafts=Store::get('segment_drafts');$draft=(is_array($drafts)&&isset($drafts[$key])&&($drafts[$key]['identity']??'')===Store::identity())?$drafts[$key]:null;
+        if($draft) { echo '<div class="notice notice-warning inline"><p>Ungesendeter Entwurf vom '.esc_html(wp_date('d.m.Y H:i',$draft['at'])).' ist unten eingesetzt. Mit „Speichern“ erneut senden.</p></div>'; }
+        $inserts=[];foreach($segments as $s) { if(($s['kind']??'')==='insert') { $inserts[$s['key']]=$s['html']; } }
+        if($draft) { $inserts=array_merge($inserts,$draft['inserts']); }
+        echo '<p style="max-width:900px">Ändere einen Baustein nur, wenn du ihn wirklich anders haben willst: Ab dann wird genau dieser Baustein nicht mehr automatisch aktualisiert (z. B. bei Gesetzesänderungen). Unveränderte Bausteine bleiben aktuell. Eigenen Text kannst du am Anfang, nach jedem Baustein und am Ende einfügen.</p>';
+        self::form('segments');
+        echo '<input type="hidden" name="text_key" value="'.esc_attr($key).'"><div style="max-width:960px">';
+        self::insertField('_start','Eigener Text am Anfang',$inserts['_start']??'');
+        foreach($segments as $s) {
+            if(($s['kind']??'')!=='block') { continue; }
+            $html=$draft['blocks'][$s['key']]??$s['html'];
+            preg_match('~<h[1-6][^>]*>(.*?)</h[1-6]>~is',$s['html'],$m);$label=$m?wp_strip_all_tags($m[1]):preg_replace('~/(de|en)$~','',$s['key']);
+            echo '<div style="background:#fff;border:1px solid #dcdcde;border-left:4px solid '.(!empty($s['customized'])?'#8c5cf5':'#2271b1').';padding:12px 16px;margin:14px 0">';
+            echo '<p style="margin:0 0 8px;display:flex;gap:10px;align-items:center"><strong>'.esc_html($label).'</strong>'.(!empty($s['customized'])?'<span style="background:#f0e9ff;color:#5b2bb5;border-radius:10px;padding:1px 8px;font-size:12px">angepasst – wird nicht mehr aktualisiert</span>':'<span style="color:#646970;font-size:12px">aktuell aus der Zentrale</span>').'</p>';
+            wp_editor($html,'bbl_'.md5($s['key']),['textarea_name'=>'blocks['.$s['key'].']','textarea_rows'=>8,'media_buttons'=>false,'teeny'=>true]);
+            if(!empty($s['customized'])) { echo '<p style="margin:8px 0 0"><label><input type="checkbox" name="reset[]" value="'.esc_attr($s['key']).'"> Auf den Standardtext zurücksetzen (wird dann wieder automatisch aktualisiert)</label></p>'; }
+            echo '</div>';
+            self::insertField($s['key'],'Eigenen Text nach „'.$label.'“ einfügen',$inserts[$s['key']]??'');
+        }
+        self::insertField('_end','Eigener Text am Ende',$inserts['_end']??'');
+        echo '</div>';submit_button('Speichern');echo '</form>';
+    }
+    private static function insertField($key,$label,$html) {
+        echo '<details style="margin:6px 0 6px 16px"'.($html!==''?' open':'').'><summary style="cursor:pointer;color:#2271b1">+ '.esc_html($label).'</summary><div style="margin-top:6px">';
+        wp_editor($html,'bbi_'.md5($key),['textarea_name'=>'inserts['.$key.']','textarea_rows'=>4,'media_buttons'=>false,'tinymce'=>false,'quicktags'=>true]);
+        echo '<p class="description">Leer lassen oder leeren, um nichts einzufügen.</p></div></details>';
+    }
+    private static function settings() {
+        $p=Module::adminProvider(); $id=$p['id']; $status=Store::get('status'); $owner=Module::owner();
         echo '<h2>Status</h2><p>Ausgabe: <strong>'.esc_html(Module::active()?'Aktiv über '.$owner['id']:($owner?'Wartet auf Freigabe der Shortcodes durch den bisherigen Anbieter':'Ausgeschaltet / nicht bereit')).'</strong></p>';
         if($owner && $owner['id']!==$id) { echo '<p>Verwaltung liegt bei '.esc_html($owner['id']).'.</p>'; }
         $labels=['synced'=>'Texte und Eingaben synchronisiert','outputs_only'=>'Texte synchronisiert; Fragebogenabruf fehlgeschlagen','sync_failed'=>'Synchronisation fehlgeschlagen','ack_failed'=>'Anzeige-Bestätigung fehlgeschlagen','draft_saved'=>'Ungesendeter lokaler Entwurf','foreign_provider'=>'Bisheriger Anbieter bleibt zuständig'];
@@ -30,13 +92,9 @@ final class Admin {
         submit_button('Verbindung speichern'); echo '</form>';
         self::form('sync');submit_button('Texte und Eingaben abrufen','secondary');echo '</form>';
         self::form('toggle');echo '<label><input type="checkbox" name="enabled" value="1" '.checked((bool)Store::get('enabled_'.$id,false),true,false).'> Rechtstext-Modul in '.esc_html($id==='consent'?'BB Consent':'BB Basic').' aktivieren</label><p class="description">Erst nach Abruf und Vergleich der Vorschau aktivieren. Solange eRecht24 oder ein anderer Anbieter die Handler belegt, bleibt dieser zuständig. Beim kontrollierten Deaktivieren des bisherigen Anbieters übernimmt das vorbereitete Modul beim nächsten Seitenaufruf. Bestehende Texte zuvor sichern.</p>';submit_button('Aktivierung speichern');echo '</form>';
-        echo '<h2>Lokale Vorschau</h2><p>Die Vorschau bestätigt noch keine öffentliche Anzeige.</p>';
-        if(($cache['identity']??'')===Store::identity()) foreach($cache['outputs']??[] as $row) {
-            $v=$row['payload'];echo '<details><summary>'.esc_html($v['title'].' · '.$v['language'].' · Version '.$row['id']).'</summary><pre style="white-space:pre-wrap">'.esc_html($v['html']).'</pre></details>';
-        }
         $ack=Store::get('acknowledged');echo '<p>Zuletzt nach öffentlichem Rendern bestätigt: '.esc_html(implode(', ',$ack['ids']??[])?:'Noch keine Version').'</p>';
         echo '<p>Bei Seiten-Caches: Nach einer Veröffentlichung den Seiten-/CDN-Cache leeren. Die Bestätigung beschreibt den lokal gerenderten Stand, nicht jede bereits gespeicherte Cache-Kopie.</p>';
-        self::inputs();echo '</div>';
+        self::inputs();
     }
     private static function inputs() {
         $remote=Store::get('remote_inputs');if(($remote['identity']??'')!==Store::identity() || !isset($remote['schema']['payload']['fields'])) { return; }
@@ -67,6 +125,19 @@ final class Admin {
         } else { echo '<input class="regular-text" type="'.esc_attr(in_array($f['type'],['email','url'],true)?$f['type']:'text').'" name="fields['.esc_attr($id).']" value="'.esc_attr($v).'">'; }
         echo '</label></p>';
     }
+    /** Skript- und Stilblöcke samt Inhalt entfernen (wp_kses_post ließe deren Text stehen), danach normale WordPress-Filterung. */
+    public static function cleanText($html) {
+        return wp_kses_post(preg_replace('#<(script|style|noscript|template)\b[^>]*>.*?</\1\s*>#is','',(string)$html));
+    }
+    /** Formularwerte des Baustein-Editors: nur gültige Schlüssel, HTML gefiltert. */
+    public static function parseSegments($blocks,$inserts,$reset) {
+        $validKey=function($k){return is_string($k)&&preg_match('~^[a-z0-9_]+/(de|en)$~',$k);};
+        $outBlocks=[];foreach((array)$blocks as $k=>$html) { if($validKey($k)&&is_string($html)) { $outBlocks[$k]=self::cleanText($html); } }
+        $outInserts=[];foreach((array)$inserts as $k=>$html) { if(($k==='_start'||$k==='_end'||$validKey($k))&&is_string($html)) { $outInserts[$k]=self::cleanText($html); } }
+        $outReset=array_values(array_filter((array)$reset,$validKey));
+        foreach($outReset as $k) { unset($outBlocks[$k]); }
+        return [$outBlocks,$outInserts,$outReset];
+    }
     public static function parseFields($schema,$posted,$original) {
         if(!is_array($posted)) { throw new \RuntimeException('Ungültige Eingaben'); }
         $result=$original;
@@ -86,7 +157,7 @@ final class Admin {
         if(!current_user_can('manage_options')) { wp_die('Keine Berechtigung.',403); }
         $operation=isset($_POST['operation'])&&is_string($_POST['operation'])?sanitize_key(wp_unslash($_POST['operation'])):'';
         check_admin_referer('bb_legal_'.$operation);
-        $result='invalid';$provider=Module::adminProvider();
+        $result='invalid';$provider=Module::adminProvider();$args=['tab'=>'settings'];
         try {
             if($operation==='connection') {
                 $endpoint=isset($_POST['endpoint'])&&is_string($_POST['endpoint'])?rtrim(trim(wp_unslash($_POST['endpoint'])),'/'):'';
@@ -97,13 +168,21 @@ final class Admin {
                 if($change&&(Module::owner()||Store::get('enabled_consent',false)||Store::get('enabled_basic',false))) { throw new \RuntimeException('Vor Projektwechsel Modul ausschalten'); }
                 if($change&&$key==='') { throw new \RuntimeException('Neuer Seitenschlüssel erforderlich'); }
                 if($key!=='') { Store::key($key); }
-                if($change) { foreach(['remote_inputs','draft','last_submission','observed','acknowledged'] as $name) { delete_option('bb_legal_'.$name); } }
+                if($change) { foreach(['remote_inputs','draft','segment_drafts','last_submission','observed','acknowledged'] as $name) { delete_option('bb_legal_'.$name); } }
                 Store::put('endpoint',$endpoint);Store::put('site_id',$site);$result='saved';
             } elseif($operation==='sync') { $result=(new Client())->sync()?'synced':'failed'; }
             elseif($operation==='toggle') {
                 $enabled=isset($_POST['enabled'])&&$_POST['enabled']==='1';
                 if($enabled&&!Store::ready()) { throw new \RuntimeException('Zuerst vollständige Texte abrufen'); }
                 Store::put('enabled_'.$provider['id'],$enabled);$result=$enabled?'enabled':'disabled';
+            } elseif($operation==='segments') {
+                $args=[];
+                $key=isset($_POST['text_key'])&&is_string($_POST['text_key'])?wp_unslash($_POST['text_key']):'';
+                if(!preg_match('~^(imprint|privacy_policy|social_media)/(de|en)$~',$key)) { throw new \RuntimeException('Unbekannter Text'); }
+                [$type,$lang]=explode('/',$key);
+                [$blocks,$inserts,$reset]=self::parseSegments(wp_unslash($_POST['blocks']??[]),wp_unslash($_POST['inserts']??[]),wp_unslash($_POST['reset']??[]));
+                $result=(new Client())->saveSegments($type,$lang,$blocks,$inserts,$reset);
+                if($result==='segments_draft') { $args=['edit'=>$key]; }
             } elseif($operation==='inputs') {
                 $token=isset($_POST['form_token'])&&is_string($_POST['form_token'])?wp_unslash($_POST['form_token']):'';
                 if(!preg_match('/^[A-Za-z0-9]{32}$/',$token)) { throw new \RuntimeException('Formular veraltet'); }
@@ -113,6 +192,6 @@ final class Admin {
                 $result=(new Client())->submit($values,$state['version']);delete_transient('bb_legal_form_'.$token);
             }
         } catch(\Throwable $e) { $result='invalid'; }
-        wp_safe_redirect(add_query_arg(['page'=>'bb-legal','bb_legal_result'=>$result],admin_url('options-general.php')));exit;
+        wp_safe_redirect(self::url(array_merge($args,['bb_legal_result'=>$result])));exit;
     }
 }

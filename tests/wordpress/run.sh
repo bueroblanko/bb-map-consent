@@ -30,6 +30,7 @@ wpcli plugin activate bb-consent
 run_case off
 run_case prepare
 run_case active
+run_case editor
 cat > "$work/wordpress/legal-probe.php" <<'PHP'
 <?php
 require __DIR__.'/wp-load.php';
