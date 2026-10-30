@@ -9,6 +9,9 @@ if (!defined('ABSPATH')) { exit; }
 final class BBMC_Cmp {
     const OPTION = 'bbmc_cmp_enabled';
     const SEEN = 'bbmc_cmp_seen';
+    const TEXTS = 'bbmc_cmp_texts';
+    /** Own texts per site (e.g. from eRecht24); empty fields keep the neutral defaults in cmp.js. */
+    const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing'];
     const CATEGORIES = ['analytics' => 'Statistik', 'marketing' => 'Marketing'];
     /** id => [label, category, script/link URL pattern, inline code pattern, noscript pattern]. Order matters: first match wins. */
     const SERVICES = [
@@ -96,11 +99,11 @@ final class BBMC_Cmp {
         if ($seen !== array_values((array) get_option(self::SEEN, []))) { update_option(self::SEEN, $seen, true); }
         return $seen;
     }
-    public static function config(array $seen, $privacy) {
+    public static function config(array $seen, $privacy, array $texts = []) {
         $categories = [];
         foreach ($seen as $id) { $categories[self::SERVICES[$id][1]][] = self::SERVICES[$id][0]; }
         // A newly seen service changes the revision, so earlier decisions are asked for again.
-        return ['privacy' => $privacy, 'categories' => $categories, 'revision' => $seen ? (int) sprintf('%u', crc32(implode(',', $seen))) % 1000000 + 1 : 0];
+        return ['privacy' => $privacy, 'categories' => $categories, 'texts' => (object) self::clean_texts($texts), 'revision' => $seen ? (int) sprintf('%u', crc32(implode(',', $seen))) % 1000000 + 1 : 0];
     }
     public static function inject($html, array $config, $base, $version) {
         $css = '<link rel="stylesheet" id="bbmc-cmp-css" href="' . esc_url($base . 'vendor/cookieconsent.css?ver=' . $version) . '" media="all">';
@@ -117,13 +120,23 @@ final class BBMC_Cmp {
         [$html, $found] = self::filter($html);
         $seen = self::remember($found);
         if (!$seen) { return $html; }
-        return self::inject($html, self::config($seen, get_privacy_policy_url() ?: home_url('/datenschutz')), plugins_url('', __FILE__) . '/', BBMC_VERSION);
+        return self::inject($html, self::config($seen, get_privacy_policy_url() ?: home_url('/datenschutz'), (array) get_option(self::TEXTS, [])), plugins_url('', __FILE__) . '/', BBMC_VERSION);
     }
     public static function shortcode() {
         return '<a href="#bb-consent-settings" class="bbmc-cmp-settings">Datenschutz-Einstellungen</a>';
     }
+    /** Known keys only, simple inline HTML (links, bold) allowed. */
+    public static function clean_texts(array $texts) {
+        $clean = [];
+        foreach (self::TEXT_FIELDS as $key => $label) {
+            $value = isset($texts[$key]) && is_string($texts[$key]) ? trim(wp_kses($texts[$key], ['a' => ['href' => true, 'target' => true, 'rel' => true], 'strong' => [], 'b' => [], 'em' => [], 'br' => []])) : '';
+            if ($value !== '') { $clean[$key] = $value; }
+        }
+        return $clean;
+    }
     public static function register() {
         register_setting('bbmc_cmp', self::OPTION, ['type' => 'boolean', 'default' => false, 'sanitize_callback' => function ($v) { return (bool) $v; }]);
+        register_setting('bbmc_cmp', self::TEXTS, ['type' => 'array', 'default' => [], 'sanitize_callback' => function ($v) { return self::clean_texts(is_array($v) ? wp_unslash($v) : []); }]);
         add_filter('option_page_capability_bbmc_cmp', function () { return 'manage_options'; });
     }
     public static function reset() {
@@ -140,6 +153,17 @@ final class BBMC_Cmp {
         echo '<p>Erkennt Google Analytics, Tag Manager, Google Ads, Meta-Pixel, LinkedIn, TikTok, Matomo, Hotjar, Mouseflow und Clarity im ausgelieferten HTML, lädt sie erst nach Zustimmung und zeigt dafür ein Banner. Externe Inhalte wie Karten und Videos behalten ihre Platzhalter. Im Footer <code>[bb_consent_settings]</code> oder einen Menülink auf <code>#bb-consent-settings</code> einsetzen.</p><form method="post" action="options.php">';
         settings_fields('bbmc_cmp');
         echo '<label><input type="checkbox" name="' . self::OPTION . '" value="1"' . checked((bool) get_option(self::OPTION, false), true, false) . '> Cookie-Banner aktivieren</label>';
+        echo '<h3>Eigene Texte</h3><p>Leere Felder nutzen die Standardtexte. Erlaubt sind Links und Fettschrift. Im Banner-Text setzt <code>{datenschutz}</code> den Link zur Datenschutzerklärung ein, in den Beschreibungen <code>{dienste}</code> die erkannten Dienste.</p><table class="form-table" role="presentation">';
+        $texts = (array) get_option(self::TEXTS, []);
+        foreach (self::TEXT_FIELDS as $key => $label) {
+            $id = 'bbmc_cmp_text_' . $key;
+            $value = isset($texts[$key]) ? (string) $texts[$key] : '';
+            $long = in_array($key, ['description', 'intro', 'necessary', 'analytics', 'marketing'], true);
+            echo '<tr><th scope="row"><label for="' . $id . '">' . esc_html($label) . '</label></th><td>' . ($long
+                ? '<textarea id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" rows="3" class="large-text">' . esc_textarea($value) . '</textarea>'
+                : '<input id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" type="text" class="regular-text" value="' . esc_attr($value) . '">') . '</td></tr>';
+        }
+        echo '</table>';
         submit_button('Speichern');
         echo '</form>';
         $seen = (array) get_option(self::SEEN, []);

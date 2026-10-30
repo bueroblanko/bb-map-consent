@@ -229,6 +229,8 @@ Einmal erkannte Dienste merkt sich die Website (Option `bbmc_cmp_seen`). Das Ban
 
 Technik: CookieConsent 3.1.0 von Orest Bida (MIT, `includes/cmp/vendor/`), lokal ausgeliefert, kein CDN. Banner mit „Alle akzeptieren“, „Nur notwendige“ (gleich gewichtet) und „Einstellungen“ (Statistik, Marketing). Die Entscheidung liegt 30 Tage in localStorage (`bbmc_cmp`), Zustimmung wie Ablehnung. Beim Widerruf werden die bekannten Cookies der Dienste gelöscht (auch auf der Hauptdomain, wenn die Website auf einer Subdomain läuft) und die Seite neu geladen. Externe Inhalte (Karten, Videos, Feeds) stehen nicht im Banner und behalten ihre eigenen Freigaben.
 
+Eigene Texte: Unter „Eigene Texte“ lassen sich Titel, Banner-Text, Buttons und die Beschreibungen je Kategorie pro Website ersetzen (Option `bbmc_cmp_texts`, Links und Fettschrift erlaubt). `{datenschutz}` setzt den Link zur Datenschutzerklärung ein, `{dienste}` die erkannten Dienste. Leere Felder nutzen die Standardtexte. Texte aus eRecht24 gehören dorthin und nicht ins öffentliche Repository.
+
 Footer: Shortcode `[bb_consent_settings]` oder ein Menü-Link auf `#bb-consent-settings` öffnet die Einstellungen. Gestaltung über das CSS-Feld oben mit `#cc-main` (z. B. `#cc-main { --cc-btn-primary-bg: #113262; }`).
 
 Grenzen: Tracker, die ein anderes Plugin erst per JavaScript nachlädt, ohne dass eines der Muster im HTML steht, werden nicht erkannt. Optimierungsplugins dürfen die Skripte mit `data-bbmc-cmp` nicht verzögern. Cookielos konfiguriertes Matomo wird trotzdem gesperrt. Texte sind neutrale Standardtexte und keine rechtliche Prüfung. Bots (z. B. Suchmaschinen) sehen kein Banner.

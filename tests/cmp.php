@@ -6,6 +6,7 @@ function cmp_check($ok, $what) { if (!$ok) throw new Exception('CMP regression: 
 $options = [];
 function get_option($k, $d = false) { global $options; return array_key_exists($k, $options) ? $options[$k] : $d; }
 function update_option($k, $v) { global $options; $options[$k] = $v; return true; }
+function wp_kses($s, $allowed) { return strip_tags($s, '<'.implode('><', array_keys($allowed)).'>'); }
 // Trackers become inactive scripts with the right category.
 $cases = [
  ['<script async src="https://www.googletagmanager.com/gtag/js?id=G-TEST123"></script>', 'google_analytics', 'analytics'],
@@ -53,6 +54,10 @@ $config = BBMC_Cmp::config($seen, '/datenschutz/');
 cmp_check($seen === ['meta_pixel', 'matomo'] && $config['revision'] !== $r1, 'new service bumps revision');
 cmp_check($config['categories'] === ['marketing' => ['Meta-Pixel'], 'analytics' => ['Matomo']], 'categories '.json_encode($config));
 cmp_check(BBMC_Cmp::config([], '')['revision'] === 0, 'empty config');
+// Own texts: known keys only, empty dropped, scripts stripped; JSON stays an object.
+$texts = BBMC_Cmp::clean_texts(['title' => ' Cookies ', 'description' => 'Text <a href="/x">Link</a><script>alert(1)</script>', 'analytics' => '', 'evil' => 'x']);
+cmp_check($texts === ['title' => 'Cookies', 'description' => 'Text <a href="/x">Link</a>alert(1)'], 'texts '.json_encode($texts));
+cmp_check(json_encode(BBMC_Cmp::config(['matomo'], '', [])['texts']) === '{}' && BBMC_Cmp::config(['matomo'], '', ['title' => 'X'])['texts']->title === 'X', 'texts in config');
 // Assets go into head/body.
 $page = BBMC_Cmp::inject('<html><head></head><body><p>x</p></body></html>', $config, '/p/', '1');
 cmp_check(strpos($page, 'cookieconsent.css?ver=1"') < strpos($page, '</head>') && strpos($page, 'id="bbmc-cmp-config"') > strpos($page, '<p>x</p>') && strpos($page, '/p/cmp.js?ver=1') < strpos($page, '</body>'), 'inject');
