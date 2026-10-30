@@ -17,7 +17,7 @@ final class Client {
         $result = wp_safe_remote_request($url, ['method'=>$method,'timeout'=>15,'redirection'=>0,'limit_response_size'=>2097153,'headers'=>[
             'Content-Type'=>'application/json','X-BB-Site'=>$site,'X-BB-Timestamp'=>$timestamp,'X-BB-Signature'=>$signature
         ],'body'=>$body,'sslverify'=>true]);
-        if (is_wp_error($result)) { throw new \RuntimeException('Zentrale nicht erreichbar. Letzte lokale Fassung bleibt erhalten.'); }
+        if (is_wp_error($result)) { throw new \RuntimeException('Zentrale nicht erreichbar ('.$result->get_error_message().'). Letzte lokale Fassung bleibt erhalten.'); }
         $code = wp_remote_retrieve_response_code($result); $raw = wp_remote_retrieve_body($result);
         if ($code !== 200 || strlen($raw) > 2097152) { throw new \RuntimeException('Zentrale meldet HTTP ' . (int)$code . '. Letzte lokale Fassung bleibt erhalten.'); }
         $json = json_decode($raw, true);
@@ -28,7 +28,7 @@ final class Client {
         if (!Store::lock()) { return false; }
         try {
             $manifest = $this->request('GET', 'legal');
-            if (!Store::validManifest($manifest['outputs'] ?? null)) { throw new \RuntimeException('Keine vollständige gültige Rechtstext-Ausgabe vorhanden.'); }
+            if (!Store::validManifest($manifest['outputs'] ?? null)) { throw new \RuntimeException('Antwort der Zentrale ist unvollständig oder die Prüfsumme stimmt nicht.'); }
             $old = Store::get('cache');
             $next = ['identity'=>Store::identity(),'outputs'=>$manifest['outputs'],'fetched_at'=>time()];
             Store::put('cache', $next); Store::put('schema_version', Store::SCHEMA);
@@ -44,7 +44,7 @@ final class Client {
                 Store::put('remote_inputs', $inputs + ['identity'=>Store::identity()]);
             } catch (\Throwable $e) { Store::status('outputs_only'); return true; }
             Store::status('synced'); return true;
-        } catch (\Throwable $e) { Store::status('sync_failed'); return false; }
+        } catch (\Throwable $e) { Store::status('sync_failed', ['message'=>$e->getMessage()]); return false; }
         finally { Store::unlock(); }
     }
     public function submit($inputs, $base) {

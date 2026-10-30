@@ -109,6 +109,8 @@ final class Module {
         return true;
     }
     public static function push($request) {
+        // Sofort abrufen: Seiten mit wenig Besuch führen WP-Cron oft stundenlang nicht aus.
+        try { self::poll(); } catch (\Throwable $e) {}
         if (!wp_next_scheduled('bb_legal_push_sync')) { wp_schedule_single_event(time()+1,'bb_legal_push_sync'); }
         return new \WP_REST_Response(['status'=>'queued'],202);
     }
