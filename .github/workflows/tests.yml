@@ -22,6 +22,7 @@ jobs:
           node tests/consent.js
           node --check assets/maps.js
           node --check includes/legal/editor.js
+          node --check includes/legal/admin.js
   wordpress:
     runs-on: ubuntu-latest
     steps:

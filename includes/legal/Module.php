@@ -34,6 +34,9 @@ final class Module {
         Deactivate::boot();
     }
     public static function owner() { return self::$owner; }
+    /** URL und Version des laufenden Modul-Ordners (für Admin-CSS/JS). */
+    public static function url() { return self::$runtime['url']; }
+    public static function version() { return self::$runtime['version']; }
     public static function adminProvider() { return self::$admin; }
     public static function active() { return self::$active; }
     public static function conflicts() {

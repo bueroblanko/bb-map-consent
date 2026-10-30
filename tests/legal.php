@@ -70,5 +70,14 @@ check(Store::get('cache')['outputs'][0]['id']===5,'Nach dem Senden neue Fassung 
 $GLOBALS['http']=[new WP_Error('offline')];check((new Client())->saveSegments('privacy_policy','de',['x/de'=>'<p>Offline</p>'],[],[])==='segments_draft','Offline bleibt als Entwurf');
 check(Store::get('segment_drafts')['privacy_policy/de']['blocks']['x/de']==='<p>Offline</p>','Entwurf enthält die Änderungen');
 check(Admin::parseSegments(['a/de'=>'<p>x</p>','bad key'=>'z'],['_start'=>'<p>s</p><script>q</script>','evil'=>'q'],['a/de'])===[[],['_start'=>'<p>s</p>'],['a/de']],'Editor-Werte gefiltert, Zurücksetzen gewinnt');
+$schema=['fields'=>[['id'=>'company','type'=>'text'],['id'=>'representatives','type'=>'list','fields'=>[['id'=>'id'],['id'=>'name']]],['id'=>'dpo_name','type'=>'text'],['id'=>'dpo_type','type'=>'select'],['id'=>'dpo_enabled','type'=>'bool'],['id'=>'dpo_address','type'=>'textarea'],['id'=>'neu','type'=>'text','group'=>'Datenschutz']]];
+$parsed=Admin::parseFields($schema,['company'=>'A','representatives'=>[['id'=>'person-1','name'=>' Eva '],['id'=>'','name'=>'Neu'],['id'=>'','name'=>'']],'dpo_enabled'=>'1','dpo_address'=>"Max Muster\nWeg 1",'neu'=>'x'],['dpo_name'=>'Alt','dpo_type'=>'internal']);
+check($parsed['representatives'][0]===['id'=>'person-1','name'=>'Eva']&&count($parsed['representatives'])===2&&preg_match('/^person-[a-f0-9]{8}$/',$parsed['representatives'][1]['id']),'Personenliste aus Zeilen, leere Zeile entfällt, neue id');
+check(Admin::parseFields(['fields'=>[['id'=>'r','type'=>'list']]],['r'=>'[{"id":"a","name":"B"}]'],[])['r']===[['id'=>'a','name'=>'B']],'Liste als JSON weiter lesbar');
+check($parsed['dpo_type']==='internal'&&$parsed['dpo_name']==='Max Muster','Doppelfelder aus Nachfolger abgeleitet');
+check(Admin::parseFields($schema,['dpo_address'=>''],['dpo_type'=>'external'])['dpo_type']==='none','DSB aus setzt Typ auf keiner');
+$steps=Admin::layout($schema['fields']);$ids=[];foreach($steps as $st)foreach($st['sections'] as $sec)foreach($sec['items'] as $it)$ids[]=$it[0]['id'];
+check(!in_array('dpo_name',$ids,true)&&!in_array('dpo_type',$ids,true)&&in_array('neu',$ids,true)&&count($ids)===5,'Assistent ohne Doppelfelder, unbekannte Felder unter Weitere Angaben');
+check(Admin::serviceGroup('hosting_ionos')==='Hosting'&&Admin::serviceGroup('meta_pixel')==='Werbung und Tracking'&&Admin::serviceGroup('unbekannt')==='Weitere','Dienste gruppiert');
 check(Admin::cleanText('<p>Text</p><script>alert(1)</script><style>p{}</style>')==='<p>Text</p>','Skript- und Stilblöcke samt Inhalt entfernt');
 echo "$passed Legal-Regressionsprüfungen bestanden\n";
