@@ -26,6 +26,7 @@ final class Module {
         self::$admin = self::$admin ?: reset($providers);
         add_action('admin_menu', function () { Admin::menu(); });
         add_action('admin_post_bb_legal_save', ['BB\\Legal\\V1\\Admin', 'save']);
+        add_action('admin_init', ['BB\\Legal\\V1\\Admin', 'connectReturn']);
         add_action('admin_notices', ['BB\\Legal\\V1\\Admin', 'notice']);
         add_filter('cron_schedules', function ($s) { $s['bb_legal_quarter_hour'] = ['interval'=>900,'display'=>'BB Legal: alle 15 Minuten']; return $s; });
         add_action('bb_legal_clear_replay', function ($sig) { delete_option('bb_legal_replay_' . $sig); });
