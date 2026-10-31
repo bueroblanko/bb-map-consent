@@ -300,4 +300,6 @@ Rechtstexte › Verbindung hat jetzt einen Knopf „Mit Zentrale verbinden“. E
 
 Borlabs-Vorlagen enthalten Beispiel-IDs wie `G-123456789` oder `AW-123456789`. Die Übernahme aus Borlabs zeigt solche Werte nicht mehr an und nimmt stattdessen die echte ID, falls eine vorhanden ist.
 
+## 0.10.12: Einstellungs-Link ohne Funktion wird ausgeblendet
+
 Werden auf einer Seite keine Dienste erkannt, die eine Einwilligung brauchen, erscheint kein Banner. Der Footer-Link „Cookies“ und Menülinks auf `#bb-consent-settings` werden dann ausgeblendet, statt beim Klick nichts zu tun.
