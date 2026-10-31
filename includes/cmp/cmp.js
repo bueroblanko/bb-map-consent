@@ -21,6 +21,7 @@
       necessary: 'Ermöglichen grundlegende Funktionen der Website, zum Beispiel das Speichern dieser Auswahl in Ihrem Browser.',
       analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website: {dienste}.',
       marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website: {dienste}.',
+      external: 'Inhalte anderer Anbieter, zum Beispiel Videos oder Karten. Beim Laden wird Ihre IP-Adresse an den jeweiligen Anbieter übermittelt. Sie können einzelne Inhalte auch direkt im Platzhalter freigeben. Auf dieser Website: {dienste}.',
       more: 'Weitere Informationen finden Sie in der {datenschutz} und im {impressum}.'
     },
     du: {
@@ -34,11 +35,12 @@
       necessary: 'Ermöglichen grundlegende Funktionen der Website, zum Beispiel das Speichern dieser Auswahl in deinem Browser.',
       analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website: {dienste}.',
       marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website: {dienste}.',
+      external: 'Inhalte anderer Anbieter, zum Beispiel Videos oder Karten. Beim Laden wird deine IP-Adresse an den jeweiligen Anbieter übermittelt. Du kannst einzelne Inhalte auch direkt im Platzhalter freigeben. Auf dieser Website: {dienste}.',
       more: 'Weitere Informationen findest du in der {datenschutz} und im {impressum}.'
     }
   };
   const base = defaults[config.address] || defaults.sie;
-  const titles = {necessary: 'Essenziell', analytics: 'Statistik', marketing: 'Marketing'};
+  const titles = {necessary: 'Essenziell', analytics: 'Statistik', marketing: 'Marketing', external: 'Externe Medien'};
   // Cookies these services set themselves; removed when consent is withdrawn.
   const clear = {
     analytics: [/^_ga/, /^_gid$/, /^_gat/, /^_pk_/, /^_hj/, /^mf_/, /^_clck$/, /^_clsk$/, /^MATOMO_/],
@@ -47,7 +49,10 @@
   const root = location.hostname.split('.').slice(-2).join('.');
   const used = ['analytics', 'marketing'].filter((key) => config.categories[key]);
   const kinds = used.map((key) => titles[key]);
-  const kategorien = (kinds.length > 1 ? kinds[0] + '- und ' + kinds[1] : kinds[0]) + 'dienste';
+  const external = config.external || {};
+  const words = kinds.length ? [(kinds.length > 1 ? kinds[0] + '- und ' + kinds[1] : kinds[0]) + 'dienste'] : [];
+  if (config.categories.external) words.push('externe Medien wie Videos oder Karten');
+  const kategorien = words.join(' sowie ');
   // Own texts (settings page) win over the defaults.
   const text = (key, services) => (own[key] || base[key]).replace(/\{datenschutz\}/g, privacy).replace(/\{impressum\}/g, imprint).replace(/\{einstellungen\}/g, '<a href="#bb-consent-settings">Einstellungen</a>').replace(/\{kategorien\}/g, kategorien).replace(/\{dienste\}/g, services || '');
   const categories = {necessary: {enabled: true, readOnly: true}};
@@ -59,7 +64,15 @@
     categories[key] = {autoClear: {cookies, reloadPage: true}};
     sections.push({title: titles[key], description: text(key, config.categories[key].map(esc).join(', ')), linkedCategory: key});
   });
+  if (config.categories.external) {
+    // One toggle per placeholder service; assets/maps.js loads or blocks the placeholders accordingly.
+    const services = {};
+    Object.keys(external).forEach((id) => { services[id] = {label: esc(external[id])}; });
+    categories.external = {services};
+    sections.push({title: titles.external, description: text('external', config.categories.external.map(esc).join(', ')), linkedCategory: 'external'});
+  }
   sections.push({title: 'Weitere Informationen', description: text('more')});
+  const announce = () => document.dispatchEvent(new CustomEvent('bbmc:cmp'));
   window.CookieConsent.run({
     revision: config.revision,
     cookie: {name: 'bbmc_cmp', useLocalStorage: true, expiresAfterDays: 30},
@@ -70,7 +83,9 @@
     disablePageInteraction: true,
     categories,
     // Already running Google tags would rewrite their cookies when the page unloads for the reload.
+    onConsent: announce,
     onChange: () => {
+      announce();
       if (typeof window.gtag !== 'function') return;
       const state = (category) => (window.CookieConsent.acceptedCategory(category) ? 'granted' : 'denied');
       window.gtag('consent', 'update', {analytics_storage: state('analytics'), ad_storage: state('marketing'), ad_user_data: state('marketing'), ad_personalization: state('marketing')});
