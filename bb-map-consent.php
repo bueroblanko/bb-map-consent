@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung, Elfsight, YouTube, Tramino, Microsoft Bookings und die Jobmorgen-Stellensuche.
- * Version: 0.10.3
+ * Version: 0.10.4
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,13 +11,17 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.10.3');
+define('BBMC_VERSION', '0.10.4');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
         add_filter('do_shortcode_tag', [__CLASS__, 'divi'], 10, 4);
         add_action('template_redirect', function () {
             if (!is_feed() && !is_admin() && !wp_doing_ajax()) { ob_start([__CLASS__, 'filter_html']); }
+        }, 0);
+        // Content loaded later by the front end (e.g. Divi FilterGrid "load more") arrives via admin-ajax.
+        add_action('admin_init', function () {
+            if (wp_doing_ajax() && self::frontend_ajax()) { ob_start([__CLASS__, 'filter_ajax']); }
         }, 0);
         foreach (['youtube' => 'YouTube', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings'] as $service => $label) {
             add_shortcode('bb_' . $service . '_revoke', function () use ($service, $label) { return '<button type="button" class="bbmc-revoke" data-service="' . esc_attr($service) . '">' . $label . '-Einwilligung widerrufen</button>'; });
@@ -29,8 +33,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.10.3');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.10.3', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.10.4');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.10.4', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -342,6 +346,30 @@ final class BB_Map_Consent {
             });
             return $changed ? $m[1] . '"' . esc_attr(wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)) . '"' : $m[0];
         }, $tag);
+    }
+    /** An admin-ajax request sent from a public page, not from wp-admin or the Divi builder. */
+    public static function frontend_ajax() {
+        $referer = isset($_SERVER['HTTP_REFERER']) ? (string) wp_unslash($_SERVER['HTTP_REFERER']) : '';
+        if ($referer === '' || self::host($referer) !== self::host(home_url())) { return false; }
+        return strpos((string) wp_parse_url($referer, PHP_URL_PATH), '/wp-admin') === false && strpos($referer, 'et_fb=') === false && empty($_REQUEST['et_fb']);
+    }
+    /** Filters HTML in an ajax response, whether sent as JSON (strings inside) or as plain HTML. */
+    public static function filter_ajax($output) {
+        // JSON may escape "<" as \u003C and "/" as \/; a cheap check skips responses without embeds.
+        if (!preg_match('~(?:<|u003C)(?:iframe|script|blockquote)\b~i', $output)) { return $output; }
+        $trimmed = ltrim($output);
+        if ($trimmed !== '' && ($trimmed[0] === '{' || $trimmed[0] === '[')) {
+            $data = json_decode($output, true);
+            if (!is_array($data)) { return $output; }
+            $changed = false;
+            array_walk_recursive($data, function (&$value) use (&$changed) {
+                if (!is_string($value) || !preg_match('~<(?:iframe|script|blockquote)\b~i', $value)) { return; }
+                $filtered = self::filter_html($value);
+                if ($filtered !== $value) { $value = $filtered; $changed = true; }
+            });
+            return $changed ? wp_json_encode($data) : $output;
+        }
+        return self::filter_html($output);
     }
     public static function attribute($tag, $name) {
         $opening = substr($tag, 0, strpos($tag, '>') + 1);

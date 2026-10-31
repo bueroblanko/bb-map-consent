@@ -149,13 +149,18 @@
       });
     } catch (_) {}
     ready = true;
-    boxes().forEach(box => {
-      // Grid plugins (e.g. Divi FilterGrid) cancel clicks inside their video figures; keep checkbox and links working.
-      box.addEventListener('click', event => { if (event.target.closest('label, a')) event.stopPropagation(); });
-      try { const height = JSON.parse(box.dataset.bbmc).height; if (height) box.style.setProperty('--bbmc-h', height + 'px'); } catch (_) {}
-    });
-    Object.keys(keys).forEach(service => { if (consent[service]) boxes(service).forEach(load); });
+    boxes().forEach(prepare);
+    // Placeholders added later (e.g. grid plugins loading more posts via ajax).
+    if (window.MutationObserver) new MutationObserver(() => boxes().forEach(prepare)).observe(document.body, {childList: true, subtree: true});
   };
+  function prepare(box) {
+    if (box.dataset.bbmcReady) return;
+    box.dataset.bbmcReady = 'yes';
+    // Grid plugins (e.g. Divi FilterGrid) cancel clicks inside their video figures; keep checkbox and links working.
+    box.addEventListener('click', event => { if (event.target.closest('label, a')) event.stopPropagation(); });
+    try { const height = JSON.parse(box.dataset.bbmc).height; if (height) box.style.setProperty('--bbmc-h', height + 'px'); } catch (_) {}
+    if (consent[box.dataset.service]) load(box);
+  }
   // Choice in the banner or its settings: load newly accepted services, reload when one was withdrawn.
   document.addEventListener('bbmc:cmp', () => {
     if (!ready) return;
