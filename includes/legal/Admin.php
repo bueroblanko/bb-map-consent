@@ -24,8 +24,8 @@ final class Admin {
     private static function url($args=[]) { return add_query_arg(array_merge(['page'=>'bb-legal'],$args),admin_url('options-general.php')); }
     public static function screen() {
         if (!current_user_can('manage_options')) { return; }
-        $messages=['saved'=>'Einstellungen gespeichert.','synced'=>'Texte und Angaben aus der Zentrale abgerufen.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Angaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Angaben gespeichert und an die Zentrale gesendet.','merged'=>'Gespeichert. Parallele Änderungen wurden zusammengeführt.','conflict'=>'Gespeichert, aber einige Felder wurden parallel geändert. Bitte unten prüfen.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.','segments_ok'=>'Gespeichert. Geänderte Bausteine werden ab jetzt nicht mehr automatisch aktualisiert, alle anderen schon.','segments_unchanged'=>'Keine Änderungen.','segments_draft'=>'Zentrale nicht erreichbar. Deine Änderungen sind lokal gespeichert und stehen beim nächsten Öffnen wieder im Editor.','selbst_an'=>'Der Text ist vom Abgleich ausgeschlossen und wird hier selbst gepflegt.','selbst_aus'=>'Der Text kommt wieder aus der Rechtstexte-Zentrale.','selbst_gespeichert'=>'Gespeichert. Der Text ist sofort auf der Website.'];
-        $problem=['failed'=>'error','invalid'=>'error','draft'=>'warning','segments_draft'=>'warning','conflict'=>'warning','pending'=>'warning'];
+        $messages=['saved'=>'Einstellungen gespeichert.','connected'=>'Verbunden. Texte und Angaben wurden aus der Zentrale abgerufen, Vorschau unter Rechtsinhalte.','connected_failed'=>'Verbindung gespeichert, aber der Abruf ist fehlgeschlagen. Code prüfen oder später „Texte und Angaben jetzt abrufen“.','code_invalid'=>'Der Verbindungscode ist unvollständig oder ungültig. Bitte in der Zentrale neu kopieren.','switch_blocked'=>'Diese Website ist schon mit einem anderen Projekt verbunden. Erst das Rechtstext-Modul ausschalten, dann neu verbinden.','synced'=>'Texte und Angaben aus der Zentrale abgerufen.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Angaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Angaben gespeichert und an die Zentrale gesendet.','merged'=>'Gespeichert. Parallele Änderungen wurden zusammengeführt.','conflict'=>'Gespeichert, aber einige Felder wurden parallel geändert. Bitte unten prüfen.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.','segments_ok'=>'Gespeichert. Geänderte Bausteine werden ab jetzt nicht mehr automatisch aktualisiert, alle anderen schon.','segments_unchanged'=>'Keine Änderungen.','segments_draft'=>'Zentrale nicht erreichbar. Deine Änderungen sind lokal gespeichert und stehen beim nächsten Öffnen wieder im Editor.','selbst_an'=>'Der Text ist vom Abgleich ausgeschlossen und wird hier selbst gepflegt.','selbst_aus'=>'Der Text kommt wieder aus der Rechtstexte-Zentrale.','selbst_gespeichert'=>'Gespeichert. Der Text ist sofort auf der Website.'];
+        $problem=['failed'=>'error','invalid'=>'error','code_invalid'=>'error','switch_blocked'=>'error','connected_failed'=>'warning','draft'=>'warning','segments_draft'=>'warning','conflict'=>'warning','pending'=>'warning'];
         $tab=isset($_GET['tab'])&&in_array($_GET['tab'],['settings','inputs'],true)?$_GET['tab']:'texts';
         $edit=isset($_GET['edit'])&&is_string($_GET['edit'])&&preg_match('~^(imprint|privacy_policy|social_media|terms|withdrawal)/(de|en)$~',wp_unslash($_GET['edit']))?wp_unslash($_GET['edit']):'';
         echo '<div class="wrap bb-ui"><h1>Rechtstexte</h1><nav class="nav-tab-wrapper">';
@@ -135,14 +135,17 @@ final class Admin {
         self::form('toggle');echo '<div class="bb-card-body"><label class="bb-switch"><input type="checkbox" name="enabled" value="1" '.checked((bool)Store::get('enabled_'.$id,false),true,false).'><span><strong>Rechtstexte über '.esc_html($id==='consent'?'BB Consent':'BB Basic').' ausgeben</strong><small>Solange eRecht24 oder ein anderer Anbieter die Shortcodes belegt, bleibt dieser zuständig. Wird er deaktiviert, übernimmt das Modul beim nächsten Seitenaufruf. Bestehende Texte vorher sichern.</small></span></label></div>';
         echo '<div class="bb-card-foot">';submit_button('Speichern','primary','submit',false);echo '</div></form></section>';
 
-        $site=Store::get('site_id','');
+        $site=Store::get('site_id','');$endpoint=Store::get('endpoint','https://legal.bbkd.de');
+        $where=$site!==''?$endpoint.'/?view=site&id='.$site:$endpoint.'/?view=customers';
         echo '<section class="bb-card"><header><h2>Verbindung zur Zentrale</h2><p>'.($site!==''?'Verbunden mit Projekt <code>'.esc_html($site).'</code>.':'Noch nicht verbunden.').'</p></header>';
         self::form('connection');
         echo '<div class="bb-card-body"><div class="bb-grid">';
-        echo '<div class="bb-f w3"><label for="bb-legal-endpoint">Adresse der Zentrale</label><input type="url" id="bb-legal-endpoint" name="endpoint" value="'.esc_attr(Store::get('endpoint','https://legal.bbkd.de')).'" required></div>';
-        echo '<div class="bb-f w3"><label for="bb-legal-site">Projekt-ID</label><input type="text" id="bb-legal-site" name="site_id" value="'.esc_attr($site).'" pattern="[a-f0-9]{24}" required></div>';
-        echo '<div class="bb-f"><label for="bb-legal-key">Seitenschlüssel</label><input type="password" id="bb-legal-key" name="site_key" value="" autocomplete="new-password" placeholder="'.esc_attr(Store::get('site_id','')!==''?'gespeichert, leer lassen zum Behalten':'').'"><span class="bb-help">Wird nicht angezeigt. Nur den Seitenschlüssel eintragen, niemals Admin- oder Freigabe-Token.</span></div>';
-        echo '</div></div><div class="bb-card-foot">';submit_button('Verbindung speichern','primary','submit',false);echo '</div></form></section>';
+        echo '<div class="bb-f"><label for="bb-legal-code">Verbindungscode</label><textarea id="bb-legal-code" name="code" rows="2" spellcheck="false" autocomplete="off" style="font-family:monospace;word-break:break-all" placeholder="BBL1-…"></textarea><span class="bb-help">In der <a href="'.esc_url($where).'" target="_blank" rel="noopener">Zentrale</a> bei der Website unter Anbindung auf „Verbindungscode für WordPress“ klicken, Code kopieren und hier einfügen. Die Texte werden danach direkt abgerufen.</span></div>';
+        echo '</div><details style="margin-top:12px"><summary style="cursor:pointer">Manuell eintragen</summary><div class="bb-grid" style="margin-top:12px">';
+        echo '<div class="bb-f w3"><label for="bb-legal-endpoint">Adresse der Zentrale</label><input type="url" id="bb-legal-endpoint" name="endpoint" value="'.esc_attr($endpoint).'"></div>';
+        echo '<div class="bb-f w3"><label for="bb-legal-site">Projekt-ID</label><input type="text" id="bb-legal-site" name="site_id" value="'.esc_attr($site).'" pattern="[a-f0-9]{24}"></div>';
+        echo '<div class="bb-f"><label for="bb-legal-key">Seitenschlüssel</label><input type="password" id="bb-legal-key" name="site_key" value="" autocomplete="new-password" placeholder="'.esc_attr($site!==''?'gespeichert, leer lassen zum Behalten':'').'"><span class="bb-help">Wird nicht angezeigt. Nur den Seitenschlüssel eintragen, niemals Admin- oder Freigabe-Token.</span></div>';
+        echo '</div></details></div><div class="bb-card-foot">';submit_button($site!==''?'Verbindung speichern':'Verbinden','primary','submit',false);echo '</div></form></section>';
 
         echo '<details class="bb-card"><summary class="bb-card-body" style="cursor:pointer"><strong>Technische Hinweise</strong></summary><div class="bb-card-body" style="padding-top:0"><p>Push-Adresse für das Projekt in der Zentrale: <code>'.esc_html(rest_url('bb-legal/v1/push')).'</code></p><p class="bb-small">Bei Seiten-Caches nach einer Veröffentlichung den Seiten- bzw. CDN-Cache leeren. Die Bestätigung beschreibt den lokal gerenderten Stand, nicht jede gespeicherte Cache-Kopie.</p></div></details>';
     }
@@ -377,6 +380,17 @@ final class Admin {
         }
         return $list;
     }
+    /** Verbindungscode aus der Zentrale: „BBL1-“ + base64url von {"u":Adresse,"s":Website-ID,"k":Seitenschlüssel}. Gibt [Adresse, ID, Schlüssel] oder null zurück. */
+    public static function parseCode($code) {
+        $code=preg_replace('/\s+/','',(string)$code);
+        if(!preg_match('/^BBL1-([A-Za-z0-9_-]+)$/',$code,$m)) { return null; }
+        $raw=base64_decode(strtr($m[1],'-_','+/'),true);
+        $data=$raw===false?null:json_decode($raw,true);
+        if(!is_array($data)||!is_string($data['u']??null)||!is_string($data['s']??null)||!is_string($data['k']??null)) { return null; }
+        $endpoint=rtrim($data['u'],'/');
+        if(!preg_match('/^[a-f0-9]{24}$/',$data['s'])||!preg_match('/^[a-f0-9]{64}$/',$data['k'])||wp_parse_url($endpoint,PHP_URL_SCHEME)!=='https') { return null; }
+        return [$endpoint,$data['s'],$data['k']];
+    }
     public static function save() {
         if(!current_user_can('manage_options')) { wp_die('Keine Berechtigung.',403); }
         $operation=isset($_POST['operation'])&&is_string($_POST['operation'])?sanitize_key(wp_unslash($_POST['operation'])):'';
@@ -384,16 +398,24 @@ final class Admin {
         $result='invalid';$provider=Module::adminProvider();$args=['tab'=>'settings'];
         try {
             if($operation==='connection') {
-                $endpoint=isset($_POST['endpoint'])&&is_string($_POST['endpoint'])?rtrim(trim(wp_unslash($_POST['endpoint'])),'/'):'';
-                $site=isset($_POST['site_id'])&&is_string($_POST['site_id'])?trim(wp_unslash($_POST['site_id'])):'';
-                $key=isset($_POST['site_key'])&&is_string($_POST['site_key'])?trim(wp_unslash($_POST['site_key'])):'';
+                $code=isset($_POST['code'])&&is_string($_POST['code'])?trim(wp_unslash($_POST['code'])):'';
+                if($code!=='') {
+                    $parsed=self::parseCode($code);
+                    if(!$parsed) { $result='code_invalid'; throw new \RuntimeException('Ungültiger Verbindungscode'); }
+                    [$endpoint,$site,$key]=$parsed;
+                } else {
+                    $endpoint=isset($_POST['endpoint'])&&is_string($_POST['endpoint'])?rtrim(trim(wp_unslash($_POST['endpoint'])),'/'):'';
+                    $site=isset($_POST['site_id'])&&is_string($_POST['site_id'])?trim(wp_unslash($_POST['site_id'])):'';
+                    $key=isset($_POST['site_key'])&&is_string($_POST['site_key'])?trim(wp_unslash($_POST['site_key'])):'';
+                }
                 if(!wp_http_validate_url($endpoint)||wp_parse_url($endpoint,PHP_URL_SCHEME)!=='https'||wp_parse_url($endpoint,PHP_URL_QUERY)||wp_parse_url($endpoint,PHP_URL_FRAGMENT)||!preg_match('/^[a-f0-9]{24}$/',$site)||($key!==''&&!preg_match('/^[a-f0-9]{64}$/',$key))) { throw new \RuntimeException('Ungültige Verbindung'); }
                 $change=$site!==Store::get('site_id','')||$endpoint!==Store::get('endpoint','https://legal.bbkd.de');
-                if($change&&(Module::owner()||Store::get('enabled_consent',false)||Store::get('enabled_basic',false))) { throw new \RuntimeException('Vor Projektwechsel Modul ausschalten'); }
+                if($change&&(Module::owner()||Store::get('enabled_consent',false)||Store::get('enabled_basic',false))) { $result='switch_blocked'; throw new \RuntimeException('Vor Projektwechsel Modul ausschalten'); }
                 if($change&&$key==='') { throw new \RuntimeException('Neuer Seitenschlüssel erforderlich'); }
                 if($key!=='') { Store::key($key); }
                 if($change) { foreach(['remote_inputs','draft','segment_drafts','last_submission','observed','acknowledged'] as $name) { delete_option('bb_legal_'.$name); } }
                 Store::put('endpoint',$endpoint);Store::put('site_id',$site);$result='saved';
+                if($code!=='') { $result=(new Client())->sync()?'connected':'connected_failed'; }
             } elseif($operation==='sync') { $result=(new Client())->sync()?'synced':'failed';if(($_POST['back']??'')==='inputs') { $args=['tab'=>'inputs']; } }
             elseif($operation==='toggle') {
                 $enabled=isset($_POST['enabled'])&&$_POST['enabled']==='1';
@@ -426,7 +448,7 @@ final class Admin {
                 $values=self::parseFields($state['schema'],wp_unslash($_POST['fields']??[]),$state['inputs']);
                 $result=(new Client())->submit($values,$state['version']);delete_transient('bb_legal_form_'.$token);
             }
-        } catch(\Throwable $e) { $result='invalid'; }
+        } catch(\Throwable $e) { if(!in_array($result,['code_invalid','switch_blocked'],true)) { $result='invalid'; } }
         wp_safe_redirect(self::url(array_merge($args,['bb_legal_result'=>$result])));exit;
     }
 }
