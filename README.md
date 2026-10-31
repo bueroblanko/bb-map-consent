@@ -287,3 +287,7 @@ Der Shortcode `[bb_consent_settings]` zeigt jetzt „Cookies“ statt „Datensc
 Borlabs gibt Google Analytics, Tag Manager, Google Ads oder das Meta-Pixel oft selbst aus. Wird Borlabs entfernt, ist das Tracking weg. Unter Einstellungen › BB Consent › Cookie-Banner gibt es dafür die Karte „Tracking-Codes“ (GA4, GTM, Google Ads, Meta-Pixel, Mouseflow, Hotjar, Clarity). BB Consent schreibt den Standard-Code in den `<head>` und blockt ihn wie jeden anderen Tracker bis zur Zustimmung. Bei ausgeschaltetem Banner oder aktivem Borlabs wird nichts ausgegeben. Steht dieselbe ID schon im Theme oder einem Plugin, wird sie nicht doppelt eingebaut.
 
 Ist Borlabs noch installiert, liest BB Consent die IDs aus dessen Einstellungen und bietet „In BB Consent übernehmen“ an. Ablauf beim Umstieg: BB Consent installieren, Banner einschalten, IDs übernehmen und prüfen, dann Borlabs deaktivieren.
+
+## 0.10.9: Mit der Rechtstexte-Zentrale per Verbindungscode verbinden
+
+Unter Einstellungen › BB Consent › Rechtstexte › Verbindung reicht jetzt ein einziger Verbindungscode (`BBL1-…`). Er kommt aus der Zentrale (Website › Anbindung › „Verbindungscode für WordPress“) und enthält Adresse, Projekt-ID und Seitenschlüssel. Nach „Verbinden“ werden Texte und Angaben sofort abgerufen. Die Einzelfelder stehen weiter unter „Manuell eintragen“.
