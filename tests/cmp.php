@@ -111,4 +111,6 @@ cmp_check(substr_count(BBMC_Cmp::add_tracking($theme, ['ga4' => 'G-JHKR8XW00C', 
 $borlabs = 'a:2:{s:10:"trackingId";s:12:"G-R0NFPZV9TX";} {"gtmId":"GTM-TNKW54QQ"} "conversionId":"AW-721461199" s:9:"meta-pixel" {"pixelId":"987654321098765"} G-Suite 2024-01-01 1698765432';
 cmp_check(BBMC_Cmp::find_ids($borlabs) === ['ga4' => 'G-R0NFPZV9TX', 'gtm' => 'GTM-TNKW54QQ', 'ads' => 'AW-721461199', 'meta' => '987654321098765'], 'find ids '.json_encode(BBMC_Cmp::find_ids($borlabs)));
 cmp_check(BBMC_Cmp::find_ids('created 1698765432123456 G-SUITE') === [], 'no false ids');
+cmp_check(BBMC_Cmp::find_ids('{\\"asynchronous-opt-out-code\\":\\"0\\",\\"pixel-id\\":\\"1152073978499337\\",\\"service-group\\"')['meta'] === '1152073978499337', 'borlabs config pixel-id');
+cmp_check(BBMC_Cmp::find_ids('a:1:{s:8:"pixel-id";s:16:"1152073978499337";}')['meta'] === '1152073978499337', 'borlabs db pixel-id');
 echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard, tracking IDs and Borlabs import passed\n";

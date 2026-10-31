@@ -217,7 +217,8 @@ final class BBMC_Cmp {
         if (preg_match('~\b(G-(?=[A-Z]*\d)[A-Z0-9]{8,12})\b~', $text, $m)) { $found['ga4'] = $m[1]; }
         if (preg_match('~\b(GTM-[A-Z0-9]{5,9})\b~', $text, $m)) { $found['gtm'] = $m[1]; }
         if (preg_match('~\b(AW-\d{8,12})\b~', $text, $m)) { $found['ads'] = $m[1]; }
-        if (preg_match('~(?:facebook|meta[-_ ]?pixel|fbq)[^\d]{0,400}?\b(\d{15,16})\b~is', $text, $m)) { $found['meta'] = $m[1]; }
+        // Borlabs 3 stores the pixel as "pixel-id" (JSON in its config, serialised in the database).
+        if (preg_match('~pixel[-_]?id\W{0,12}(\d{15,16})\b~i', $text, $m) || preg_match('~(?:facebook|meta[-_ ]?pixel|fbq)[^\d]{0,400}?\b(\d{15,16})\b~is', $text, $m)) { $found['meta'] = $m[1]; }
         if (preg_match('~mouseflow[^\n]{0,400}?\b([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\b~is', $text, $m)) { $found['mouseflow'] = strtolower($m[1]); }
         if (preg_match('~(?:hotjar|hjid)[^\d]{0,200}?\b(\d{6,9})\b~is', $text, $m)) { $found['hotjar'] = $m[1]; }
         return self::clean_tracking($found);
