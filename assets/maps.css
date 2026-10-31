@@ -4,3 +4,4 @@
 .bbmc[style*="--bbmc-ratio"] .bbmc-placeholder{min-height:auto;aspect-ratio:var(--bbmc-ratio)}
 /* Optional local YouTube preview image behind a dark veil; beats site CSS that only sets the background colour. */
 .bbmc .bbmc-placeholder.bbmc-thumb{background-color:#222;background-image:linear-gradient(rgba(0,0,0,.62),rgba(0,0,0,.62)),var(--bbmc-thumb);background-size:cover;background-position:center;border-color:transparent}.bbmc .bbmc-placeholder.bbmc-thumb,.bbmc .bbmc-placeholder.bbmc-thumb strong,.bbmc .bbmc-placeholder.bbmc-thumb a,.bbmc .bbmc-placeholder.bbmc-thumb label{color:#fff}
+.bbmc-target .fluid-width-video-wrapper{padding-top:0!important;height:auto}.bbmc-target .fluid-width-video-wrapper iframe{position:static!important}

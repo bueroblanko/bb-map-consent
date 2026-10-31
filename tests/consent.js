@@ -9,7 +9,7 @@ function run(saved = {}) {
     const nodes = {
       '.bbmc-placeholder': {hidden: false}, '.bbmc-revoke': {hidden: true},
       '.bbmc-remember': {checked: false}, '.bbmc-status': {textContent: ''},
-      '.bbmc-target': {hidden: true, append(frame) {frames.push({service, src: frame.src});}}
+      '.bbmc-target': {hidden: true, append(frame) {frames.push({service, src: frame.src, className: frame.className});}}
     };
     const own = {};
     return {dataset: {service, bbmc: JSON.stringify({kind: 'iframe', src: 'https://example.com/'+service})}, querySelector: key => nodes[key], nodes, own, style: {setProperty() {}}, addEventListener: (type, fn) => {own[type] = fn;}};
@@ -37,6 +37,7 @@ assert.equal(stopped,1);
 env.instagram.nodes['.bbmc-remember'].checked=true;
 env.click(env.instagram,'bbmc-allow');
 assert.deepEqual(env.frames.map(f=>f.service),['instagram']);
+assert.equal(env.frames[0].className,'fitvidsignore');
 assert.equal(env.maps.nodes['.bbmc-placeholder'].hidden,false);
 assert.ok(env.stored['bbmc-instagram-consent-v1']);
 assert.equal(env.stored['bbmc-consent-v1'],undefined);
