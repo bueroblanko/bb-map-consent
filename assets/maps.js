@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1', planity: 'bbmc-planity-consent-v1', elfsight: 'bbmc-elfsight-consent-v1', youtube: 'bbmc-youtube-consent-v1', tramino: 'bbmc-tramino-consent-v1', bookings: 'bbmc-bookings-consent-v1', jobmorgen: 'bbmc-jobmorgen-consent-v1'};
+  const keys = {maps: 'bbmc-consent-v1', instagram: 'bbmc-instagram-consent-v1', dealerweb: 'bbmc-dealerweb-consent-v1', planity: 'bbmc-planity-consent-v1', elfsight: 'bbmc-elfsight-consent-v1', youtube: 'bbmc-youtube-consent-v1', tramino: 'bbmc-tramino-consent-v1', bookings: 'bbmc-bookings-consent-v1', jobmorgen: 'bbmc-jobmorgen-consent-v1', cleverpv: 'bbmc-cleverpv-consent-v1', anlagenplaner: 'bbmc-anlagenplaner-consent-v1'};
   const consent = {};
   const scriptLoads = {};
   let api;
@@ -96,6 +96,8 @@
         if (config.width) frame.style.maxWidth = config.width + 'px';
         frame.referrerPolicy = 'strict-origin-when-cross-origin';
         if (config.service === 'youtube') frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+        if (config.id && !document.getElementById(config.id)) frame.id = config.id;
+        if (config.service === 'cleverpv') { frame.style.border = '0'; frame.setAttribute('scrolling', 'no'); }
         frame.allowFullscreen = true; frame.src = config.src; target.append(frame);
       } else {
         if (reserved > 400) target.style.minHeight = reserved + 'px';

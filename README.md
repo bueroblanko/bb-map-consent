@@ -307,3 +307,9 @@ Werden auf einer Seite keine Dienste erkannt, die eine Einwilligung brauchen, er
 ## 0.10.13: Anbieter und Datenschutzerklärung je Dienst
 
 Im Einstellungsfenster steht hinter jedem Dienst der Anbieter mit Sitz und ein Link auf dessen Datenschutzerklärung, zum Beispiel „Mouseflow (Mouseflow ApS, Dänemark, Datenschutzerklärung)“. Selbst gehostetes Matomo und Dienste ohne bekannte Anbieterseite (Tramino, Planity, COmarketing, Jobmorgen) stehen weiter nur mit Namen da.
+
+## 0.10.14: clever-PV-Rechner und Autarkierechner
+
+- **clever-PV-Einsparungsrechner** (clever-PV GmbH, Landsberg am Lech): Ein iframe von `integrations.clever-pv.com` wird durch einen Platzhalter ersetzt. Die Höhe kommt aus `height` oder dem Inline-Style, die `id` des iframes bleibt erhalten, damit das Höhenskript der Seite den Rechner nach der Freigabe weiter findet.
+- **Autarkierechner / Anlagenplaner** (Sunbeam Communications GmbH, Berlin): Der Loader von `pv-system-tech.com` (`cls.sbloader.js`) wird zurückgehalten. Vor dem Container `#sb-anlagenplaner` bzw. `.sb-anlagenplaner` erscheint der Platzhalter. Der Platzhalter nennt auch Google Maps, weil der Rechner nach der Freigabe die Google-Maps-API lädt.
+- Beide Dienste stehen im Banner unter „Externe Medien“ mit Anbieter und Link. Widerruf per `[bb_cleverpv_revoke]` und `[bb_anlagenplaner_revoke]`.

@@ -31,7 +31,7 @@ final class BBMC_Cmp {
     const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing', 'external' => 'Beschreibung Externe Medien', 'more' => 'Weitere Informationen'];
     const CATEGORIES = ['analytics' => 'Statistik', 'marketing' => 'Marketing', 'external' => 'Externe Medien'];
     /** Placeholder services of BB Consent (data-service of .bbmc) => label in the banner. Seen ids carry the prefix ext_. */
-    const EXTERNAL = ['youtube' => 'YouTube', 'maps' => 'Google Maps', 'instagram' => 'Instagram', 'elfsight' => 'Elfsight', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'planity' => 'Planity', 'dealerweb' => 'Aktionsbanner (COmarketing)', 'jobmorgen' => 'Jobmorgen'];
+    const EXTERNAL = ['youtube' => 'YouTube', 'maps' => 'Google Maps', 'instagram' => 'Instagram', 'elfsight' => 'Elfsight', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'planity' => 'Planity', 'dealerweb' => 'Aktionsbanner (COmarketing)', 'jobmorgen' => 'Jobmorgen', 'cleverpv' => 'clever-PV-Rechner', 'anlagenplaner' => 'Autarkierechner'];
     /** id => [label, category, script/link URL pattern, inline code pattern, noscript pattern]. Order matters: first match wins. */
     const SERVICES = [
         'google_tag_manager' => ['Google Tag Manager', 'marketing', '~googletagmanager\.com/gtm\.js~i', '~googletagmanager\.com/gtm\.js~i', '~googletagmanager\.com/ns\.html~i'],
@@ -64,6 +64,8 @@ final class BBMC_Cmp {
         'ext_instagram' => ['Meta Platforms Ireland Limited, Irland', 'https://privacycenter.instagram.com/policy'],
         'ext_bookings' => ['Microsoft Ireland Operations Limited, Irland', 'https://www.microsoft.com/de-de/privacy/privacystatement'],
         'ext_elfsight' => ['Elfsight', 'https://elfsight.com/privacy-policy/'],
+        'ext_cleverpv' => ['clever-PV GmbH, Landsberg am Lech', 'https://clever-pv.com/de/datenschutzerklaerung/'],
+        'ext_anlagenplaner' => ['Sunbeam Communications GmbH, Berlin, nutzt Google Maps', 'https://sunbeam-communications.com/impressum/'],
     ];
     /** Other consent plugins; the banner stays off while one is active so two never run in parallel. */
     const OTHER_CMPS = ['borlabs-cookie', 'complianz-gdpr', 'real-cookie-banner', 'cookie-law-info', 'cookiebot', 'cookie-notice', 'gdpr-cookie-compliance', 'uk-cookie-consent', 'cookie-script'];
