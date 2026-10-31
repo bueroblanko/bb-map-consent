@@ -9,6 +9,8 @@ function update_option($k, $v) { global $options; $options[$k] = $v; return true
 function wp_kses($s, $allowed) { return strip_tags($s, '<'.implode('><', array_keys($allowed)).'>'); }
 // Trackers become inactive scripts with the right category.
 $cases = [
+ ['<script async src="https://pixel.byspotify.com/ping.min.js"></script>', 'spotify', 'marketing'],
+ ["<script>window.spdt('lead');</script>", 'spotify', 'marketing'],
  ['<script async src="https://www.googletagmanager.com/gtag/js?id=G-TEST123"></script>', 'google_analytics', 'analytics'],
  ["<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TEST123');</script>", 'google_analytics', 'analytics'],
  ['<script async src="https://www.googletagmanager.com/gtag/js?id=AW-123"></script>', 'google_ads', 'marketing'],
@@ -113,6 +115,13 @@ cmp_check(BBMC_Cmp::find_ids($borlabs) === ['ga4' => 'G-R0NFPZV9TX', 'gtm' => 'G
 cmp_check(BBMC_Cmp::find_ids('created 1698765432123456 G-SUITE') === [], 'no false ids');
 cmp_check(BBMC_Cmp::find_ids('"tracking-id":"G-123456789" "conversion-id":"AW-123456789" GTM-XXXXXXX "pixel-id":"123456789012345"') === [], 'borlabs example values ignored');
 cmp_check(BBMC_Cmp::find_ids('"tracking-id":"G-123456789" … "tracking-id":"G-R0NFPZV9TX" "AW-123456789" "AW-721461199"') === ['ga4' => 'G-R0NFPZV9TX', 'ads' => 'AW-721461199'], 'real id after example');
+// TikTok and Spotify pixels from Borlabs: IDs only next to their names, standard snippets blocked like any tracker.
+$tt = BBMC_Cmp::find_ids('{"key":"tiktok-pixel","settings":{"pixel-id":"C4ABCD1EFGH2IJKL3MN0"}} {"key":"spotify-pixel","settings":{"pixel-key":"A1B2C3D4E5F60718293A4B5C6D7E8F90"}}');
+cmp_check($tt === ['tiktok' => 'C4ABCD1EFGH2IJKL3MN0', 'spotify' => 'a1b2c3d4e5f60718293a4b5c6d7e8f90'], 'tiktok/spotify ids '.json_encode($tt));
+cmp_check(BBMC_Cmp::find_ids('"hash":"a1b2c3d4e5f60718293a4b5c6d7e8f90" "ref":"C4ABCD1EFGH2IJKL3MN0"') === [], 'no ids without names');
+$px = BBMC_Cmp::add_tracking($page, ['tiktok' => 'C4ABCD1EFGH2IJKL3MN0', 'spotify' => 'a1b2c3d4e5f60718293a4b5c6d7e8f90']);
+[$blockedPx, $seenPx] = BBMC_Cmp::filter($px);
+cmp_check(in_array('tiktok', $seenPx, true) && in_array('spotify', $seenPx, true) && strpos($blockedPx, 'analytics.tiktok.com') !== false && preg_match('~<script(?![^>]*type="text/plain")[^>]*>[^<]*(?:ttq\.load|spdt\()~', $blockedPx) === 0, 'tiktok/spotify snippets blocked '.json_encode($seenPx));
 cmp_check(BBMC_Cmp::find_ids('{\\"asynchronous-opt-out-code\\":\\"0\\",\\"pixel-id\\":\\"1152073978499337\\",\\"service-group\\"')['meta'] === '1152073978499337', 'borlabs config pixel-id');
 cmp_check(BBMC_Cmp::find_ids('a:1:{s:8:"pixel-id";s:16:"1152073978499337";}')['meta'] === '1152073978499337', 'borlabs db pixel-id');
 // No service needing consent: settings links are hidden instead of doing nothing.

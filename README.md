@@ -313,3 +313,9 @@ Im Einstellungsfenster steht hinter jedem Dienst der Anbieter mit Sitz und ein L
 - **clever-PV-Einsparungsrechner** (clever-PV GmbH, Landsberg am Lech): Ein iframe von `integrations.clever-pv.com` wird durch einen Platzhalter ersetzt. Die Höhe kommt aus `height` oder dem Inline-Style, die `id` des iframes bleibt erhalten, damit das Höhenskript der Seite den Rechner nach der Freigabe weiter findet.
 - **Autarkierechner / Anlagenplaner** (Sunbeam Communications GmbH, Berlin): Der Loader von `pv-system-tech.com` (`cls.sbloader.js`) wird zurückgehalten. Vor dem Container `#sb-anlagenplaner` bzw. `.sb-anlagenplaner` erscheint der Platzhalter. Der Platzhalter nennt auch Google Maps, weil der Rechner nach der Freigabe die Google-Maps-API lädt.
 - Beide Dienste stehen im Banner unter „Externe Medien“ mit Anbieter und Link. Widerruf per `[bb_cleverpv_revoke]` und `[bb_anlagenplaner_revoke]`.
+
+## 0.10.15: TikTok- und Spotify-Pixel unter Tracking-Codes
+
+- Neue Felder **TikTok-Pixel** (Pixel-ID) und **Spotify Ads Pixel** (32-stelliger Key) unter „Tracking-Codes“. BB Consent gibt den Standardcode aus, aber nur bei aktivem Banner und erst nach Einwilligung in „Marketing“.
+- Die Übernahme aus Borlabs findet beide IDs, wenn sie neben dem Dienstnamen stehen.
+- Das Spotify-Pixel (`pixel.byspotify.com`, `spdt(…)`) wird jetzt auch erkannt und blockiert, wenn es fest im Theme steht. Anbieter: Spotify AB, Schweden.
