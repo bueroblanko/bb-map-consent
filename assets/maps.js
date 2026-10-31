@@ -132,6 +132,8 @@
   window.addEventListener('storage', event => { if (Object.values(keys).includes(event.key) && !event.newValue) location.reload(); });
   const restore = () => {
     boxes().forEach(box => {
+      // Grid plugins (e.g. Divi FilterGrid) cancel clicks inside their video figures; keep checkbox and links working.
+      box.addEventListener('click', event => { if (event.target.closest('label, a')) event.stopPropagation(); });
       try { const height = JSON.parse(box.dataset.bbmc).height; if (height) box.style.setProperty('--bbmc-h', height + 'px'); } catch (_) {}
     });
     Object.keys(keys).forEach(service => { if (consent[service]) boxes(service).forEach(load); });

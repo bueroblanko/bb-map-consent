@@ -219,6 +219,10 @@ Anbindung an die Rechtstexte-Zentrale legal.bbkd.de. Das Modul liegt in `include
 Prüfungen: `php tests/legal.php` (Modul) und `bash tests/wordpress/run.sh` (lädt ein Wegwerf-WordPress und prüft Shortcodes, Blöcke, Push, Ausfall der Zentrale, Fremdanbieter und Übergabe an BB Basic). Beide laufen auch in GitHub Actions. Vor einem Release: Pilot auf dev.bueroblanko.de.
 
 
+## Korrektur 0.10.1: Platzhalter in Raster-Plugins
+
+Divi FilterGrid bricht Klicks in seinen Video-Kacheln ab. Dadurch ließen sich „30 Tage merken“ und der Datenschutz-Link im Platzhalter nicht anklicken. Klicks auf Label und Links bleiben jetzt im Platzhalter. „Einwilligung widerrufen“ unter einem geladenen Inhalt hat seitlichen Abstand und wird in Kacheln mit negativem Rand nicht mehr abgeschnitten. Gefunden auf ausbildung-bergstrasse.de.
+
 ## Cookie-Banner für Tracking ab 0.10.0 (Modul `includes/cmp/`, Standard aus)
 
 Einschalten unter Einstellungen → BB Consent → „Cookie-Banner für Tracking“ (nur Administratoren). Ist Borlabs, Complianz, Real Cookie Banner, CookieYes, Cookiebot, Cookie Notice oder ein ähnliches Plugin aktiv, bleibt das Banner aus, damit nie zwei Banner parallel laufen.

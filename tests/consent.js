@@ -11,7 +11,8 @@ function run(saved = {}) {
       '.bbmc-remember': {checked: false}, '.bbmc-status': {textContent: ''},
       '.bbmc-target': {hidden: true, append(frame) {frames.push({service, src: frame.src});}}
     };
-    return {dataset: {service, bbmc: JSON.stringify({kind: 'iframe', src: 'https://example.com/'+service})}, querySelector: key => nodes[key], nodes};
+    const own = {};
+    return {dataset: {service, bbmc: JSON.stringify({kind: 'iframe', src: 'https://example.com/'+service})}, querySelector: key => nodes[key], nodes, own, style: {setProperty() {}}, addEventListener: (type, fn) => {own[type] = fn;}};
   }
   const maps = box('maps'), instagram = box('instagram');
   const context = {
@@ -28,6 +29,11 @@ function run(saved = {}) {
 }
 let env = run();
 assert.equal(env.frames.length,0);
+// Clicks on the checkbox label and links stay inside the box (grid plugins cancel them further up).
+let stopped = 0;
+env.maps.own.click({target: {closest: sel => sel === 'label, a' ? {} : null}, stopPropagation: () => stopped++});
+env.maps.own.click({target: {closest: () => null}, stopPropagation: () => stopped++});
+assert.equal(stopped,1);
 env.instagram.nodes['.bbmc-remember'].checked=true;
 env.click(env.instagram,'bbmc-allow');
 assert.deepEqual(env.frames.map(f=>f.service),['instagram']);
