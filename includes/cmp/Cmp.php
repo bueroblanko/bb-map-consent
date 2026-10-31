@@ -56,13 +56,13 @@ final class BBMC_Cmp {
         'meta_pixel' => ['Meta Platforms Ireland Limited, Irland', 'https://www.facebook.com/privacy/policy/'],
         'linkedin' => ['LinkedIn Ireland Unlimited Company, Irland', 'https://www.linkedin.com/legal/privacy-policy'],
         'tiktok' => ['TikTok Technology Limited, Irland', 'https://www.tiktok.com/legal/page/eea/privacy-policy/de'],
-        'hotjar' => ['Hotjar Ltd., Malta', 'https://www.hotjar.com/legal/policies/privacy/'],
-        'mouseflow' => ['Mouseflow ApS, Dänemark', 'https://mouseflow.com/legal/company/privacy-policy/'],
-        'clarity' => ['Microsoft Ireland Operations Limited, Irland', 'https://privacy.microsoft.com/de-de/privacystatement'],
+        'hotjar' => ['Hotjar (Contentsquare)', 'https://www.hotjar.com/legal/policies/privacy/'],
+        'mouseflow' => ['Mouseflow ApS, Dänemark', 'https://mouseflow.com/legal/privacy-policy/'],
+        'clarity' => ['Microsoft Ireland Operations Limited, Irland', 'https://www.microsoft.com/de-de/privacy/privacystatement'],
         'ext_youtube' => ['Google Ireland Limited, Irland', 'https://policies.google.com/privacy'],
         'ext_maps' => ['Google Ireland Limited, Irland', 'https://policies.google.com/privacy'],
         'ext_instagram' => ['Meta Platforms Ireland Limited, Irland', 'https://privacycenter.instagram.com/policy'],
-        'ext_bookings' => ['Microsoft Ireland Operations Limited, Irland', 'https://privacy.microsoft.com/de-de/privacystatement'],
+        'ext_bookings' => ['Microsoft Ireland Operations Limited, Irland', 'https://www.microsoft.com/de-de/privacy/privacystatement'],
         'ext_elfsight' => ['Elfsight', 'https://elfsight.com/privacy-policy/'],
     ];
     /** Other consent plugins; the banner stays off while one is active so two never run in parallel. */
