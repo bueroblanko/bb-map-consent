@@ -319,3 +319,7 @@ Im Einstellungsfenster steht hinter jedem Dienst der Anbieter mit Sitz und ein L
 - Neue Felder **TikTok-Pixel** (Pixel-ID) und **Spotify Ads Pixel** (32-stelliger Key) unter „Tracking-Codes“. BB Consent gibt den Standardcode aus, aber nur bei aktivem Banner und erst nach Einwilligung in „Marketing“.
 - Die Übernahme aus Borlabs findet beide IDs, wenn sie neben dem Dienstnamen stehen.
 - Das Spotify-Pixel (`pixel.byspotify.com`, `spdt(…)`) wird jetzt auch erkannt und blockiert, wenn es fest im Theme steht. Anbieter: Spotify AB, Schweden.
+
+## 0.10.16: Platzhalter mit derselben Anrede wie das Banner
+
+Ist im Banner die Anrede „Du“ eingestellt, sprechen auch die Platzhalter (Karten, Videos, Rechner …) mit „du“ an, zum Beispiel „Mit dem Laden stimmst du zu …“. Bei „Sie“ bleibt alles wie bisher.
