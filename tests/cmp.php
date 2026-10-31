@@ -4,7 +4,7 @@ require __DIR__.'/filter.php';
 ob_end_clean();
 function cmp_check($ok, $what) { if (!$ok) throw new Exception('CMP regression: '.$what); }
 $options = [];
-function get_option($k, $d = false) { global $options; return array_key_exists($k, $options) ? $options[$k] : $d; }
+function get_option($k, $d = false) { global $options; return array_key_exists($k, (array) $options) ? $options[$k] : $d; }
 function update_option($k, $v) { global $options; $options[$k] = $v; return true; }
 function wp_kses($s, $allowed) { return strip_tags($s, '<'.implode('><', array_keys($allowed)).'>'); }
 // Trackers become inactive scripts with the right category.

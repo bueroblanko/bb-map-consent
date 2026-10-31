@@ -21,4 +21,11 @@ $other = BB_Map_Consent::filter_html('<body><p>Start</p>'.$loader.'</body>');
 rc_check(strpos($other,'class="bbmc"')===false && strpos($other,'cls.sbloader.js')===false, 'no container: script held, no placeholder');
 rc_check(BB_Map_Consent::filter_html('<link rel="dns-prefetch" href="//pv-system-tech.com">')==='', 'Sunbeam hint removed');
 rc_check(BB_Map_Consent::filter_html('<script>var t = "anlagenplaner";</script>')==='<script>var t = "anlagenplaner";</script>', 'unrelated script untouched');
+// Placeholders follow the banner's form of address.
+if (!function_exists('get_option')) { function get_option($k, $d = false) { return $k === 'bbmc_cmp_address' ? ($GLOBALS['rc_address'] ?? $d) : $d; } }
+$GLOBALS['rc_address'] = 'du';
+$du = BB_Map_Consent::filter_html('<body>'.$frame.'</body>');
+rc_check(strpos($du,'stimmst du zu')!==false && strpos($du,'deine IP-Adresse')!==false && strpos($du,'Sie ')===false, 'du address');
+$GLOBALS['rc_address'] = 'sie';
+rc_check(strpos(BB_Map_Consent::filter_html('<body>'.$frame.'</body>'),'stimmen Sie zu')!==false, 'sie address');
 echo "Rechner: clever-PV iframe, Autarkierechner loader and container, hints passed\n";
