@@ -87,4 +87,30 @@ $options['bbmc_cmp_seen'] = ['matomo', 'ext_youtube'];
 cmp_check(BBMC_Cmp::remember([], ['matomo']) === ['ext_youtube'], 'matomo dropped from seen');
 if (!function_exists('esc_html')) { function esc_html($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); } }
 cmp_check(strpos(BBMC_Cmp::shortcode(), '>Cookies</a>') !== false && strpos(BBMC_Cmp::shortcode(['label' => 'Cookie-Einstellungen']), '>Cookie-Einstellungen</a>') !== false && strpos(BBMC_Cmp::shortcode(''), '>Cookies</a>') !== false, 'settings link label');
-echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard passed\n";
+// Tracking IDs written by BB Consent (e.g. formerly output by Borlabs).
+$bad = [];
+$ids = BBMC_Cmp::clean_tracking(['ga4' => ' g-jhkr8xw00c ', 'gtm' => 'GTM-WV2D9XCC', 'ads' => 'AW-721461199', 'meta' => '123456789012345', 'mouseflow' => 'ABCDEF12-3456-7890-ABCD-EF1234567890', 'hotjar' => 'x1', 'clarity' => 'abc"><script>', 'evil' => 'G-1'], $bad);
+cmp_check($ids === ['ga4' => 'G-JHKR8XW00C', 'gtm' => 'GTM-WV2D9XCC', 'ads' => 'AW-721461199', 'meta' => '123456789012345', 'mouseflow' => 'abcdef12-3456-7890-abcd-ef1234567890'], 'clean tracking '.json_encode($ids));
+cmp_check($bad === ['Hotjar', 'Microsoft Clarity'], 'invalid tracking '.json_encode($bad));
+$expect = ['ga4' => ['google_analytics', 'analytics'], 'gtm' => ['google_tag_manager', 'marketing'], 'ads' => ['google_ads', 'marketing'], 'meta' => ['meta_pixel', 'marketing'], 'mouseflow' => ['mouseflow', 'analytics'], 'hotjar' => ['hotjar', 'analytics'], 'clarity' => ['clarity', 'analytics']];
+$sample = $ids + ['hotjar' => '1234567', 'clarity' => 'abcd1234ef'];
+foreach ($expect as $key => [$service, $cat]) {
+ $code = BBMC_Cmp::snippet($key, $sample[$key]);
+ cmp_check(strpos($code, $sample[$key]) !== false, "snippet $key has id");
+ [$out, $found] = BBMC_Cmp::filter($code);
+ cmp_check($found === [$service], "snippet $key found ".json_encode($found));
+ cmp_check(strpos($out, '<script type="text/javascript"') === false && strpos($out, '<script async') === false && preg_match_all('~<script type="text/plain" data-category="'.$cat.'"~', $out) === substr_count($code, '<script'), "snippet $key blocked $out");
+}
+$page = '<html><head><title>x</title></head><body></body></html>';
+$withIds = BBMC_Cmp::add_tracking($page, ['ga4' => 'G-JHKR8XW00C', 'gtm' => 'GTM-WV2D9XCC']);
+cmp_check(strpos($withIds, 'G-JHKR8XW00C') < strpos($withIds, '</head>') && strpos($withIds, 'GTM-WV2D9XCC') < strpos($withIds, '</head>'), 'tracking in head');
+cmp_check(BBMC_Cmp::add_tracking($page, []) === $page && BBMC_Cmp::add_tracking($page, ['ga4' => 'nope']) === $page, 'no tracking without ids');
+$theme = '<html><head><script async src="https://www.googletagmanager.com/gtag/js?id=G-JHKR8XW00C"></script></head><body></body></html>';
+cmp_check(substr_count(BBMC_Cmp::add_tracking($theme, ['ga4' => 'G-JHKR8XW00C', 'gtm' => 'GTM-WV2D9XCC']), 'G-JHKR8XW00C') === 1, 'no duplicate id');
+// IDs from Borlabs settings or its public config.
+$borlabs = 'a:2:{s:10:"trackingId";s:12:"G-R0NFPZV9TX";} {"gtmId":"GTM-TNKW54QQ"} "conversionId":"AW-721461199" s:9:"meta-pixel" {"pixelId":"987654321098765"} G-Suite 2024-01-01 1698765432';
+cmp_check(BBMC_Cmp::find_ids($borlabs) === ['ga4' => 'G-R0NFPZV9TX', 'gtm' => 'GTM-TNKW54QQ', 'ads' => 'AW-721461199', 'meta' => '987654321098765'], 'find ids '.json_encode(BBMC_Cmp::find_ids($borlabs)));
+cmp_check(BBMC_Cmp::find_ids('created 1698765432123456 G-SUITE') === [], 'no false ids');
+cmp_check(BBMC_Cmp::find_ids('{\\"asynchronous-opt-out-code\\":\\"0\\",\\"pixel-id\\":\\"1152073978499337\\",\\"service-group\\"')['meta'] === '1152073978499337', 'borlabs config pixel-id');
+cmp_check(BBMC_Cmp::find_ids('a:1:{s:8:"pixel-id";s:16:"1152073978499337";}')['meta'] === '1152073978499337', 'borlabs db pixel-id');
+echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard, tracking IDs and Borlabs import passed\n";
