@@ -15,7 +15,9 @@ final class Client {
         $timestamp = (string)time();
         $signature = hash_hmac('sha256', $method . "\n" . $target . "\n" . $timestamp . "\n" . $body, $key);
         $result = wp_safe_remote_request($url, ['method'=>$method,'timeout'=>15,'redirection'=>0,'limit_response_size'=>2097153,'headers'=>[
-            'Content-Type'=>'application/json','X-BB-Site'=>$site,'X-BB-Timestamp'=>$timestamp,'X-BB-Signature'=>$signature
+            'Content-Type'=>'application/json','X-BB-Site'=>$site,'X-BB-Timestamp'=>$timestamp,'X-BB-Signature'=>$signature,
+            // Lets the Zentrale push new texts; page caches often keep WP-Cron from polling.
+            'X-BB-Push-Url'=>rest_url('bb-legal/v1/push')
         ],'body'=>$body,'sslverify'=>true]);
         if (is_wp_error($result)) { throw new \RuntimeException('Zentrale nicht erreichbar ('.$result->get_error_message().'). Letzte lokale Fassung bleibt erhalten.'); }
         $code = wp_remote_retrieve_response_code($result); $raw = wp_remote_retrieve_body($result);

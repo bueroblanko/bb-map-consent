@@ -9,7 +9,7 @@ function delete_option($name){unset($GLOBALS['options'][$name]);return true;}
 function wp_salt($scheme){return $GLOBALS['test_salt']??'Synthetic test installation salt';}
 function wp_json_encode($v,$flags=0){return json_encode($v,$flags);}
 function wp_strip_all_tags($v){return strip_tags($v);}
-function wp_parse_url($u,$part=-1){return parse_url($u,$part);}
+function wp_parse_url($u,$part=-1){return parse_url($u,$part);}function rest_url($p=''){return 'https://kunde.example/wp-json/'.$p;}
 function wp_http_validate_url($u){return strpos($u,'https://legal.example.test')===0?$u:false;}
 function is_wp_error($v){return $v instanceof WP_Error;}
 class WP_Error{public $code;public function __construct($code,$msg='',$data=[]){$this->code=$code;}}
@@ -43,7 +43,7 @@ Store::put('endpoint','https://legal.example.test');Store::put('site_id',str_rep
 check(Store::key()===$key,'Schlüssel entschlüsselbar');check(strpos(Store::get('site_key'),$key)===false,'Kein Klartextschlüssel in Optionen');check(!array_filter($GLOBALS['autoloads']),'Moduloptionen ohne Autoload');
 $rows=[row(1),row(2,'privacy_policy')];check(Store::validManifest($rows),'Vollständiges Manifest gültig');$bad=$rows;$bad[0]['payload']['html']='Manipuliert';check(!Store::validManifest($bad),'Beschädigter Hash abgelehnt');check(!Store::validManifest([$rows[0]]),'Unvollständige Sprache abgelehnt');
 queueSync($rows);$c=new Client();check($c->sync(),'Synchronisation erfolgreich');check(Store::ready(),'Lokaler Stand bereit');check(!Store::get('acknowledged'),'Abruf ist keine Anzeige-Bestätigung');
-[$url,$args]=$GLOBALS['requests'][0];$p=parse_url($url);$target=$p['path'].'?'.$p['query'];$h=$args['headers'];check(hash_equals($h['X-BB-Signature'],hash_hmac('sha256',"GET\n".$target."\n".$h['X-BB-Timestamp']."\n",$key)),'Exakte Pfad-/Query-Signatur');check($args['redirection']===0&&$args['sslverify']===true,'Keine Weiterleitung und TLS-Prüfung');
+[$url,$args]=$GLOBALS['requests'][0];$p=parse_url($url);$target=$p['path'].'?'.$p['query'];$h=$args['headers'];check(hash_equals($h['X-BB-Signature'],hash_hmac('sha256',"GET\n".$target."\n".$h['X-BB-Timestamp']."\n",$key)),'Exakte Pfad-/Query-Signatur');check($args['redirection']===0&&$args['sslverify']===true,'Keine Weiterleitung und TLS-Prüfung');check($h['X-BB-Push-Url']==='https://kunde.example/wp-json/bb-legal/v1/push','Push-Adresse wird mitgeschickt');
 $before=Store::get('cache');$GLOBALS['http']=[reply(['outputs'=>[$rows[0]]])];check(!$c->sync()&&Store::get('cache')===$before,'Ungültiges Manifest erhält Cache');$GLOBALS['http']=[new WP_Error('offline')];check(!$c->sync()&&Store::get('cache')===$before,'Netzfehler erhält Cache');
 Store::put('draft',['inputs'=>['company'=>'Ungesendet'],'base_version_id'=>1]);queueSync($rows);$c->sync();check(Store::get('draft')['inputs']['company']==='Ungesendet','Abruf überschreibt keinen Entwurf');
 $GLOBALS['http']=[new WP_Error('offline')];check($c->submit(['company'=>'Offline'],1)==='draft','Offline-Eingaben bleiben als Entwurf');check(Store::get('draft')['base_version_id']===1,'Entwurf behält Basisversion');
