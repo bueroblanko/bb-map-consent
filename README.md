@@ -303,3 +303,7 @@ Borlabs-Vorlagen enthalten Beispiel-IDs wie `G-123456789` oder `AW-123456789`. D
 ## 0.10.12: Einstellungs-Link ohne Funktion wird ausgeblendet
 
 Werden auf einer Seite keine Dienste erkannt, die eine Einwilligung brauchen, erscheint kein Banner. Der Footer-Link „Cookies“ und Menülinks auf `#bb-consent-settings` werden dann ausgeblendet, statt beim Klick nichts zu tun.
+
+## 0.10.13: Anbieter und Datenschutzerklärung je Dienst
+
+Im Einstellungsfenster steht hinter jedem Dienst der Anbieter mit Sitz und ein Link auf dessen Datenschutzerklärung, zum Beispiel „Mouseflow (Mouseflow ApS, Dänemark, Datenschutzerklärung)“. Selbst gehostetes Matomo und Dienste ohne bekannte Anbieterseite (Tramino, Planity, COmarketing, Jobmorgen) stehen weiter nur mit Namen da.

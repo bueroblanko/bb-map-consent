@@ -45,6 +45,26 @@ final class BBMC_Cmp {
         'mouseflow' => ['Mouseflow', 'analytics', '~cdn\.mouseflow\.com~i', '~\b_mfq\b|cdn\.mouseflow\.com~', ''],
         'clarity' => ['Microsoft Clarity', 'analytics', '~clarity\.ms~i', '~clarity\.ms~', ''],
     ];
+    /**
+     * Provider and its privacy policy per service (tracker id or placeholder id), shown next to the
+     * service in the settings window. Self-hosted Matomo and services without a known policy URL have none.
+     */
+    const PROVIDERS = [
+        'google_tag_manager' => ['Google Ireland Limited, Irland', 'https://policies.google.com/privacy'],
+        'google_ads' => ['Google Ireland Limited, Irland', 'https://policies.google.com/privacy'],
+        'google_analytics' => ['Google Ireland Limited, Irland', 'https://policies.google.com/privacy'],
+        'meta_pixel' => ['Meta Platforms Ireland Limited, Irland', 'https://www.facebook.com/privacy/policy/'],
+        'linkedin' => ['LinkedIn Ireland Unlimited Company, Irland', 'https://www.linkedin.com/legal/privacy-policy'],
+        'tiktok' => ['TikTok Technology Limited, Irland', 'https://www.tiktok.com/legal/page/eea/privacy-policy/de'],
+        'hotjar' => ['Hotjar Ltd., Malta', 'https://www.hotjar.com/legal/policies/privacy/'],
+        'mouseflow' => ['Mouseflow ApS, Dänemark', 'https://mouseflow.com/legal/company/privacy-policy/'],
+        'clarity' => ['Microsoft Ireland Operations Limited, Irland', 'https://privacy.microsoft.com/de-de/privacystatement'],
+        'ext_youtube' => ['Google Ireland Limited, Irland', 'https://policies.google.com/privacy'],
+        'ext_maps' => ['Google Ireland Limited, Irland', 'https://policies.google.com/privacy'],
+        'ext_instagram' => ['Meta Platforms Ireland Limited, Irland', 'https://privacycenter.instagram.com/policy'],
+        'ext_bookings' => ['Microsoft Ireland Operations Limited, Irland', 'https://privacy.microsoft.com/de-de/privacystatement'],
+        'ext_elfsight' => ['Elfsight', 'https://elfsight.com/privacy-policy/'],
+    ];
     /** Other consent plugins; the banner stays off while one is active so two never run in parallel. */
     const OTHER_CMPS = ['borlabs-cookie', 'complianz-gdpr', 'real-cookie-banner', 'cookie-law-info', 'cookiebot', 'cookie-notice', 'gdpr-cookie-compliance', 'uk-cookie-consent', 'cookie-script'];
 
@@ -141,13 +161,16 @@ final class BBMC_Cmp {
     public static function config(array $seen, $privacy, array $texts = [], $address = 'sie', $imprint = '') {
         $categories = [];
         $external = [];
+        $providers = [];
         foreach ($seen as $id) {
-            if (strpos($id, 'ext_') === 0) { $external[substr($id, 4)] = self::EXTERNAL[substr($id, 4)]; continue; }
-            $categories[self::SERVICES[$id][1]][] = self::SERVICES[$id][0];
+            $label = strpos($id, 'ext_') === 0 ? self::EXTERNAL[substr($id, 4)] : self::SERVICES[$id][0];
+            if (isset(self::PROVIDERS[$id])) { $providers[$label] = self::PROVIDERS[$id]; }
+            if (strpos($id, 'ext_') === 0) { $external[substr($id, 4)] = $label; continue; }
+            $categories[self::SERVICES[$id][1]][] = $label;
         }
         if ($external) { $categories['external'] = array_values($external); }
         // A newly seen service changes the revision, so earlier decisions are asked for again.
-        return ['privacy' => $privacy, 'imprint' => $imprint, 'categories' => $categories, 'texts' => (object) self::clean_texts($texts), 'address' => $address === 'du' ? 'du' : 'sie', 'external' => (object) $external, 'revision' => $seen ? (int) sprintf('%u', crc32(implode(',', $seen))) % 1000000 + 1 : 0];
+        return ['privacy' => $privacy, 'imprint' => $imprint, 'categories' => $categories, 'texts' => (object) self::clean_texts($texts), 'address' => $address === 'du' ? 'du' : 'sie', 'external' => (object) $external, 'providers' => (object) $providers, 'revision' => $seen ? (int) sprintf('%u', crc32(implode(',', $seen))) % 1000000 + 1 : 0];
     }
     public static function inject($html, array $config, $base, $version) {
         $css = '<link rel="stylesheet" id="bbmc-cmp-css" href="' . esc_url($base . 'vendor/cookieconsent.css?ver=' . $version) . '" media="all">';

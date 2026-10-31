@@ -55,6 +55,14 @@
   const kategorien = words.join(' sowie ');
   // Own texts (settings page) win over the defaults.
   const text = (key, services) => (own[key] || base[key]).replace(/\{datenschutz\}/g, privacy).replace(/\{impressum\}/g, imprint).replace(/\{einstellungen\}/g, '<a href="#bb-consent-settings">Einstellungen</a>').replace(/\{kategorien\}/g, kategorien).replace(/\{dienste\}/g, services || '');
+  // Service name with provider and a link to its privacy policy, where known.
+  const providers = config.providers || {};
+  const label = (name) => {
+    const p = providers[name];
+    if (!p) return esc(name);
+    const link = /^https:\/\//.test(p[1] || '') ? ', <a href="' + esc(p[1]) + '" target="_blank" rel="noopener">Datenschutzerklärung</a>' : '';
+    return esc(name) + ' (' + esc(p[0]) + link + ')';
+  };
   const categories = {necessary: {enabled: true, readOnly: true}};
   const sections = [{description: text('intro')}, {title: titles.necessary, description: text('necessary'), linkedCategory: 'necessary'}];
   used.forEach((key) => {
@@ -62,14 +70,14 @@
     const cookies = clear[key].map((name) => ({name}));
     if (root !== location.hostname.replace(/^www\./, '')) clear[key].forEach((name) => cookies.push({name, domain: root}));
     categories[key] = {autoClear: {cookies, reloadPage: true}};
-    sections.push({title: titles[key], description: text(key, config.categories[key].map(esc).join(', ')), linkedCategory: key});
+    sections.push({title: titles[key], description: text(key, config.categories[key].map(label).join(', ')), linkedCategory: key});
   });
   if (config.categories.external) {
     // One toggle per placeholder service; assets/maps.js loads or blocks the placeholders accordingly.
     const services = {};
     Object.keys(external).forEach((id) => { services[id] = {label: esc(external[id])}; });
     categories.external = {services};
-    sections.push({title: titles.external, description: text('external', config.categories.external.map(esc).join(', ')), linkedCategory: 'external'});
+    sections.push({title: titles.external, description: text('external', config.categories.external.map(label).join(', ')), linkedCategory: 'external'});
   }
   sections.push({title: 'Weitere Informationen', description: text('more')});
   const announce = () => document.dispatchEvent(new CustomEvent('bbmc:cmp'));

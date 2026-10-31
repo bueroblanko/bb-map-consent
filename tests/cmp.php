@@ -120,4 +120,8 @@ $plain = '<html><head></head><body><a href="#bb-consent-settings" class="bbmc-cm
 $hidden = BBMC_Cmp::hide_settings_links($plain);
 cmp_check(strpos($hidden, 'bbmc-cmp-nolinks') !== false && strpos($hidden, 'bbmc-cmp-nolinks') < strpos($hidden, '</head>'), 'hide links');
 cmp_check(BBMC_Cmp::hide_settings_links('<html><head></head><body></body></html>') === '<html><head></head><body></body></html>', 'no links untouched');
+// Providers with privacy links per service; self-hosted Matomo has none.
+$prov = BBMC_Cmp::config(['mouseflow', 'matomo', 'ext_youtube'], '/d/');
+cmp_check($prov['providers']->Mouseflow === ['Mouseflow ApS, Dänemark', 'https://mouseflow.com/legal/company/privacy-policy/'] && !isset($prov['providers']->Matomo) && $prov['providers']->YouTube[1] === 'https://policies.google.com/privacy', 'providers '.json_encode($prov['providers']));
+foreach (BBMC_Cmp::PROVIDERS as $id => [$who, $url]) { cmp_check(isset(BBMC_Cmp::SERVICES[$id]) || (strpos($id, 'ext_') === 0 && isset(BBMC_Cmp::EXTERNAL[substr($id, 4)])), "provider id $id"); cmp_check(strpos($url, 'https://') === 0, "provider url $id"); }
 echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard, tracking IDs and Borlabs import passed\n";
