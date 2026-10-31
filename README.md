@@ -265,3 +265,7 @@ Eigenes CSS: `>` als Kind-Kombinator bleibt jetzt erhalten (vorher entfernt).
 - **Jobmorgen-Stellensuche** (MANNHEIMER MORGEN GmbH): Der Loader der Partnerbox (Inline-Skript mit `jobmorgen.de/partnerbox.js` bzw. `RegioPowerPartnerBox`) wird zurückgehalten. Vor dem Container `.regio-power-partner-box` steht ein Platzhalter. Seiten ohne Container halten nur das Skript zurück (vorher lief es dort ins Leere). Im Banner heißt der Dienst „Jobmorgen“.
 - **YouTube**: `youtube.com/embed` (z. B. aus WordPress-oEmbed) wird beim Freigeben als `youtube-nocookie.com/embed` geladen.
 - **Matomo ohne Cookies**: Ein Matomo-Code mit `_paq.push(['disableCookies'])` wird vom Banner nicht blockiert und aus den erkannten Diensten genommen.
+
+## 0.10.4: Nachgeladene Inhalte
+
+Inhalte, die eine Seite per admin-ajax nachlädt (z. B. Divi FilterGrid „Mehr laden“ oder Filter), werden wie die Seite selbst gefiltert. Das gilt für JSON-Antworten (Strings darin) und für HTML-Antworten. Es betrifft nur Anfragen von öffentlichen Seiten derselben Domain, nicht aus wp-admin oder dem Divi-Builder. Neu eingefügte Platzhalter richtet `maps.js` per MutationObserver ein, inklusive bereits erteilter Freigaben.
