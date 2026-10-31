@@ -165,7 +165,7 @@ final class BBMC_Cmp {
         $cookieless = self::matomo_cookieless($html);
         [$html, $found] = self::filter($html);
         $seen = self::remember($found, $cookieless ? ['matomo'] : []);
-        if (!$seen) { return $html; }
+        if (!$seen) { return self::hide_settings_links($html); }
         return self::inject($html, self::config($seen, get_privacy_policy_url() ?: home_url('/datenschutz'), (array) get_option(self::TEXTS, []), get_option(self::ADDRESS, 'sie'), self::imprint_url()), plugins_url('', __FILE__) . '/', BBMC_VERSION);
     }
     /** Valid IDs only, normalised; $invalid collects labels of entries that were dropped. */
@@ -270,6 +270,13 @@ final class BBMC_Cmp {
         update_option(self::TRACKING, $current + $found);
         wp_safe_redirect(admin_url('options-general.php?page=bb-consent&tab=banner&bbmc_import=' . count($new)));
         exit;
+    }
+    /** Without a service that needs consent there is no banner, so links to its settings would do nothing: hide them. */
+    public static function hide_settings_links($html) {
+        if (strpos($html, 'bb-consent-settings') === false) { return $html; }
+        $css = '<style id="bbmc-cmp-nolinks">.bbmc-cmp-settings,a[href$="#bb-consent-settings"],li:has(>a[href$="#bb-consent-settings"]){display:none!important}</style>';
+        $head = stripos($html, '</head>');
+        return $head === false ? $css . $html : substr_replace($html, $css, $head, 0);
     }
     /** WordPress has no imprint setting; a published page with the slug impressum or imprint, else /impressum. */
     public static function imprint_url() {

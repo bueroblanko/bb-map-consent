@@ -115,4 +115,9 @@ cmp_check(BBMC_Cmp::find_ids('"tracking-id":"G-123456789" "conversion-id":"AW-12
 cmp_check(BBMC_Cmp::find_ids('"tracking-id":"G-123456789" … "tracking-id":"G-R0NFPZV9TX" "AW-123456789" "AW-721461199"') === ['ga4' => 'G-R0NFPZV9TX', 'ads' => 'AW-721461199'], 'real id after example');
 cmp_check(BBMC_Cmp::find_ids('{\\"asynchronous-opt-out-code\\":\\"0\\",\\"pixel-id\\":\\"1152073978499337\\",\\"service-group\\"')['meta'] === '1152073978499337', 'borlabs config pixel-id');
 cmp_check(BBMC_Cmp::find_ids('a:1:{s:8:"pixel-id";s:16:"1152073978499337";}')['meta'] === '1152073978499337', 'borlabs db pixel-id');
+// No service needing consent: settings links are hidden instead of doing nothing.
+$plain = '<html><head></head><body><a href="#bb-consent-settings" class="bbmc-cmp-settings">Cookies</a></body></html>';
+$hidden = BBMC_Cmp::hide_settings_links($plain);
+cmp_check(strpos($hidden, 'bbmc-cmp-nolinks') !== false && strpos($hidden, 'bbmc-cmp-nolinks') < strpos($hidden, '</head>'), 'hide links');
+cmp_check(BBMC_Cmp::hide_settings_links('<html><head></head><body></body></html>') === '<html><head></head><body></body></html>', 'no links untouched');
 echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard, tracking IDs and Borlabs import passed\n";
