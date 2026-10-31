@@ -273,3 +273,8 @@ Inhalte, die eine Seite per admin-ajax nachlädt (z. B. Divi FilterGrid „Mehr 
 ## 0.10.5: Kein Leerraum unter geladenen Videos
 
 Lädt ein Video beim Seitenaufbau direkt (Einwilligung schon gespeichert), legt Divis FitVids einen Rahmen um das iframe und rechnet die Höhe nur aus dem height-Attribut. Im Raster entstand so ein großer Leerraum unter dem Video. Das iframe trägt jetzt die Klasse `fitvidsignore`, ein CSS-Rückfall setzt einen trotzdem gesetzten Rahmen zurück.
+
+## 0.10.6: Neue Rechtstexte sofort statt per Abfrage
+
+Viele Seiten liefern Besuchern nur Kopien aus dem Seiten-Cache aus. Dann läuft WP-Cron selten und die Abfrage alle 15 Minuten bleibt aus. Das Rechtstexte-Modul meldet der Zentrale deshalb bei jedem Abruf seine Push-Adresse. Die Zentrale speichert sie einmalig, nur für die eigene Domain, und schickt neue Fassungen danach direkt.
+
