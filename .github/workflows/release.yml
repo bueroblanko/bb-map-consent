@@ -21,6 +21,7 @@ jobs:
           php tests/update-directory.php
           php tests/instagram.php
           php tests/elfsight.php
+          php tests/rechner.php
           php tests/youtube-tramino.php
           php tests/bookings.php
           php tests/feeds.php

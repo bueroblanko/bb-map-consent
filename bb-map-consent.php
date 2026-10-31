@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung, Elfsight, YouTube, Tramino, Microsoft Bookings und die Jobmorgen-Stellensuche.
- * Version: 0.10.13
+ * Version: 0.10.14
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,7 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.10.13');
+define('BBMC_VERSION', '0.10.14');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
@@ -23,7 +23,7 @@ final class BB_Map_Consent {
         add_action('admin_init', function () {
             if (wp_doing_ajax() && self::frontend_ajax()) { ob_start([__CLASS__, 'filter_ajax']); }
         }, 0);
-        foreach (['youtube' => 'YouTube', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings'] as $service => $label) {
+        foreach (['youtube' => 'YouTube', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'cleverpv' => 'clever-PV-Rechner', 'anlagenplaner' => 'Autarkierechner'] as $service => $label) {
             add_shortcode('bb_' . $service . '_revoke', function () use ($service, $label) { return '<button type="button" class="bbmc-revoke" data-service="' . esc_attr($service) . '">' . $label . '-Einwilligung widerrufen</button>'; });
         }
         add_shortcode('bb_elfsight_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="elfsight">Elfsight-Einwilligung widerrufen</button>'; });
@@ -33,8 +33,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.10.13');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.10.13', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.10.14');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.10.14', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -85,6 +85,15 @@ final class BB_Map_Consent {
         $normal = strpos($src, '//') === 0 ? 'https:' . $src : $src;
         return in_array(self::host($normal), ['jobmorgen.de', 'www.jobmorgen.de'], true);
     }
+    /** Autarkierechner / Anlagenplaner of Sunbeam Communications: its loader from pv-system-tech.com. */
+    public static function anlagenplaner_script($tag) {
+        $src = self::attribute($tag, 'src');
+        if ($src === '') { return (bool) preg_match('~pv-system-tech\.com/[^"\'\s]*sbloader~i', $tag); }
+        return self::anlagenplaner_host($src);
+    }
+    public static function anlagenplaner_host($url) {
+        return (bool) preg_match('/(?:^|\.)pv-system-tech\.com$/', self::host(strpos($url, '//') === 0 ? 'https:' . $url : $url));
+    }
     /** YouTube embeds load from youtube-nocookie.com (privacy-enhanced mode), as WordPress oEmbed uses youtube.com. */
     public static function youtube_nocookie($src) {
         return preg_replace('~^((?:https?:)?//)(?:www\.)?youtube\.com/embed/~i', '$1www.youtube-nocookie.com/embed/', $src);
@@ -97,6 +106,7 @@ final class BB_Map_Consent {
         if (in_array($host, ['youtube.com', 'www.youtube.com', 'www.youtube-nocookie.com', 'youtube-nocookie.com'], true)
             && preg_match('~^/embed/[A-Za-z0-9_-]+(?:/|$)~', $path)) { return 'youtube'; }
         if (preg_match('/(?:^|\.)tramino\.de$/', $host)) { return 'tramino'; }
+        if ($host === 'integrations.clever-pv.com') { return 'cleverpv'; }
         if (in_array($host, ['outlook.office365.com', 'outlook.office.com'], true)
             && preg_match('~^/(?:owa/calendar/[^/]+/bookings(?:/|$)|book/[^/]+(?:/|$))~i', $path)) { return 'bookings'; }
         return '';
@@ -112,6 +122,8 @@ final class BB_Map_Consent {
             'instagram' => ['Instagram', 'Mit dem Laden stimmen Sie zu, dass Inhalte von Instagram (Meta) eingebunden werden. Dabei wird Ihre IP-Adresse an Meta übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Meta übermittelt.'],
             'planity' => ['Online-Terminbuchung', 'Mit dem Laden stimmen Sie zu, dass das Buchungssystem von Planity (Planity SAS, Frankreich) eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an Planity und von Planity eingesetzte Dienstleister wie Amazon Web Services übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Planity übermittelt.'],
             'jobmorgen' => ['Stellensuche von jobmorgen.de', 'Mit dem Laden stimmen Sie zu, dass die Stellensuche von jobmorgen.de (MANNHEIMER MORGEN GmbH, Mannheim) eingebunden wird. Dabei werden Ihre IP-Adresse und bei einer Suche Ihre Eingaben an den Anbieter übermittelt.', 'Beim Laden werden Daten an jobmorgen.de übermittelt.'],
+            'cleverpv' => ['clever-PV-Rechner', 'Mit dem Laden stimmen Sie zu, dass der Einsparungsrechner der clever-PV GmbH (Landsberg am Lech) eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an clever-PV übermittelt.', 'Beim Laden werden Daten an clever-PV übermittelt.'],
+            'anlagenplaner' => ['Autarkierechner', 'Mit dem Laden stimmen Sie zu, dass der Autarkierechner der Sunbeam Communications GmbH (Berlin) eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an Sunbeam übermittelt. Der Rechner nutzt außerdem Google Maps, dabei wird Ihre IP-Adresse an Google übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Sunbeam und Google übermittelt.'],
             'dealerweb' => ['Aktionsbanner', 'Mit dem Laden stimmen Sie zu, dass ein Aktionsbanner der COmarketing GmbH (dealerweb-comarketing.de) eingebunden wird, das über die Website-Plattform Wix ausgeliefert wird. Dabei wird Ihre IP-Adresse an COmarketing und Wix übermittelt; Daten können auch außerhalb der EU verarbeitet werden.', 'Beim Laden werden Daten an COmarketing und Wix übermittelt.'],
         ];
         [$name, $notice, $short] = $texts[$service];
@@ -238,8 +250,9 @@ final class BB_Map_Consent {
         [$html, $feeds] = self::feeds($html);
         $planity = false;
         $jobmorgen = false;
+        $anlagenplaner = false;
         // Tokenise tags without reserialising the document or touching script strings.
-        $html = preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>|<[a-z][a-z0-9]*\b[^>]*\sdata-et-multi-view\s*=[^>]*>~is', function ($m) use ($feeds, &$planity, &$elfsight_loader, &$jobmorgen) {
+        $html = preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>|<[a-z][a-z0-9]*\b[^>]*\sdata-et-multi-view\s*=[^>]*>~is', function ($m) use ($feeds, &$planity, &$elfsight_loader, &$jobmorgen, &$anlagenplaner) {
             $tag = $m[0];
             if (strpos($tag, '<!--') === 0) { return $tag; }
             if (!preg_match('~^<(?:script|blockquote|iframe|link)\b~i', $tag)) { return self::multi_view($tag); }
@@ -272,6 +285,11 @@ final class BB_Map_Consent {
                     $jobmorgen = true;
                     return '<template class="bbmc-feed-script" data-service="jobmorgen" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
                 }
+                if (self::anlagenplaner_script($tag)) {
+                    // Like Jobmorgen: the placeholder goes before the calculator's container below.
+                    $anlagenplaner = true;
+                    return '<template class="bbmc-feed-script" data-service="anlagenplaner" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
+                }
                 if (self::planity_script($tag)) {
                     // Keep configuration and loaders in order; one placeholder sits where the widget code started.
                     $holder = '<template class="bbmc-feed-script" data-service="planity" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
@@ -285,19 +303,25 @@ final class BB_Map_Consent {
             if (stripos($tag, '<link') === 0) {
                 $rel = self::attribute($tag, 'rel');
                 $href = self::attribute($tag, 'href');
-                if ((self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href) === 'static.elfsight.com' || in_array(self::host($href), ['outlook.office365.com', 'outlook.office.com'], true) || self::extra_iframe_service($href) || preg_match('/(?:^|\.)(youtube(?:-nocookie)?\.com|ytimg\.com|googlevideo\.com|tramino\.de)$/', self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href)) || self::google($href) || self::instagram_host($href) || self::dealerweb_url($href) || self::host($href) === 'd2skjte8udjqxw.cloudfront.net' || in_array(self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href), ['jobmorgen.de', 'www.jobmorgen.de'], true)) && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
+                if ((self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href) === 'static.elfsight.com' || in_array(self::host($href), ['outlook.office365.com', 'outlook.office.com'], true) || self::extra_iframe_service($href) || preg_match('/(?:^|\.)(youtube(?:-nocookie)?\.com|ytimg\.com|googlevideo\.com|tramino\.de)$/', self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href)) || self::google($href) || self::instagram_host($href) || self::dealerweb_url($href) || self::anlagenplaner_host($href) || self::host($href) === 'd2skjte8udjqxw.cloudfront.net' || in_array(self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href), ['jobmorgen.de', 'www.jobmorgen.de'], true)) && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
                 return $tag;
             }
             $src = self::attribute($tag, 'src');
             if (!$src) { $src = self::attribute($tag, 'data-src'); }
             $extra_service = self::extra_iframe_service($src);
             if ($extra_service) {
-                $titles = ['youtube' => 'YouTube-Video', 'tramino' => 'Tramino-Inhalte', 'bookings' => 'Microsoft Bookings'];
-                $heights = ['youtube' => 450, 'tramino' => 400, 'bookings' => 800];
+                $titles = ['youtube' => 'YouTube-Video', 'tramino' => 'Tramino-Inhalte', 'bookings' => 'Microsoft Bookings', 'cleverpv' => 'clever-PV-Rechner'];
+                $heights = ['youtube' => 450, 'tramino' => 400, 'bookings' => 800, 'cleverpv' => 800];
                 if ($extra_service === 'youtube') { $src = self::youtube_nocookie($src); }
                 $config = ['service' => $extra_service, 'kind' => 'iframe', 'src' => $src,
                     'title' => self::attribute($tag, 'title') ?: $titles[$extra_service],
                     'height' => max(150, min(1200, (int)(self::attribute($tag, 'height') ?: $heights[$extra_service])))];
+                if ($extra_service === 'cleverpv') {
+                    // The calculator sets its height via inline style; its resize script finds the frame by id.
+                    if (!self::attribute($tag, 'height') && preg_match('~(?:^|;)\s*height\s*:\s*(\d+)px~i', self::attribute($tag, 'style'), $sh)) { $config['height'] = max(150, min(2000, (int) $sh[1])); }
+                    $frame_id = self::attribute($tag, 'id');
+                    if (preg_match('~^[A-Za-z][A-Za-z0-9_-]{0,63}$~', $frame_id)) { $config['id'] = $frame_id; }
+                }
                 if ($extra_service === 'youtube') {
                     // Videos scale like Divi/FitVids: keep the embed's aspect ratio instead of its fixed height.
                     $w = (int) self::attribute($tag, 'width');
@@ -321,6 +345,9 @@ final class BB_Map_Consent {
         }, $html);
         if ($jobmorgen) {
             $html = preg_replace('~<div\b[^>]*\bclass\s*=\s*["\'][^"\']*\bregio-power-partner-box\b~i', self::box(['service' => 'jobmorgen', 'kind' => 'scripts', 'height' => 360]) . '$0', $html, 1);
+        }
+        if ($anlagenplaner) {
+            $html = preg_replace('~<div\b[^>]*\b(?:id|class)\s*=\s*["\'][^"\']*\bsb-anlagenplaner\b~i', self::box(['service' => 'anlagenplaner', 'kind' => 'scripts', 'height' => 500]) . '$0', $html, 1);
         }
         if ($elfsight_loader && !$elfsight_widgets) {
             // A loader in <head> must not insert a visible section into the head.
