@@ -26,6 +26,8 @@ final class BBMC_Cmp {
         'mouseflow' => ['Mouseflow', '~^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$~', 'Website-ID', false],
         'hotjar' => ['Hotjar', '~^\d{5,10}$~', 'Site-ID (nur Ziffern)', false],
         'clarity' => ['Microsoft Clarity', '~^[a-z0-9]{8,12}$~', 'Projekt-ID', false],
+        'tiktok' => ['TikTok-Pixel', '~^(?=[A-Z]*\d)[A-Z0-9]{16,24}$~', 'Pixel-ID', true],
+        'spotify' => ['Spotify Ads Pixel', '~^[a-f0-9]{32}$~', 'Pixel-Key (32 Zeichen)', false],
     ];
     /** Own texts per site (e.g. from eRecht24); empty fields keep the neutral defaults in cmp.js. */
     const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing', 'external' => 'Beschreibung Externe Medien', 'more' => 'Weitere Informationen'];
@@ -41,6 +43,7 @@ final class BBMC_Cmp {
         'linkedin' => ['LinkedIn Insight Tag', 'marketing', '~snap\.licdn\.com~i', '~_linkedin_partner_id|snap\.licdn\.com~', '~px\.ads\.linkedin\.com~i'],
         'tiktok' => ['TikTok-Pixel', 'marketing', '~analytics\.tiktok\.com~i', '~analytics\.tiktok\.com|\bttq\.(?:load|page)\s*\(~', '~analytics\.tiktok\.com~i'],
         'matomo' => ['Matomo', 'analytics', '~/(?:matomo|piwik)\.js(?:[?#"\']|$)|/container_[a-z0-9]+\.js~i', '~\b_paq\b|\b_mtm\b~', '~/(?:matomo|piwik)\.php~i'],
+        'spotify' => ['Spotify Ads Pixel', 'marketing', '~pixel\.byspotify\.com~i', '~pixel\.byspotify\.com|\bspdt\s*\(~', ''],
         'hotjar' => ['Hotjar', 'analytics', '~(?:static|script)\.hotjar\.com~i', '~_hjSettings|static\.hotjar\.com~', ''],
         'mouseflow' => ['Mouseflow', 'analytics', '~cdn\.mouseflow\.com~i', '~\b_mfq\b|cdn\.mouseflow\.com~', ''],
         'clarity' => ['Microsoft Clarity', 'analytics', '~clarity\.ms~i', '~clarity\.ms~', ''],
@@ -56,6 +59,7 @@ final class BBMC_Cmp {
         'meta_pixel' => ['Meta Platforms Ireland Limited, Irland', 'https://www.facebook.com/privacy/policy/'],
         'linkedin' => ['LinkedIn Ireland Unlimited Company, Irland', 'https://www.linkedin.com/legal/privacy-policy'],
         'tiktok' => ['TikTok Technology Limited, Irland', 'https://www.tiktok.com/legal/page/eea/privacy-policy/de'],
+        'spotify' => ['Spotify AB, Schweden', 'https://www.spotify.com/de/legal/privacy-policy/'],
         'hotjar' => ['Hotjar (Contentsquare)', 'https://www.hotjar.com/legal/policies/privacy/'],
         'mouseflow' => ['Mouseflow ApS, Dänemark', 'https://mouseflow.com/legal/privacy-policy/'],
         'clarity' => ['Microsoft Ireland Operations Limited, Irland', 'https://www.microsoft.com/de-de/privacy/privacystatement'],
@@ -222,6 +226,10 @@ final class BBMC_Cmp {
                 return "<script>(function(h,o,t,j,a,r){h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};h._hjSettings={hjid:" . (int) $id . ",hjsv:6};a=o.getElementsByTagName('head')[0];r=o.createElement('script');r.async=1;r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;a.appendChild(r);})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');</script>";
             case 'clarity':
                 return '<script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script",' . $js($id) . ');</script>';
+            case 'tiktok':
+                return '<script>!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=d.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=d.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};ttq.load(' . $js($id) . ');ttq.page();}(window,document,"ttq");</script>';
+            case 'spotify':
+                return "<script>(function(w,d){var id='spdt-capture',n='script';if(!d.getElementById(id)){w.spdt=w.spdt||function(){(w.spdt.q=w.spdt.q||[]).push(arguments);};var e=d.createElement(n);e.id=id;e.async=1;e.src='https://pixel.byspotify.com/ping.min.js';var s=d.getElementsByTagName(n)[0];s.parentNode.insertBefore(e,s);}w.spdt('conf',{key:" . $js($id) . "});w.spdt('view');})(window,document);</script>";
         }
         return '';
     }
@@ -235,7 +243,7 @@ final class BBMC_Cmp {
         $head = stripos($html, '</head>');
         return $head === false ? $code . $html : substr_replace($html, $code, $head, 0);
     }
-    /** Tracking IDs in a text (Borlabs settings or its public config). Meta, Mouseflow and Hotjar only next to their names. */
+    /** Tracking IDs in a text (Borlabs settings or its public config). Meta, Mouseflow, Hotjar, TikTok and Spotify only next to their names. */
     public static function find_ids($text) {
         $text = (string) $text;
         // Several candidates per service: Borlabs templates carry example values (G-123456789, AW-123456789) next to real ones.
@@ -247,13 +255,15 @@ final class BBMC_Cmp {
             'meta' => ['~pixel[-_]?id(?:\W{0,4}s:\d+:)?\W{0,12}(\d{15,16})\b~i', '~(?:facebook|meta[-_ ]?pixel|fbq)[^\d]{0,400}?\b(\d{15,16})\b~is'],
             'mouseflow' => ['~mouseflow[^\n]{0,400}?\b([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\b~is'],
             'hotjar' => ['~(?:hotjar|hjid)[^\d]{0,200}?\b(\d{6,9})\b~is'],
+            'tiktok' => ['~(?:tiktok|ttq)[^\n]{0,400}?\b((?=[A-Z]*\d)[A-Z0-9]{20})\b~s'],
+            'spotify' => ['~(?:spotify|spdt)[^\n]{0,400}?\b([a-f0-9]{32})\b~is'],
         ];
         $found = [];
         foreach ($patterns as $key => $list) {
             foreach ($list as $pattern) {
                 if (!preg_match_all($pattern, $text, $m)) { continue; }
                 foreach ($m[1] as $id) {
-                    if (!self::example_id($id)) { $found[$key] = $key === 'mouseflow' ? strtolower($id) : $id; break 2; }
+                    if (!self::example_id($id)) { $found[$key] = in_array($key, ['mouseflow', 'spotify'], true) ? strtolower($id) : $id; break 2; }
                 }
             }
         }
