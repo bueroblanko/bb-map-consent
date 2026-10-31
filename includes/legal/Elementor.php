@@ -10,7 +10,7 @@ class Elementor extends \Elementor\Widget_Base {
     public function get_categories() { return ['general']; }
     protected function register_controls() {
         $this->start_controls_section('content_section',['label'=>'Rechtstext']);
-        $this->add_control('type',['label'=>'Text','type'=>\Elementor\Controls_Manager::SELECT,'default'=>'imprint','options'=>['imprint'=>'Impressum','privacy_policy'=>'Datenschutz','social_media'=>'Social Media','privacy_policy_social_media'=>'Social Media (alt)']]);
+        $this->add_control('type',['label'=>'Text','type'=>\Elementor\Controls_Manager::SELECT,'default'=>'imprint','options'=>['imprint'=>'Impressum','privacy_policy'=>'Datenschutz','social_media'=>'Social Media','terms'=>'AGB','withdrawal'=>'Widerrufsbelehrung','privacy_policy_social_media'=>'Social Media (alt)']]);
         $this->add_control('lang',['label'=>'Sprache','type'=>\Elementor\Controls_Manager::SELECT,'default'=>'de','options'=>['de'=>'Deutsch','en'=>'Englisch']]);
         $this->add_control('strip_title',['label'=>'Titel ausblenden','type'=>\Elementor\Controls_Manager::SWITCHER,'return_value'=>'true']);
         $this->end_controls_section();

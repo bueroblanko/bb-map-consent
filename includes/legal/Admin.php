@@ -2,7 +2,7 @@
 namespace BB\Legal\V1;
 if (!defined('ABSPATH')) { exit; }
 final class Admin {
-    const TYPES = ['imprint'=>'Impressum','privacy_policy'=>'Datenschutzerklärung','social_media'=>'Social-Media-Hinweise'];
+    const TYPES = ['imprint'=>'Impressum','privacy_policy'=>'Datenschutzerklärung','social_media'=>'Social-Media-Hinweise','terms'=>'Allgemeine Geschäftsbedingungen','withdrawal'=>'Widerrufsbelehrung'];
     public static function menu() {
         $hook=add_options_page('Rechtstexte','Rechtstexte','manage_options','bb-legal',[__CLASS__,'screen']);
         add_action('admin_enqueue_scripts',function($current)use($hook){
@@ -27,7 +27,7 @@ final class Admin {
         $messages=['saved'=>'Einstellungen gespeichert.','synced'=>'Texte und Angaben aus der Zentrale abgerufen.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Angaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Angaben gespeichert und an die Zentrale gesendet.','merged'=>'Gespeichert. Parallele Änderungen wurden zusammengeführt.','conflict'=>'Gespeichert, aber einige Felder wurden parallel geändert. Bitte unten prüfen.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.','segments_ok'=>'Gespeichert. Geänderte Bausteine werden ab jetzt nicht mehr automatisch aktualisiert, alle anderen schon.','segments_unchanged'=>'Keine Änderungen.','segments_draft'=>'Zentrale nicht erreichbar. Deine Änderungen sind lokal gespeichert und stehen beim nächsten Öffnen wieder im Editor.','selbst_an'=>'Der Text ist vom Abgleich ausgeschlossen und wird hier selbst gepflegt.','selbst_aus'=>'Der Text kommt wieder aus der Rechtstexte-Zentrale.','selbst_gespeichert'=>'Gespeichert. Der Text ist sofort auf der Website.'];
         $problem=['failed'=>'error','invalid'=>'error','draft'=>'warning','segments_draft'=>'warning','conflict'=>'warning','pending'=>'warning'];
         $tab=isset($_GET['tab'])&&in_array($_GET['tab'],['settings','inputs'],true)?$_GET['tab']:'texts';
-        $edit=isset($_GET['edit'])&&is_string($_GET['edit'])&&preg_match('~^(imprint|privacy_policy|social_media)/(de|en)$~',wp_unslash($_GET['edit']))?wp_unslash($_GET['edit']):'';
+        $edit=isset($_GET['edit'])&&is_string($_GET['edit'])&&preg_match('~^(imprint|privacy_policy|social_media|terms|withdrawal)/(de|en)$~',wp_unslash($_GET['edit']))?wp_unslash($_GET['edit']):'';
         echo '<div class="wrap bb-ui"><h1>Rechtstexte</h1><nav class="nav-tab-wrapper">';
         foreach(['texts'=>'Rechtsinhalte','inputs'=>'Angaben','settings'=>'Verbindung'] as $key=>$name) { echo '<a class="nav-tab'.($tab===$key?' nav-tab-active':'').'" href="'.esc_url(self::url($key==='texts'?[]:['tab'=>$key])).'">'.$name.'</a>'; }
         echo '</nav>';
@@ -402,14 +402,14 @@ final class Admin {
             } elseif($operation==='segments') {
                 $args=[];
                 $key=isset($_POST['text_key'])&&is_string($_POST['text_key'])?wp_unslash($_POST['text_key']):'';
-                if(!preg_match('~^(imprint|privacy_policy|social_media)/(de|en)$~',$key)) { throw new \RuntimeException('Unbekannter Text'); }
+                if(!preg_match('~^(imprint|privacy_policy|social_media|terms|withdrawal)/(de|en)$~',$key)) { throw new \RuntimeException('Unbekannter Text'); }
                 [$type,$lang]=explode('/',$key);
                 [$blocks,$inserts,$reset]=self::parseSegments(wp_unslash($_POST['blocks']??[]),wp_unslash($_POST['inserts']??[]),wp_unslash($_POST['reset']??[]));
                 $result=(new Client())->saveSegments($type,$lang,$blocks,$inserts,$reset);
                 if($result==='segments_draft') { $args=['edit'=>$key]; }
             } elseif($operation==='selbst'||$operation==='selbst_text') {
                 $key=isset($_POST['text_key'])&&is_string($_POST['text_key'])?wp_unslash($_POST['text_key']):'';
-                if(!preg_match('~^(imprint|privacy_policy|social_media)/(de|en)$~',$key)) { throw new \RuntimeException('Unbekannter Text'); }
+                if(!preg_match('~^(imprint|privacy_policy|social_media|terms|withdrawal)/(de|en)$~',$key)) { throw new \RuntimeException('Unbekannter Text'); }
                 $selbst=Store::get('selbst');$selbst=is_array($selbst)?$selbst:[];$args=['edit'=>$key];
                 if($operation==='selbst_text') {
                     if(!isset($selbst[$key])||!isset($_POST['html'])||!is_string($_POST['html'])) { throw new \RuntimeException('Nicht selbst gepflegt'); }

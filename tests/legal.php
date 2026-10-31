@@ -80,4 +80,7 @@ $steps=Admin::layout($schema['fields']);$ids=[];foreach($steps as $st)foreach($s
 check(!in_array('dpo_name',$ids,true)&&!in_array('dpo_type',$ids,true)&&in_array('neu',$ids,true)&&count($ids)===5,'Assistent ohne Doppelfelder, unbekannte Felder unter Weitere Angaben');
 check(Admin::serviceGroup('hosting_ionos')==='Hosting'&&Admin::serviceGroup('meta_pixel')==='Werbung und Tracking'&&Admin::serviceGroup('unbekannt')==='Weitere','Dienste gruppiert');
 check(Admin::cleanText('<p>Text</p><script>alert(1)</script><style>p{}</style>')==='<p>Text</p>','Skript- und Stilblöcke samt Inhalt entfernt');
+$shop=[row(1),row(2,'privacy_policy'),row(30,'terms'),row(31,'withdrawal')];check(Store::validManifest($shop),'Manifest mit AGB und Widerruf gültig');
+check(Store::validManifest([row(1),row(2,'privacy_policy'),row(32,'kuenftig')]),'Unbekannte Textart wird übersprungen');check(!Store::validManifest([row(32,'kuenftig')]),'Nur unbekannte Textarten abgelehnt');
+$GLOBALS['admin']=false;queueSync($shop);check((new Client())->sync(),'Abgleich mit AGB und Widerruf');unset($GLOBALS['shortcode_tags']['erecht24']);Module::activate();check(strpos(Module::shortcode(['type'=>'terms']),'<h1>Demo</h1>')!==false&&strpos(Module::shortcode(['type'=>'withdrawal','strip_title'=>'true']),'Demo-Text')!==false,'Shortcode zeigt AGB und Widerruf');
 echo "$passed Legal-Regressionsprüfungen bestanden\n";
