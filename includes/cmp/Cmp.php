@@ -12,6 +12,21 @@ final class BBMC_Cmp {
     const SEEN = 'bbmc_cmp_seen';
     const TEXTS = 'bbmc_cmp_texts';
     const ADDRESS = 'bbmc_cmp_address';
+    const TRACKING = 'bbmc_cmp_tracking';
+    /**
+     * Tracking IDs BB Consent writes itself (e.g. after Borlabs, which used to output them).
+     * key => [label, pattern, placeholder, upper-case]. The code is added to the page before the
+     * filter runs, so it is blocked like any other tracker and only ever written while the banner is active.
+     */
+    const TRACKING_FIELDS = [
+        'ga4' => ['Google Analytics 4', '~^G-[A-Z0-9]{6,14}$~', 'G-XXXXXXXXXX', true],
+        'gtm' => ['Google Tag Manager', '~^GTM-[A-Z0-9]{4,10}$~', 'GTM-XXXXXXX', true],
+        'ads' => ['Google Ads', '~^AW-\d{6,12}$~', 'AW-123456789', true],
+        'meta' => ['Meta-Pixel', '~^\d{10,20}$~', 'Pixel-ID (nur Ziffern)', false],
+        'mouseflow' => ['Mouseflow', '~^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$~', 'Website-ID', false],
+        'hotjar' => ['Hotjar', '~^\d{5,10}$~', 'Site-ID (nur Ziffern)', false],
+        'clarity' => ['Microsoft Clarity', '~^[a-z0-9]{8,12}$~', 'Projekt-ID', false],
+    ];
     /** Own texts per site (e.g. from eRecht24); empty fields keep the neutral defaults in cmp.js. */
     const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing', 'external' => 'Beschreibung Externe Medien', 'more' => 'Weitere Informationen'];
     const CATEGORIES = ['analytics' => 'Statistik', 'marketing' => 'Marketing', 'external' => 'Externe Medien'];
@@ -37,6 +52,7 @@ final class BBMC_Cmp {
         add_action('admin_init', [__CLASS__, 'register']);
         add_action('bbmc_settings_screen', [__CLASS__, 'screen']);
         add_action('admin_post_bbmc_cmp_reset', [__CLASS__, 'reset']);
+        add_action('admin_post_bbmc_cmp_import', [__CLASS__, 'import']);
         add_shortcode('bb_consent_settings', [__CLASS__, 'shortcode']);
         add_action('template_redirect', function () {
             if (self::active() && !is_feed() && !is_admin() && !wp_doing_ajax() && !isset($_GET['et_fb']) && !is_customize_preview()) { ob_start([__CLASS__, 'output']); }
@@ -145,11 +161,95 @@ final class BBMC_Cmp {
     }
     public static function output($html) {
         if (stripos($html, '<html') === false) { return $html; }
+        $html = self::add_tracking($html, (array) get_option(self::TRACKING, []));
         $cookieless = self::matomo_cookieless($html);
         [$html, $found] = self::filter($html);
         $seen = self::remember($found, $cookieless ? ['matomo'] : []);
         if (!$seen) { return $html; }
         return self::inject($html, self::config($seen, get_privacy_policy_url() ?: home_url('/datenschutz'), (array) get_option(self::TEXTS, []), get_option(self::ADDRESS, 'sie'), self::imprint_url()), plugins_url('', __FILE__) . '/', BBMC_VERSION);
+    }
+    /** Valid IDs only, normalised; $invalid collects labels of entries that were dropped. */
+    public static function clean_tracking(array $ids, array &$invalid = []) {
+        $clean = [];
+        foreach (self::TRACKING_FIELDS as $key => [$label, $pattern, , $upper]) {
+            $value = isset($ids[$key]) && is_scalar($ids[$key]) ? preg_replace('~\s+~', '', (string) $ids[$key]) : '';
+            if ($value === '') { continue; }
+            $value = $upper ? strtoupper($value) : strtolower($value);
+            if (preg_match($pattern, $value)) { $clean[$key] = $value; } else { $invalid[] = $label; }
+        }
+        return $clean;
+    }
+    /** Standard code for one tracking ID, in the form the service publishes it. */
+    public static function snippet($key, $id) {
+        $js = function ($v) { return wp_json_encode((string) $v); };
+        $gtag = "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());";
+        switch ($key) {
+            case 'ga4':
+            case 'ads':
+                return '<script async src="https://www.googletagmanager.com/gtag/js?id=' . rawurlencode($id) . '"></script><script>' . $gtag . 'gtag(\'config\',' . $js($id) . ');</script>';
+            case 'gtm':
+                return "<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer'," . $js($id) . ');</script>';
+            case 'meta':
+                return "<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init'," . $js($id) . ");fbq('track','PageView');</script>";
+            case 'mouseflow':
+                return '<script>window._mfq=window._mfq||[];(function(){var mf=document.createElement("script");mf.type="text/javascript";mf.defer=true;mf.src="//cdn.mouseflow.com/projects/"+' . $js($id) . '+".js";document.getElementsByTagName("head")[0].appendChild(mf);})();</script>';
+            case 'hotjar':
+                return "<script>(function(h,o,t,j,a,r){h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};h._hjSettings={hjid:" . (int) $id . ",hjsv:6};a=o.getElementsByTagName('head')[0];r=o.createElement('script');r.async=1;r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;a.appendChild(r);})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');</script>";
+            case 'clarity':
+                return '<script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script",' . $js($id) . ');</script>';
+        }
+        return '';
+    }
+    /** Adds the configured codes to <head>; an ID already on the page (theme, plugin) is not added twice. */
+    public static function add_tracking($html, array $ids) {
+        $code = '';
+        foreach (self::clean_tracking($ids) as $key => $id) {
+            if (stripos($html, $id) === false) { $code .= self::snippet($key, $id); }
+        }
+        if ($code === '') { return $html; }
+        $head = stripos($html, '</head>');
+        return $head === false ? $code . $html : substr_replace($html, $code, $head, 0);
+    }
+    /** Tracking IDs in a text (Borlabs settings or its public config). Meta, Mouseflow and Hotjar only next to their names. */
+    public static function find_ids($text) {
+        $found = [];
+        $text = (string) $text;
+        if (preg_match('~\b(G-(?=[A-Z]*\d)[A-Z0-9]{8,12})\b~', $text, $m)) { $found['ga4'] = $m[1]; }
+        if (preg_match('~\b(GTM-[A-Z0-9]{5,9})\b~', $text, $m)) { $found['gtm'] = $m[1]; }
+        if (preg_match('~\b(AW-\d{8,12})\b~', $text, $m)) { $found['ads'] = $m[1]; }
+        if (preg_match('~(?:facebook|meta[-_ ]?pixel|fbq)[^\d]{0,400}?\b(\d{15,16})\b~is', $text, $m)) { $found['meta'] = $m[1]; }
+        if (preg_match('~mouseflow[^\n]{0,400}?\b([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\b~is', $text, $m)) { $found['mouseflow'] = strtolower($m[1]); }
+        if (preg_match('~(?:hotjar|hjid)[^\d]{0,200}?\b(\d{6,9})\b~is', $text, $m)) { $found['hotjar'] = $m[1]; }
+        return self::clean_tracking($found);
+    }
+    /** IDs stored by Borlabs Cookie (its database tables and the config files it publishes). */
+    public static function borlabs_ids() {
+        global $wpdb;
+        $text = '';
+        if (isset($wpdb) && is_object($wpdb)) {
+            $tables = (array) $wpdb->get_col($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($wpdb->prefix . 'borlabs_cookie') . '%'));
+            foreach ($tables as $table) {
+                if (!preg_match('~(?:service|cookie|content_blocker|script_blocker|provider|package)~', substr($table, strlen($wpdb->prefix . 'borlabs_cookie')))) { continue; }
+                foreach ((array) $wpdb->get_results('SELECT * FROM `' . esc_sql($table) . '` LIMIT 500', ARRAY_A) as $row) { $text .= implode("\n", array_map('strval', array_filter((array) $row, 'is_scalar'))) . "\n"; }
+            }
+        }
+        $uploads = function_exists('wp_upload_dir') ? wp_upload_dir(null, false) : [];
+        if (!empty($uploads['basedir'])) {
+            foreach (array_merge((array) glob($uploads['basedir'] . '/borlabs-cookie/*.js'), (array) glob($uploads['basedir'] . '/borlabs-cookie/*/*.js')) as $file) {
+                if (is_file($file) && filesize($file) < 2000000) { $text .= file_get_contents($file) . "\n"; }
+            }
+        }
+        return self::find_ids($text);
+    }
+    /** Takes IDs found in Borlabs into empty fields; existing entries stay. */
+    public static function import() {
+        if (!current_user_can('manage_options') || !check_admin_referer('bbmc_cmp_import')) { wp_die('Keine Berechtigung.'); }
+        $current = self::clean_tracking((array) get_option(self::TRACKING, []));
+        $found = self::borlabs_ids();
+        $new = array_diff_key($found, $current);
+        update_option(self::TRACKING, $current + $found);
+        wp_safe_redirect(admin_url('options-general.php?page=bb-consent&tab=banner&bbmc_import=' . count($new)));
+        exit;
     }
     /** WordPress has no imprint setting; a published page with the slug impressum or imprint, else /impressum. */
     public static function imprint_url() {
@@ -177,6 +277,12 @@ final class BBMC_Cmp {
         register_setting('bbmc_cmp', self::OPTION, ['type' => 'boolean', 'default' => false, 'sanitize_callback' => function ($v) { return (bool) $v; }]);
         register_setting('bbmc_cmp', self::ADDRESS, ['type' => 'string', 'default' => 'sie', 'sanitize_callback' => function ($v) { return $v === 'du' ? 'du' : 'sie'; }]);
         register_setting('bbmc_cmp', self::TEXTS, ['type' => 'array', 'default' => [], 'sanitize_callback' => function ($v) { return self::clean_texts(is_array($v) ? wp_unslash($v) : []); }]);
+        register_setting('bbmc_cmp', self::TRACKING, ['type' => 'array', 'default' => [], 'sanitize_callback' => function ($v) {
+            $invalid = [];
+            $clean = self::clean_tracking(is_array($v) ? wp_unslash($v) : [], $invalid);
+            if ($invalid) { add_settings_error(self::TRACKING, 'bbmc_tracking', 'Nicht gespeichert, Format passt nicht: ' . implode(', ', $invalid) . '.', 'error'); }
+            return $clean;
+        }]);
         add_filter('option_page_capability_bbmc_cmp', function () { return 'manage_options'; });
     }
     public static function reset() {
@@ -196,6 +302,17 @@ final class BBMC_Cmp {
         if (isset($_GET['bbmc_reset'])) { echo '<div class="notice notice-success is-dismissible"><p>Erkannte Dienste zurückgesetzt. Sie werden beim nächsten Seitenaufruf neu erkannt.</p></div>'; }
         $other = self::other_cmp();
         if ($other) { echo '<div class="notice notice-warning inline"><p>Ein anderes Cookie-Plugin ist aktiv (' . esc_html($other) . '). Das Banner bleibt aus, bis es deaktiviert ist.</p></div>'; }
+        if (isset($_GET['bbmc_import'])) { echo '<div class="notice notice-success is-dismissible"><p>' . ((int) $_GET['bbmc_import'] > 0 ? (int) $_GET['bbmc_import'] . ' Tracking-ID(s) aus Borlabs übernommen. Bitte unten prüfen.' : 'Keine neuen Tracking-IDs in Borlabs gefunden.') . '</p></div>'; }
+        $tracking = self::clean_tracking((array) get_option(self::TRACKING, []));
+        $borlabs = array_diff_key(self::borlabs_ids(), $tracking);
+        if ($borlabs) {
+            $list = [];
+            foreach ($borlabs as $key => $id) { $list[] = self::TRACKING_FIELDS[$key][0] . ' ' . $id; }
+            echo '<div class="notice notice-info inline"><p><strong>In Borlabs gefunden:</strong> ' . esc_html(implode(', ', $list)) . '. Borlabs gibt diese Codes selbst aus. Ohne Übernahme fehlen sie, sobald Borlabs entfernt ist.</p><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin:0 0 8px"><input type="hidden" name="action" value="bbmc_cmp_import">';
+            wp_nonce_field('bbmc_cmp_import');
+            submit_button('In BB Consent übernehmen', 'primary', 'submit', false);
+            echo '</form></div>';
+        }
         echo '<form method="post" action="options.php">';
         settings_fields('bbmc_cmp');
         $address = get_option(self::ADDRESS, 'sie');
@@ -205,6 +322,14 @@ final class BBMC_Cmp {
         foreach (['sie' => 'Sie', 'du' => 'Du'] as $key => $label) { echo '<label><input type="radio" name="' . self::ADDRESS . '" value="' . $key . '"' . checked($address, $key, false) . '><span>' . $label . '</span></label>'; }
         echo '</div></div></div></div><div class="bb-card-foot">';
         submit_button('Speichern', 'primary', 'submit', false);
+        echo '</div></section>';
+        echo '<section class="bb-card"><header><h2>Tracking-Codes</h2><p>Nur für Codes, die sonst nirgends eingebaut sind, zum Beispiel weil Borlabs sie bisher ausgegeben hat. BB Consent schreibt den Standard-Code und lädt ihn erst nach Zustimmung. Ist das Banner aus, wird nichts ausgegeben. Steht dieselbe ID schon im Theme oder einem Plugin, wird sie nicht doppelt eingebaut.</p></header><div class="bb-card-body"><div class="bb-grid">';
+        foreach (self::TRACKING_FIELDS as $key => [$label, , $placeholder]) {
+            $id = 'bbmc_cmp_tracking_' . $key;
+            echo '<div class="bb-f w2"><label for="' . $id . '">' . esc_html($label) . '</label><input id="' . $id . '" name="' . self::TRACKING . '[' . $key . ']" type="text" value="' . esc_attr(isset($tracking[$key]) ? $tracking[$key] : '') . '" placeholder="' . esc_attr($placeholder) . '" spellcheck="false" autocomplete="off"></div>';
+        }
+        echo '</div></div><div class="bb-card-foot">';
+        submit_button('Tracking speichern', 'primary', 'submit', false);
         echo '</div></section>';
         $texts = (array) get_option(self::TEXTS, []);
         echo '<details class="bb-card"' . (array_filter($texts) ? ' open' : '') . '><summary class="bb-card-body" style="cursor:pointer"><strong>Eigene Texte</strong> <span class="bb-small">' . (array_filter($texts) ? count(array_filter($texts)) . ' angepasst' : 'leer = Standardtexte in der gewählten Anrede') . '</span></summary><div class="bb-card-body" style="padding-top:0">';

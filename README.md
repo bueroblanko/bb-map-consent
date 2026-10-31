@@ -281,3 +281,9 @@ Viele Seiten liefern Besuchern nur Kopien aus dem Seiten-Cache aus. Dann läuft 
 ## 0.10.7: Footer-Link heißt „Cookies“
 
 Der Shortcode `[bb_consent_settings]` zeigt jetzt „Cookies“ statt „Datenschutz-Einstellungen“. Ein eigener Text geht mit `[bb_consent_settings label="…"]`.
+
+## 0.10.8: Tracking-Codes aus Borlabs übernehmen
+
+Borlabs gibt Google Analytics, Tag Manager, Google Ads oder das Meta-Pixel oft selbst aus. Wird Borlabs entfernt, ist das Tracking weg. Unter Einstellungen › BB Consent › Cookie-Banner gibt es dafür die Karte „Tracking-Codes“ (GA4, GTM, Google Ads, Meta-Pixel, Mouseflow, Hotjar, Clarity). BB Consent schreibt den Standard-Code in den `<head>` und blockt ihn wie jeden anderen Tracker bis zur Zustimmung. Bei ausgeschaltetem Banner oder aktivem Borlabs wird nichts ausgegeben. Steht dieselbe ID schon im Theme oder einem Plugin, wird sie nicht doppelt eingebaut.
+
+Ist Borlabs noch installiert, liest BB Consent die IDs aus dessen Einstellungen und bietet „In BB Consent übernehmen“ an. Ablauf beim Umstieg: BB Consent installieren, Banner einschalten, IDs übernehmen und prüfen, dann Borlabs deaktivieren.
