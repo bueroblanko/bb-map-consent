@@ -85,4 +85,6 @@ cmp_check($clHtml === $cl && $clFound === [], 'cookieless matomo untouched');
 cmp_check(BBMC_Cmp::matomo_cookieless("<script>_paq.push(['disableCookies']);</script>") && !BBMC_Cmp::matomo_cookieless('<script>_paq.push(["trackPageView"]);</script><p>disableCookies</p>'), 'cookieless detection');
 $options['bbmc_cmp_seen'] = ['matomo', 'ext_youtube'];
 cmp_check(BBMC_Cmp::remember([], ['matomo']) === ['ext_youtube'], 'matomo dropped from seen');
+if (!function_exists('esc_html')) { function esc_html($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); } }
+cmp_check(strpos(BBMC_Cmp::shortcode(), '>Cookies</a>') !== false && strpos(BBMC_Cmp::shortcode(['label' => 'Cookie-Einstellungen']), '>Cookie-Einstellungen</a>') !== false && strpos(BBMC_Cmp::shortcode(''), '>Cookies</a>') !== false, 'settings link label');
 echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard passed\n";

@@ -278,3 +278,6 @@ Lädt ein Video beim Seitenaufbau direkt (Einwilligung schon gespeichert), legt 
 
 Viele Seiten liefern Besuchern nur Kopien aus dem Seiten-Cache aus. Dann läuft WP-Cron selten und die Abfrage alle 15 Minuten bleibt aus. Das Rechtstexte-Modul meldet der Zentrale deshalb bei jedem Abruf seine Push-Adresse. Die Zentrale speichert sie einmalig, nur für die eigene Domain, und schickt neue Fassungen danach direkt.
 
+## 0.10.7: Footer-Link heißt „Cookies“
+
+Der Shortcode `[bb_consent_settings]` zeigt jetzt „Cookies“ statt „Datenschutz-Einstellungen“. Ein eigener Text geht mit `[bb_consent_settings label="…"]`.

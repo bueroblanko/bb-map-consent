@@ -159,8 +159,10 @@ final class BBMC_Cmp {
         }
         return home_url('/impressum');
     }
-    public static function shortcode() {
-        return '<a href="#bb-consent-settings" class="bbmc-cmp-settings">Datenschutz-Einstellungen</a>';
+    /** [bb_consent_settings] or [bb_consent_settings label="…"]; default label „Cookies“. */
+    public static function shortcode($atts = []) {
+        $label = is_array($atts) && isset($atts['label']) && trim((string) $atts['label']) !== '' ? (string) $atts['label'] : 'Cookies';
+        return '<a href="#bb-consent-settings" class="bbmc-cmp-settings">' . esc_html($label) . '</a>';
     }
     /** Known keys only, simple inline HTML (links, bold) allowed. */
     public static function clean_texts(array $texts) {
