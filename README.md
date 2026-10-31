@@ -291,3 +291,7 @@ Ist Borlabs noch installiert, liest BB Consent die IDs aus dessen Einstellungen 
 ## 0.10.9: Mit der Rechtstexte-Zentrale per Verbindungscode verbinden
 
 Unter Einstellungen › BB Consent › Rechtstexte › Verbindung reicht jetzt ein einziger Verbindungscode (`BBL1-…`). Er kommt aus der Zentrale (Website › Anbindung › „Verbindungscode für WordPress“) und enthält Adresse, Projekt-ID und Seitenschlüssel. Nach „Verbinden“ werden Texte und Angaben sofort abgerufen. Die Einzelfelder stehen weiter unter „Manuell eintragen“.
+
+## 0.10.10: „Mit Zentrale verbinden“
+
+Rechtstexte › Verbindung hat jetzt einen Knopf „Mit Zentrale verbinden“. Er öffnet legal.bbkd.de, dort einmal bestätigen (ist die Domain noch unbekannt, kann sie direkt angelegt werden). Danach geht es automatisch zurück, WordPress holt sich den Zugang über eine Einmal-Freigabe (5 Minuten gültig) und ruft die Texte ab. Nichts mehr kopieren. Verbindungscode und Einzelfelder stehen unter „Andere Wege“.
