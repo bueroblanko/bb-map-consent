@@ -66,12 +66,16 @@ if($case==='off'){
  verify(!array_intersect([$short,$block,$el],$D::usages()),'Danach keine Seite mehr vom Plugin abhängig');
  $links=apply_filters('plugin_action_links',['deactivate'=>'<a href="x">Deaktivieren</a>'],plugin_basename(WP_PLUGIN_DIR.'/bb-consent/bb-map-consent.php'));verify($links['deactivate']==='<a href="x">Deaktivieren</a>','Ohne Rechtstext-Seiten normales Deaktivieren');
  $frozen=get_option('bb_legal_frozen');verify(isset($frozen[$short],$frozen[$block],$frozen[$el])&&!isset($frozen[$plain]),'Fest eingesetzte Seiten gemerkt');
- ob_start();$D::notice();$notice=ob_get_clean();verify(strpos($notice,'wieder mit der Zentrale verbinden')!==false&&strpos($notice,'Festen Text behalten')!==false,'Nach Aktivierung Frage zum Wiederverbinden');
  wp_update_post(['ID'=>$block,'post_content'=>get_post($block)->post_content.'<p>Von Hand ergänzt</p>']);
- list($restored,$changed)=$D::restore();
- verify(get_post($short)->post_content==='<p>Vorher</p>[et_pb_text][impressum][/et_pb_text]','Shortcode wieder eingesetzt');
- verify(json_decode(get_post_meta($el,'_elementor_data',true),true)[0]['elements'][0]['widgetType']==='erecht24_legal_text','Elementor-Widget wieder eingesetzt');
- verify(in_array($short,$restored,true)&&in_array($el,$restored,true)&&$changed===[$block]&&strpos(get_post($block)->post_content,'Von Hand ergänzt')!==false,'Von Hand geänderte Seite bleibt unverändert');
- verify(get_option('bb_legal_frozen',null)===null,'Merkliste danach leer');ob_start();$D::notice();verify(strpos(ob_get_clean(),'wieder mit der Zentrale verbinden')===false,'Frage danach weg');
+ $D::reconnect();
+ verify(get_option('bb_legal_frozen',null)===null,'Merkliste nach automatischem Zurückverbinden leer');
+ verify(get_post($short)->post_content==='<p>Vorher</p>[et_pb_text][impressum][/et_pb_text]','Shortcode automatisch wieder eingesetzt');
+ verify(json_decode(get_post_meta($el,'_elementor_data',true),true)[0]['elements'][0]['widgetType']==='erecht24_legal_text','Elementor-Widget automatisch wieder eingesetzt');
+ verify(strpos(get_post($block)->post_content,'Von Hand ergänzt')!==false&&array_keys(get_option('bb_legal_frozen_changed'))===[$block],'Von Hand geänderte Seite bleibt und wird vorgemerkt');
+ $GLOBALS['pagenow']='index.php';unset($_GET['bb_legal_deactivate']);ob_start();$D::notice();$notice=ob_get_clean();
+ verify(strpos($notice,'Rechtstexte wieder mit der Zentrale verbunden')!==false&&strpos($notice,'Rechtstexte nicht aktuell')!==false&&strpos($notice,'bb_legal_unfreeze')!==false,'Hinweise auf jeder Admin-Seite');
+ ob_start();$D::notice();$notice=ob_get_clean();verify(strpos($notice,'wieder mit der Zentrale verbunden')===false&&strpos($notice,'Rechtstexte nicht aktuell')!==false,'Erfolg einmal, offene Seite bleibt bis zur Entscheidung');
+ list($restored)=$D::restore(get_option('bb_legal_frozen_changed'),true);delete_option('bb_legal_frozen_changed');
+ verify($restored===[$block]&&strpos(get_post($block)->post_content,'<!-- wp:erecht24/erecht24')===0,'Auf Knopfdruck auch geänderte Seite zurückverbunden');
  foreach([$short,$block,$el,$plain] as $id){wp_delete_post($id,true);}
 }else{throw new Exception('Unbekannter Testfall');}
