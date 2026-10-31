@@ -12,6 +12,7 @@ final class Deactivate {
         add_filter('plugin_action_links', [__CLASS__, 'link'], 20, 2);
         add_action('admin_notices', [__CLASS__, 'notice']);
         add_action('admin_post_bb_legal_freeze', [__CLASS__, 'freeze']);
+        add_action('admin_post_bb_legal_unfreeze', [__CLASS__, 'unfreeze']);
     }
     private static function plugin() { $p = Module::owner(); return is_array($p) ? (string)($p['plugin'] ?? '') : ''; }
     private static function allowed() { return Module::active() && self::plugin() !== '' && current_user_can('activate_plugins'); }
@@ -86,12 +87,53 @@ final class Deactivate {
         return [$plan, $problems];
     }
     public static function apply(array $plan) {
+        // Merkt sich Original und eingesetzten Stand, damit das Wiederaktivieren die Seiten zurückverbinden kann.
+        $frozen = Store::get('frozen', []); if (!is_array($frozen)) { $frozen = []; }
         foreach ($plan as $id => $entry) {
+            $post = get_post($id); if (!$post) { continue; }
+            $memo = $frozen[$id] ?? [];
             // wp_update_post legt eine Revision an: Die Fassung mit Shortcode bleibt wiederherstellbar.
-            if (isset($entry['content'])) { wp_update_post(wp_slash(['ID'=>$id, 'post_content'=>$entry['content']])); }
-            if (isset($entry['elementor'])) { update_post_meta($id, '_elementor_data', wp_slash(wp_json_encode($entry['elementor']))); delete_post_meta($id, '_elementor_css'); }
+            if (isset($entry['content'])) {
+                if (!isset($memo['content'])) { $memo['content'] = $post->post_content; }
+                wp_update_post(wp_slash(['ID'=>$id, 'post_content'=>$entry['content']]));
+                $memo['content_hash'] = md5(get_post($id)->post_content);
+            }
+            if (isset($entry['elementor'])) {
+                if (!isset($memo['elementor'])) { $memo['elementor'] = (string)get_post_meta($id, '_elementor_data', true); }
+                update_post_meta($id, '_elementor_data', wp_slash(wp_json_encode($entry['elementor']))); delete_post_meta($id, '_elementor_css');
+                $memo['elementor_hash'] = md5((string)get_post_meta($id, '_elementor_data', true));
+            }
+            $frozen[$id] = $memo;
         }
-        if ($plan && class_exists('Elementor\\Plugin') && isset(\Elementor\Plugin::$instance->files_manager)) {
+        Store::put('frozen', $frozen);
+        self::clearElementor($plan);
+    }
+    /** Fest eingesetzte Seiten wieder auf Shortcode, Block oder Widget stellen, nur wenn sie seitdem unverändert sind. */
+    public static function restore() {
+        $frozen = Store::get('frozen', []); $restored = []; $changed = [];
+        foreach (is_array($frozen) ? $frozen : [] as $id => $memo) {
+            $id = (int)$id; $post = get_post($id); if (!$post || $post->post_status === 'trash') { continue; }
+            $same = (!isset($memo['content']) || md5($post->post_content) === ($memo['content_hash'] ?? ''))
+                && (!isset($memo['elementor']) || md5((string)get_post_meta($id, '_elementor_data', true)) === ($memo['elementor_hash'] ?? ''));
+            if (!$same) { $changed[] = $id; continue; }
+            if (isset($memo['content'])) { wp_update_post(wp_slash(['ID'=>$id, 'post_content'=>$memo['content']])); }
+            if (isset($memo['elementor'])) { update_post_meta($id, '_elementor_data', wp_slash($memo['elementor'])); delete_post_meta($id, '_elementor_css'); }
+            $restored[] = $id;
+        }
+        delete_option('bb_legal_frozen');
+        self::clearElementor($restored);
+        return [$restored, $changed];
+    }
+    public static function unfreeze() {
+        if (!Module::active() || !current_user_can('activate_plugins')) { wp_die('Keine Berechtigung.', 403); }
+        check_admin_referer('bb_legal_unfreeze');
+        if (!empty($_POST['keep'])) { delete_option('bb_legal_frozen'); $result = ['keep'=>true]; }
+        else { list($restored, $changed) = self::restore(); $result = ['restored'=>$restored, 'changed'=>$changed]; }
+        set_transient('bb_legal_unfreeze_result_' . get_current_user_id(), $result, 600);
+        wp_safe_redirect(admin_url('plugins.php')); exit;
+    }
+    private static function clearElementor($changed) {
+        if ($changed && class_exists('Elementor\\Plugin') && isset(\Elementor\Plugin::$instance->files_manager)) {
             try { \Elementor\Plugin::$instance->files_manager->clear_cache(); } catch (\Throwable $e) {}
         }
     }
@@ -117,7 +159,9 @@ final class Deactivate {
         return implode(', ', $out);
     }
     public static function notice() {
-        if (($GLOBALS['pagenow'] ?? '') !== 'plugins.php' || empty($_GET['bb_legal_deactivate']) || !self::allowed()) { return; }
+        if (($GLOBALS['pagenow'] ?? '') !== 'plugins.php' || !Module::active() || !current_user_can('activate_plugins')) { return; }
+        self::reconnectNotice();
+        if (empty($_GET['bb_legal_deactivate']) || !self::allowed()) { return; }
         $file = self::plugin();
         if (!empty($_GET['bb_legal_freeze'])) {
             $problems = get_transient('bb_legal_freeze_problems_' . get_current_user_id());
@@ -134,6 +178,28 @@ final class Deactivate {
         echo '<button type="submit" class="button button-primary">Letzten Stand fest einsetzen und deaktivieren</button> ';
         echo '<a class="button" href="' . esc_url(self::deactivateUrl($file)) . '">Ohne Sichern deaktivieren</a> ';
         echo '<a class="button-link" href="' . esc_url(admin_url('plugins.php')) . '">Abbrechen</a>';
+        echo '</form></div>';
+    }
+    /** Nach dem Wiederaktivieren: Ergebnis zeigen bzw. fragen, ob fest eingesetzte Seiten zurückverbunden werden. */
+    private static function reconnectNotice() {
+        $key = 'bb_legal_unfreeze_result_' . get_current_user_id();
+        $result = get_transient($key);
+        if (is_array($result)) {
+            delete_transient($key);
+            if (!empty($result['keep'])) { echo '<div class="notice notice-success"><p>Fester Text bleibt auf den Seiten. Sie werden nicht mehr aus der Zentrale aktualisiert.</p></div>'; }
+            else {
+                if (!empty($result['restored'])) { echo '<div class="notice notice-success"><p>Wieder mit der Zentrale verbunden: ' . self::titles($result['restored']) . '.</p></div>'; }
+                if (!empty($result['changed'])) { echo '<div class="notice notice-error"><p>Nicht zurückgestellt, weil die Seite seit dem Fest-Einsetzen geändert wurde: ' . self::titles($result['changed']) . '. Den Rechtstext dort bitte per Shortcode oder über die Revision wieder einsetzen.</p></div>'; }
+            }
+        }
+        $frozen = Store::get('frozen', []);
+        if (!is_array($frozen) || !$frozen) { return; }
+        echo '<div class="notice notice-warning"><h2 style="margin:.6em 0 .4em">Rechtstexte wieder mit der Zentrale verbinden?</h2>';
+        echo '<p>Beim letzten Deaktivieren wurde auf diesen Seiten ein fester Text eingesetzt: ' . self::titles(array_map('intval', array_keys($frozen))) . '. Beim Verbinden kommen Shortcode, Block oder Widget zurück, danach gilt wieder der aktuelle Stand aus der Zentrale. Seiten, die seitdem geändert wurden, bleiben unverändert.</p>';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin:0 0 1em">';
+        echo '<input type="hidden" name="action" value="bb_legal_unfreeze">'; wp_nonce_field('bb_legal_unfreeze');
+        echo '<button type="submit" class="button button-primary">Wieder verbinden</button> ';
+        echo '<button type="submit" name="keep" value="1" class="button">Festen Text behalten</button>';
         echo '</form></div>';
     }
 }
