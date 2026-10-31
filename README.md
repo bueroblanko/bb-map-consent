@@ -259,3 +259,9 @@ Ist das Cookie-Banner an, erscheinen die Dienste der Platzhalter (YouTube, Googl
 Hinweis: Mit Banner und Platzhaltern, aber ohne Tracker erscheint das Banner jetzt auch nur für die externen Medien.
 
 Eigenes CSS: `>` als Kind-Kombinator bleibt jetzt erhalten (vorher entfernt).
+
+## 0.10.3: Jobmorgen, YouTube ohne Cookies, Matomo ohne Cookies
+
+- **Jobmorgen-Stellensuche** (MANNHEIMER MORGEN GmbH): Der Loader der Partnerbox (Inline-Skript mit `jobmorgen.de/partnerbox.js` bzw. `RegioPowerPartnerBox`) wird zurückgehalten. Vor dem Container `.regio-power-partner-box` steht ein Platzhalter. Seiten ohne Container halten nur das Skript zurück (vorher lief es dort ins Leere). Im Banner heißt der Dienst „Jobmorgen“.
+- **YouTube**: `youtube.com/embed` (z. B. aus WordPress-oEmbed) wird beim Freigeben als `youtube-nocookie.com/embed` geladen.
+- **Matomo ohne Cookies**: Ein Matomo-Code mit `_paq.push(['disableCookies'])` wird vom Banner nicht blockiert und aus den erkannten Diensten genommen.

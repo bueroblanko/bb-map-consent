@@ -12,7 +12,8 @@ foreach ($cases as [$url,$service,$height]) {
  $out=BB_Map_Consent::filter_html($iframe);
  embed_check(strpos($out,'<iframe')===false && strpos($out,'data-service="'.$service.'"')!==false);
  preg_match('/data-bbmc="([^"]+)"/',$out,$m);$c=json_decode(html_entity_decode($m[1],ENT_QUOTES),true);
- embed_check($c['src']===$url && $c['height']===$height && $c['title']==='Test');
+ // youtube.com embeds (e.g. WordPress oEmbed) load in privacy-enhanced mode.
+ embed_check($c['src']===str_replace('www.youtube.com/','www.youtube-nocookie.com/',$url) && $c['height']===$height && $c['title']==='Test');
  $html.=$out;
 }
 foreach(['https://www.youtube.com.evil.example/embed/123','https://tramino.de.evil.example/widget','javascript://test.tramino.de/widget'] as $url) embed_check(BB_Map_Consent::extra_iframe_service($url)==='');
@@ -26,4 +27,5 @@ embed_check(strpos(BB_Map_Consent::filter_html('<iframe width="100%" height="400
 embed_check(strpos(BB_Map_Consent::filter_html('<iframe height="400" src="https://ferienwohnung-winkel.tramino.de/api/widgets/rating/"></iframe>'),'--bbmc-ratio')===false);
 $html.='<script src="https://test.local/maps.js"></script></body></html>';
 if (getenv('BBMC_EXTRA_FIXTURE')) file_put_contents(getenv('BBMC_EXTRA_FIXTURE'),$html);
+embed_check(BB_Map_Consent::youtube_nocookie('https://youtube.com/embed/abc?rel=0')==='https://www.youtube-nocookie.com/embed/abc?rel=0' && BB_Map_Consent::youtube_nocookie('https://www.youtube.com/watch?v=abc')==='https://www.youtube.com/watch?v=abc');
 echo "YouTube/Tramino: actual FEWO URLs, separate services, preserved dimensions/title, protocols, host boundaries and resource hints passed\n";

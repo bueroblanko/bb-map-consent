@@ -16,7 +16,7 @@ final class BBMC_Cmp {
     const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing', 'external' => 'Beschreibung Externe Medien', 'more' => 'Weitere Informationen'];
     const CATEGORIES = ['analytics' => 'Statistik', 'marketing' => 'Marketing', 'external' => 'Externe Medien'];
     /** Placeholder services of BB Consent (data-service of .bbmc) => label in the banner. Seen ids carry the prefix ext_. */
-    const EXTERNAL = ['youtube' => 'YouTube', 'maps' => 'Google Maps', 'instagram' => 'Instagram', 'elfsight' => 'Elfsight', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'planity' => 'Planity', 'dealerweb' => 'Aktionsbanner (COmarketing)'];
+    const EXTERNAL = ['youtube' => 'YouTube', 'maps' => 'Google Maps', 'instagram' => 'Instagram', 'elfsight' => 'Elfsight', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'planity' => 'Planity', 'dealerweb' => 'Aktionsbanner (COmarketing)', 'jobmorgen' => 'Jobmorgen'];
     /** id => [label, category, script/link URL pattern, inline code pattern, noscript pattern]. Order matters: first match wins. */
     const SERVICES = [
         'google_tag_manager' => ['Google Tag Manager', 'marketing', '~googletagmanager\.com/gtm\.js~i', '~googletagmanager\.com/gtm\.js~i', '~googletagmanager\.com/ns\.html~i'],
