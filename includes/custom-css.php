@@ -14,8 +14,9 @@ final class BBMC_Custom_CSS {
     }
     public static function sanitize($css) {
         if (!is_string($css)) { return ''; }
-        // CSS is printed in a style element. Never allow HTML markup or a closing style tag.
-        return trim(str_replace(['<', '>'], '', wp_strip_all_tags($css)));
+        // CSS is printed in a style element. Never allow HTML markup or a closing style tag;
+        // without "<" nothing can close it, while ">" stays usable as child combinator.
+        return trim(str_replace('<', '', wp_strip_all_tags($css)));
     }
     public static function register() {
         register_setting('bbmc_design', self::OPTION, ['type' => 'string', 'default' => '', 'sanitize_callback' => [__CLASS__, 'sanitize']]);

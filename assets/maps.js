@@ -11,6 +11,12 @@
       if (!consent[service]) localStorage.removeItem(key);
     } catch (_) { consent[service] = false; }
   });
+  // Services the cookie banner lists under "external": the banner's choice is their stored consent.
+  const managed = new Set();
+  let ready = false;
+  const cc = () => window.CookieConsent;
+  const accepted = () => { try { return cc().getUserPreferences().acceptedServices.external || []; } catch (_) { return []; } };
+  const setAccepted = list => cc().acceptService(list, 'external');
   const boxes = (service) => [...document.querySelectorAll('.bbmc')].filter(box => !service || box.dataset.service === service);
   function googleApi(apiKey) {
     if (window.google?.maps?.Map) return Promise.resolve();
@@ -113,6 +119,7 @@
   function revoke(service) {
     consent[service] = false;
     try { localStorage.removeItem(keys[service]); } catch (_) {}
+    if (managed.has(service)) setAccepted(accepted().filter(id => id !== service));
     // Reload destroys running Maps scripts, connections and all map instances.
     location.reload();
   }
@@ -125,12 +132,23 @@
     if (!button.classList.contains('bbmc-allow')) return;
     consent[service] = true;
     if (button.closest('.bbmc').querySelector('.bbmc-remember').checked) {
-      try { localStorage.setItem(keys[service], JSON.stringify({expires: Date.now() + 30 * 86400000})); } catch (_) {}
+      if (managed.has(service)) { if (!accepted().includes(service)) setAccepted([...accepted(), service]); }
+      else try { localStorage.setItem(keys[service], JSON.stringify({expires: Date.now() + 30 * 86400000})); } catch (_) {}
     }
     boxes(service).forEach(load);
   });
   window.addEventListener('storage', event => { if (Object.values(keys).includes(event.key) && !event.newValue) location.reload(); });
   const restore = () => {
+    try {
+      const external = JSON.parse(document.getElementById('bbmc-cmp-config').textContent).external || {};
+      if (cc()) Object.keys(external).forEach(service => {
+        if (!keys[service]) return;
+        managed.add(service);
+        try { localStorage.removeItem(keys[service]); } catch (_) {}
+        consent[service] = accepted().includes(service);
+      });
+    } catch (_) {}
+    ready = true;
     boxes().forEach(box => {
       // Grid plugins (e.g. Divi FilterGrid) cancel clicks inside their video figures; keep checkbox and links working.
       box.addEventListener('click', event => { if (event.target.closest('label, a')) event.stopPropagation(); });
@@ -138,6 +156,16 @@
     });
     Object.keys(keys).forEach(service => { if (consent[service]) boxes(service).forEach(load); });
   };
+  // Choice in the banner or its settings: load newly accepted services, reload when one was withdrawn.
+  document.addEventListener('bbmc:cmp', () => {
+    if (!ready) return;
+    const list = accepted();
+    managed.forEach(service => {
+      if (list.includes(service)) { consent[service] = true; boxes(service).forEach(load); }
+      else if (boxes(service).some(box => box.dataset.loaded)) location.reload();
+      else consent[service] = false;
+    });
+  });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restore, {once: true});
   else restore();
 })();

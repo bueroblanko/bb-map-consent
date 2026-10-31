@@ -4,7 +4,8 @@ if (!defined('ABSPATH')) { exit; }
  * Cookie banner for tracking (CookieConsent 3, bundled locally). Default off.
  * Known trackers are recognised in the finished HTML and turned into inactive
  * <script type="text/plain" data-category="…"> tags; CookieConsent runs them after consent.
- * External content (maps, videos, …) keeps its own placeholders and is not part of the banner.
+ * External content (maps, videos, …) keeps its placeholders; services seen in them form the
+ * category "external", so a choice in the banner and a click in a placeholder stay in sync.
  */
 final class BBMC_Cmp {
     const OPTION = 'bbmc_cmp_enabled';
@@ -12,8 +13,10 @@ final class BBMC_Cmp {
     const TEXTS = 'bbmc_cmp_texts';
     const ADDRESS = 'bbmc_cmp_address';
     /** Own texts per site (e.g. from eRecht24); empty fields keep the neutral defaults in cmp.js. */
-    const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing', 'more' => 'Weitere Informationen'];
-    const CATEGORIES = ['analytics' => 'Statistik', 'marketing' => 'Marketing'];
+    const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing', 'external' => 'Beschreibung Externe Medien', 'more' => 'Weitere Informationen'];
+    const CATEGORIES = ['analytics' => 'Statistik', 'marketing' => 'Marketing', 'external' => 'Externe Medien'];
+    /** Placeholder services of BB Consent (data-service of .bbmc) => label in the banner. Seen ids carry the prefix ext_. */
+    const EXTERNAL = ['youtube' => 'YouTube', 'maps' => 'Google Maps', 'instagram' => 'Instagram', 'elfsight' => 'Elfsight', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'planity' => 'Planity', 'dealerweb' => 'Aktionsbanner (COmarketing)'];
     /** id => [label, category, script/link URL pattern, inline code pattern, noscript pattern]. Order matters: first match wins. */
     const SERVICES = [
         'google_tag_manager' => ['Google Tag Manager', 'marketing', '~googletagmanager\.com/gtm\.js~i', '~googletagmanager\.com/gtm\.js~i', '~googletagmanager\.com/ns\.html~i'],
@@ -92,19 +95,29 @@ final class BBMC_Cmp {
             }
             return $tag;
         }, $html);
+        // Placeholders written by BB_Map_Consent (its buffer runs inside this one).
+        if (preg_match_all('~<section class="bbmc[^"]*" data-service="([a-z]+)"~', $html, $m)) {
+            foreach ($m[1] as $service) { if (isset(self::EXTERNAL[$service])) { $found['ext_' . $service] = true; } }
+        }
         return [$html, array_keys($found)];
     }
     /** Services seen anywhere on the site so far; the banner always lists all of them. */
     public static function remember(array $found) {
-        $seen = array_values(array_intersect(array_keys(self::SERVICES), array_unique(array_merge((array) get_option(self::SEEN, []), $found))));
+        $known = array_merge(array_keys(self::SERVICES), array_map(function ($id) { return 'ext_' . $id; }, array_keys(self::EXTERNAL)));
+        $seen = array_values(array_intersect($known, array_unique(array_merge((array) get_option(self::SEEN, []), $found))));
         if ($seen !== array_values((array) get_option(self::SEEN, []))) { update_option(self::SEEN, $seen, true); }
         return $seen;
     }
     public static function config(array $seen, $privacy, array $texts = [], $address = 'sie', $imprint = '') {
         $categories = [];
-        foreach ($seen as $id) { $categories[self::SERVICES[$id][1]][] = self::SERVICES[$id][0]; }
+        $external = [];
+        foreach ($seen as $id) {
+            if (strpos($id, 'ext_') === 0) { $external[substr($id, 4)] = self::EXTERNAL[substr($id, 4)]; continue; }
+            $categories[self::SERVICES[$id][1]][] = self::SERVICES[$id][0];
+        }
+        if ($external) { $categories['external'] = array_values($external); }
         // A newly seen service changes the revision, so earlier decisions are asked for again.
-        return ['privacy' => $privacy, 'imprint' => $imprint, 'categories' => $categories, 'texts' => (object) self::clean_texts($texts), 'address' => $address === 'du' ? 'du' : 'sie', 'revision' => $seen ? (int) sprintf('%u', crc32(implode(',', $seen))) % 1000000 + 1 : 0];
+        return ['privacy' => $privacy, 'imprint' => $imprint, 'categories' => $categories, 'texts' => (object) self::clean_texts($texts), 'address' => $address === 'du' ? 'du' : 'sie', 'external' => (object) $external, 'revision' => $seen ? (int) sprintf('%u', crc32(implode(',', $seen))) % 1000000 + 1 : 0];
     }
     public static function inject($html, array $config, $base, $version) {
         $css = '<link rel="stylesheet" id="bbmc-cmp-css" href="' . esc_url($base . 'vendor/cookieconsent.css?ver=' . $version) . '" media="all">';
@@ -159,7 +172,7 @@ final class BBMC_Cmp {
     const TEXT_SECTIONS = [
         ['Banner', 'Erscheint beim ersten Besuch.', [['title', 6], ['description', 6]]],
         ['Buttons', '', [['accept_all', 3], ['accept_necessary', 3], ['preferences', 3], ['save', 3]]],
-        ['Einstellungen-Fenster', 'Öffnet sich über „Einstellungen“ oder den Link im Footer.', [['intro', 6], ['necessary', 6], ['analytics', 3], ['marketing', 3], ['more', 6]]],
+        ['Einstellungen-Fenster', 'Öffnet sich über „Einstellungen“ oder den Link im Footer.', [['intro', 6], ['necessary', 6], ['analytics', 3], ['marketing', 3], ['external', 6], ['more', 6]]],
     ];
     public static function screen() {
         if (!current_user_can('manage_options')) { return; }
@@ -169,7 +182,7 @@ final class BBMC_Cmp {
         echo '<form method="post" action="options.php">';
         settings_fields('bbmc_cmp');
         $address = get_option(self::ADDRESS, 'sie');
-        echo '<section class="bb-card"><header><h2>Cookie-Banner für Tracking</h2><p>Erkennt Google Analytics, Tag Manager, Google Ads, Meta-Pixel, LinkedIn, TikTok, Matomo, Hotjar, Mouseflow und Clarity und lädt sie erst nach Zustimmung. Karten und Videos behalten ihre eigenen Platzhalter.</p></header><div class="bb-card-body"><div class="bb-grid">';
+        echo '<section class="bb-card"><header><h2>Cookie-Banner für Tracking</h2><p>Erkennt Google Analytics, Tag Manager, Google Ads, Meta-Pixel, LinkedIn, TikTok, Matomo, Hotjar, Mouseflow und Clarity und lädt sie erst nach Zustimmung. Karten und Videos behalten ihre Platzhalter und erscheinen im Banner als „Externe Medien“. Die Auswahl im Banner und die Freigabe im Platzhalter sind verbunden.</p></header><div class="bb-card-body"><div class="bb-grid">';
         echo '<div class="bb-f w4"><label class="bb-switch"><input type="checkbox" name="' . self::OPTION . '" value="1"' . checked((bool) get_option(self::OPTION, false), true, false) . '><span><strong>Banner aktivieren</strong><small>Im Footer <code>[bb_consent_settings]</code> oder einen Menülink auf <code>#bb-consent-settings</code> einsetzen, damit Besucher ihre Auswahl ändern können.</small></span></label></div>';
         echo '<div class="bb-f w2"><span class="bb-label">Anrede</span><div class="bb-seg" role="radiogroup" aria-label="Anrede">';
         foreach (['sie' => 'Sie', 'du' => 'Du'] as $key => $label) { echo '<label><input type="radio" name="' . self::ADDRESS . '" value="' . $key . '"' . checked($address, $key, false) . '><span>' . $label . '</span></label>'; }
@@ -184,7 +197,7 @@ final class BBMC_Cmp {
             foreach ($fields as [$key, $width]) {
                 $id = 'bbmc_cmp_text_' . $key;
                 $value = isset($texts[$key]) ? (string) $texts[$key] : '';
-                $long = in_array($key, ['description', 'intro', 'necessary', 'analytics', 'marketing', 'more'], true);
+                $long = in_array($key, ['description', 'intro', 'necessary', 'analytics', 'marketing', 'external', 'more'], true);
                 echo '<div class="bb-f w' . $width . '"><label for="' . $id . '">' . esc_html(self::TEXT_FIELDS[$key]) . '</label>' . ($long
                     ? '<textarea id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" rows="' . ($key === 'description' || $key === 'intro' ? 4 : 2) . '" placeholder="Standardtext">' . esc_textarea($value) . '</textarea>'
                     : '<input id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" type="text" value="' . esc_attr($value) . '" placeholder="Standardtext">') . '</div>';
@@ -196,6 +209,7 @@ final class BBMC_Cmp {
         echo '</div></details></form>';
         $seen = (array) get_option(self::SEEN, []);
         $labels = array_map(function ($id) { return self::SERVICES[$id][0] . ' · ' . self::CATEGORIES[self::SERVICES[$id][1]]; }, array_intersect($seen, array_keys(self::SERVICES)));
+        foreach ($seen as $id) { if (strpos($id, 'ext_') === 0 && isset(self::EXTERNAL[substr($id, 4)])) { $labels[] = self::EXTERNAL[substr($id, 4)] . ' · ' . self::CATEGORIES['external']; } }
         echo '<section class="bb-card"><header><h2>Erkannte Dienste</h2><p>Das Banner nennt alle Dienste, die bisher auf einer Seite gefunden wurden.</p></header><div class="bb-card-body">' . ($labels ? '<p class="bb-chips"><span>' . implode('</span><span>', array_map('esc_html', $labels)) . '</span></p>' : '<p class="bb-empty">Noch nichts erkannt. Seiten im Frontend aufrufen.</p>') . '</div>';
         if ($seen) {
             echo '<div class="bb-card-foot"><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="bbmc_cmp_reset">';

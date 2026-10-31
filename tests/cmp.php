@@ -72,4 +72,10 @@ cmp_check(!BBMC_Cmp::active() && BBMC_Cmp::other_cmp() === 'borlabs-cookie/borla
 $options['active_plugins'] = [];
 $options['bbmc_cmp_enabled'] = false;
 cmp_check(!BBMC_Cmp::active(), 'default off');
+// Placeholders become the category "external", linked to the placeholder services.
+[$withBox, $ext] = BBMC_Cmp::filter('<section class="bbmc" data-service="youtube" data-bbmc="{}"></section><section class="bbmc bbmc-compact" data-service="maps"></section><section class="bbmc" data-service="unknown"></section>');
+cmp_check($ext === ['ext_youtube', 'ext_maps'], 'external found '.json_encode($ext));
+$extConfig = BBMC_Cmp::config(['matomo', 'ext_youtube'], '/d/');
+cmp_check($extConfig['categories']['external'] === ['YouTube'] && (array) $extConfig['external'] === ['youtube' => 'YouTube'], 'external config');
+cmp_check($extConfig['revision'] !== BBMC_Cmp::config(['matomo'], '/d/')['revision'], 'external revision');
 echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard passed\n";

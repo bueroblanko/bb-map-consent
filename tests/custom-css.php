@@ -15,6 +15,7 @@ function delete_post_meta($id,$name) { $GLOBALS['deleted']=true; }
 function css_check($v) { if (!$v) throw new Exception('Custom CSS regression'); }
 css_check(BBMC_Custom_CSS::sanitize(['bad'])==='');
 css_check(strpos(BBMC_Custom_CSS::sanitize('</style><script>alert(1)</script><style>'),'<')===false);
+css_check(BBMC_Custom_CSS::sanitize('.a > .b { color: red; }') === '.a > .b { color: red; }');
 $GLOBALS['site_css']='.bbmc { --bbmc-accent: #123456; }';
 $GLOBALS['page_css']='.bbmc-placeholder { background: red; }';
 $GLOBALS['is_page']=true;

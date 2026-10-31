@@ -246,3 +246,16 @@ Geprüft: `php tests/cmp.php` (13 Tracker-Varianten, unveränderte fremde Skript
 ## Vorschaubilder für YouTube (ab 0.10.2)
 
 Unter Einstellungen → BB Consent → Gestaltung lässt sich „Vorschaubilder für YouTube anzeigen“ einschalten (Standard aus). Der Platzhalter zeigt dann das Vorschaubild des Videos hinter einem dunklen Schleier, Text weiß. Der Server lädt jedes Bild einmal von `i.ytimg.com` (höchstens 12 neue Bilder pro Seitenaufruf, Zeitlimit 3 s) und speichert es unter `wp-content/uploads/bb-consent/yt/`. Besucher haben vor ihrer Zustimmung keinen Kontakt zu YouTube. Schlägt ein Abruf fehl, folgt der nächste Versuch frühestens nach einem Tag. Nach dem Einschalten den Seiten-Cache leeren.
+
+## Banner und Platzhalter verbunden (ab 0.10.2)
+
+Ist das Cookie-Banner an, erscheinen die Dienste der Platzhalter (YouTube, Google Maps, Instagram usw.), sobald sie auf einer Seite vorkommen, im Banner als Kategorie „Externe Medien“ mit einem Schalter pro Dienst. Neue Dienste ändern die Revision, Besucher werden also neu gefragt.
+
+- „Alle akzeptieren“ oder der Schalter in den Einstellungen lädt die Platzhalter des Dienstes sofort.
+- „30 Tage merken“ im Platzhalter setzt den Dienst im Banner auf an. Ohne Haken gilt die Freigabe nur für den Seitenaufruf.
+- Widerrufen im Platzhalter oder in den Einstellungen nimmt die Freigabe an beiden Stellen zurück und lädt die Seite neu.
+- Ohne Banner bleibt alles wie bisher (Freigabe je Dienst im Browser).
+
+Hinweis: Mit Banner und Platzhaltern, aber ohne Tracker erscheint das Banner jetzt auch nur für die externen Medien.
+
+Eigenes CSS: `>` als Kind-Kombinator bleibt jetzt erhalten (vorher entfernt).
