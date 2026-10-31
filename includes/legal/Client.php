@@ -61,7 +61,7 @@ final class Client {
     }
     /** Bausteinfolge eines Textes live aus der Zentrale (für den Editor). */
     public function segments($type, $lang) {
-        if (!in_array($type, ['imprint','privacy_policy','social_media'], true) || !in_array($lang, ['de','en'], true)) { throw new \RuntimeException('Unbekannter Text.'); }
+        if (!in_array($type, Store::TYPES, true) || !in_array($lang, ['de','en'], true)) { throw new \RuntimeException('Unbekannter Text.'); }
         $reply = $this->request('GET', 'segments/' . $type . '/' . $lang);
         if (!is_array($reply['segments'] ?? null)) { throw new \RuntimeException('Ungültige Antwort der Zentrale.'); }
         return $reply['segments'];

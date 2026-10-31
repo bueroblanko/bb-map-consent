@@ -82,7 +82,7 @@ final class Module {
         if ($tag === 'datenschutz') { $a['type']='privacy_policy'; }
         if ($tag === 'impressum') { $a['type']='imprint'; }
         if ($a['type'] === 'privacy_policy_social_media') { $a['type']='social_media'; }
-        if (!is_string($a['type']) || !is_string($a['lang']) || !in_array($a['type'], ['imprint','privacy_policy','social_media'], true) || !in_array($a['lang'], ['de','en'], true)) { return '<p>Der angeforderte Rechtstext ist nicht verfügbar.</p>'; }
+        if (!is_string($a['type']) || !is_string($a['lang']) || !in_array($a['type'], Store::TYPES, true) || !in_array($a['lang'], ['de','en'], true)) { return '<p>Der angeforderte Rechtstext ist nicht verfügbar.</p>'; }
         $cache = Store::get('cache');
         // Selbst gepflegt: vom Abgleich ausgeschlossen, der Text der Website gilt.
         $selbst = Store::get('selbst');
