@@ -89,6 +89,8 @@
         if (!config.src) throw new Error('Diese Instagram-Einbettung wird noch nicht unterstützt. Bitte einen öffentlichen Beitrag oder ein Reel einbetten.');
         const frame = document.createElement('iframe');
         frame.title = config.title; frame.height = Math.max(config.height, reserved);
+        // Divi's FitVids would wrap the frame with a padding from the height attribute alone (no width), leaving a large gap.
+        frame.className = 'fitvidsignore';
         if (config.ratio) { frame.style.aspectRatio = config.ratio; frame.style.height = 'auto'; }
         if (reserved) target.style.minHeight = '0';
         if (config.width) frame.style.maxWidth = config.width + 'px';

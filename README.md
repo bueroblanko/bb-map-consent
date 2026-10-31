@@ -269,3 +269,7 @@ Eigenes CSS: `>` als Kind-Kombinator bleibt jetzt erhalten (vorher entfernt).
 ## 0.10.4: Nachgeladene Inhalte
 
 Inhalte, die eine Seite per admin-ajax nachlädt (z. B. Divi FilterGrid „Mehr laden“ oder Filter), werden wie die Seite selbst gefiltert. Das gilt für JSON-Antworten (Strings darin) und für HTML-Antworten. Es betrifft nur Anfragen von öffentlichen Seiten derselben Domain, nicht aus wp-admin oder dem Divi-Builder. Neu eingefügte Platzhalter richtet `maps.js` per MutationObserver ein, inklusive bereits erteilter Freigaben.
+
+## 0.10.5: Kein Leerraum unter geladenen Videos
+
+Lädt ein Video beim Seitenaufbau direkt (Einwilligung schon gespeichert), legt Divis FitVids einen Rahmen um das iframe und rechnet die Höhe nur aus dem height-Attribut. Im Raster entstand so ein großer Leerraum unter dem Video. Das iframe trägt jetzt die Klasse `fitvidsignore`, ein CSS-Rückfall setzt einen trotzdem gesetzten Rahmen zurück.
