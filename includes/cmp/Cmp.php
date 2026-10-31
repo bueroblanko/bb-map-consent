@@ -16,7 +16,7 @@ final class BBMC_Cmp {
     const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing', 'external' => 'Beschreibung Externe Medien', 'more' => 'Weitere Informationen'];
     const CATEGORIES = ['analytics' => 'Statistik', 'marketing' => 'Marketing', 'external' => 'Externe Medien'];
     /** Placeholder services of BB Consent (data-service of .bbmc) => label in the banner. Seen ids carry the prefix ext_. */
-    const EXTERNAL = ['youtube' => 'YouTube', 'maps' => 'Google Maps', 'instagram' => 'Instagram', 'elfsight' => 'Elfsight', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'planity' => 'Planity', 'dealerweb' => 'Aktionsbanner (COmarketing)'];
+    const EXTERNAL = ['youtube' => 'YouTube', 'maps' => 'Google Maps', 'instagram' => 'Instagram', 'elfsight' => 'Elfsight', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'planity' => 'Planity', 'dealerweb' => 'Aktionsbanner (COmarketing)', 'jobmorgen' => 'Jobmorgen'];
     /** id => [label, category, script/link URL pattern, inline code pattern, noscript pattern]. Order matters: first match wins. */
     const SERVICES = [
         'google_tag_manager' => ['Google Tag Manager', 'marketing', '~googletagmanager\.com/gtm\.js~i', '~googletagmanager\.com/gtm\.js~i', '~googletagmanager\.com/ns\.html~i'],
@@ -67,12 +67,14 @@ final class BBMC_Cmp {
     /** Returns [filtered html, ids of services found]. */
     public static function filter($html) {
         $found = [];
-        $html = preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<noscript\b[^>]*>.*?</noscript\s*>|<link\b[^>]*>~is', function ($m) use (&$found) {
+        // Matomo with disableCookies stores nothing on the device and runs without consent.
+        $cookieless = self::matomo_cookieless($html);
+        $html = preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<noscript\b[^>]*>.*?</noscript\s*>|<link\b[^>]*>~is', function ($m) use (&$found, $cookieless) {
             $tag = $m[0];
             if (strpos($tag, '<!--') === 0) { return $tag; }
             if (stripos($tag, '<script') === 0) {
                 $id = self::classify_script($tag);
-                if ($id === '') { return $tag; }
+                if ($id === '' || ($id === 'matomo' && $cookieless)) { return $tag; }
                 $found[$id] = true;
                 $open = substr($tag, 0, strpos($tag, '>') + 1);
                 $inactive = preg_replace('~\stype\s*=\s*(?:"[^"]*"|\x27[^\x27]*\x27|[^\s>]+)~i', '', $open);
@@ -82,14 +84,18 @@ final class BBMC_Cmp {
             if (stripos($tag, '<noscript') === 0) {
                 // Tracking pixels in noscript would load without JavaScript and therefore without consent.
                 foreach (self::SERVICES as $id => $service) {
-                    if ($service[4] !== '' && preg_match($service[4], $tag)) { $found[$id] = true; return ''; }
+                    if ($service[4] !== '' && preg_match($service[4], $tag)) {
+                        if ($id === 'matomo' && $cookieless) { return $tag; }
+                        $found[$id] = true;
+                        return '';
+                    }
                 }
                 return $tag;
             }
             if (preg_match('/preconnect|dns-prefetch|preload|prefetch/i', BB_Map_Consent::attribute($tag, 'rel'))) {
                 $href = BB_Map_Consent::attribute($tag, 'href');
-                foreach (self::SERVICES as $service) {
-                    if ($href !== '' && preg_match($service[2], $href)) { return ''; }
+                foreach (self::SERVICES as $id => $service) {
+                    if ($href !== '' && preg_match($service[2], $href)) { return $id === 'matomo' && $cookieless ? $tag : ''; }
                 }
                 if (preg_match('~^(?:https?:)?//(?:www\.)?(?:googletagmanager\.com|google-analytics\.com|connect\.facebook\.net|snap\.licdn\.com|static\.hotjar\.com|cdn\.mouseflow\.com|www\.clarity\.ms)/?$~i', $href)) { return ''; }
             }
@@ -101,10 +107,18 @@ final class BBMC_Cmp {
         }
         return [$html, array_keys($found)];
     }
-    /** Services seen anywhere on the site so far; the banner always lists all of them. */
-    public static function remember(array $found) {
+    /** A Matomo tracking code (inline _paq) on the page that calls disableCookies. */
+    public static function matomo_cookieless($html) {
+        if (stripos($html, 'disableCookies') === false || !preg_match_all('~<script\b[^>]*>(.*?)</script\s*>~is', $html, $m)) { return false; }
+        foreach ($m[1] as $code) {
+            if (strpos($code, '_paq') !== false && preg_match('~_paq\.push\(\s*\[\s*[\'"]disableCookies[\'"]\s*\]\s*\)~', $code)) { return true; }
+        }
+        return false;
+    }
+    /** Services seen anywhere on the site so far; the banner always lists all of them. $drop removes ids that no longer need consent. */
+    public static function remember(array $found, array $drop = []) {
         $known = array_merge(array_keys(self::SERVICES), array_map(function ($id) { return 'ext_' . $id; }, array_keys(self::EXTERNAL)));
-        $seen = array_values(array_intersect($known, array_unique(array_merge((array) get_option(self::SEEN, []), $found))));
+        $seen = array_values(array_intersect($known, array_diff(array_unique(array_merge((array) get_option(self::SEEN, []), $found)), $drop)));
         if ($seen !== array_values((array) get_option(self::SEEN, []))) { update_option(self::SEEN, $seen, true); }
         return $seen;
     }
@@ -131,8 +145,9 @@ final class BBMC_Cmp {
     }
     public static function output($html) {
         if (stripos($html, '<html') === false) { return $html; }
+        $cookieless = self::matomo_cookieless($html);
         [$html, $found] = self::filter($html);
-        $seen = self::remember($found);
+        $seen = self::remember($found, $cookieless ? ['matomo'] : []);
         if (!$seen) { return $html; }
         return self::inject($html, self::config($seen, get_privacy_policy_url() ?: home_url('/datenschutz'), (array) get_option(self::TEXTS, []), get_option(self::ADDRESS, 'sie'), self::imprint_url()), plugins_url('', __FILE__) . '/', BBMC_VERSION);
     }
@@ -182,7 +197,7 @@ final class BBMC_Cmp {
         echo '<form method="post" action="options.php">';
         settings_fields('bbmc_cmp');
         $address = get_option(self::ADDRESS, 'sie');
-        echo '<section class="bb-card"><header><h2>Cookie-Banner für Tracking</h2><p>Erkennt Google Analytics, Tag Manager, Google Ads, Meta-Pixel, LinkedIn, TikTok, Matomo, Hotjar, Mouseflow und Clarity und lädt sie erst nach Zustimmung. Karten und Videos behalten ihre Platzhalter und erscheinen im Banner als „Externe Medien“. Die Auswahl im Banner und die Freigabe im Platzhalter sind verbunden.</p></header><div class="bb-card-body"><div class="bb-grid">';
+        echo '<section class="bb-card"><header><h2>Cookie-Banner für Tracking</h2><p>Erkennt Google Analytics, Tag Manager, Google Ads, Meta-Pixel, LinkedIn, TikTok, Matomo, Hotjar, Mouseflow und Clarity und lädt sie erst nach Zustimmung. Matomo mit <code>disableCookies</code> setzt keine Cookies und läuft ohne Zustimmung. Karten und Videos behalten ihre Platzhalter und erscheinen im Banner als „Externe Medien“. Die Auswahl im Banner und die Freigabe im Platzhalter sind verbunden.</p></header><div class="bb-card-body"><div class="bb-grid">';
         echo '<div class="bb-f w4"><label class="bb-switch"><input type="checkbox" name="' . self::OPTION . '" value="1"' . checked((bool) get_option(self::OPTION, false), true, false) . '><span><strong>Banner aktivieren</strong><small>Im Footer <code>[bb_consent_settings]</code> oder einen Menülink auf <code>#bb-consent-settings</code> einsetzen, damit Besucher ihre Auswahl ändern können.</small></span></label></div>';
         echo '<div class="bb-f w2"><span class="bb-label">Anrede</span><div class="bb-seg" role="radiogroup" aria-label="Anrede">';
         foreach (['sie' => 'Sie', 'du' => 'Du'] as $key => $label) { echo '<label><input type="radio" name="' . self::ADDRESS . '" value="' . $key . '"' . checked($address, $key, false) . '><span>' . $label . '</span></label>'; }

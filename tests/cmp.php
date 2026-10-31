@@ -78,4 +78,11 @@ cmp_check($ext === ['ext_youtube', 'ext_maps'], 'external found '.json_encode($e
 $extConfig = BBMC_Cmp::config(['matomo', 'ext_youtube'], '/d/');
 cmp_check($extConfig['categories']['external'] === ['YouTube'] && (array) $extConfig['external'] === ['youtube' => 'YouTube'], 'external config');
 cmp_check($extConfig['revision'] !== BBMC_Cmp::config(['matomo'], '/d/')['revision'], 'external revision');
+// Cookieless Matomo (disableCookies) stays active and leaves the banner.
+$cl = '<script>var _paq = window._paq = window._paq || []; _paq.push(["disableCookies"]); _paq.push(["trackPageView"]);</script><noscript><img src="https://m.example/matomo.php?idsite=1"></noscript><link rel="preconnect" href="https://m.example/matomo.js">';
+[$clHtml, $clFound] = BBMC_Cmp::filter($cl);
+cmp_check($clHtml === $cl && $clFound === [], 'cookieless matomo untouched');
+cmp_check(BBMC_Cmp::matomo_cookieless("<script>_paq.push(['disableCookies']);</script>") && !BBMC_Cmp::matomo_cookieless('<script>_paq.push(["trackPageView"]);</script><p>disableCookies</p>'), 'cookieless detection');
+$options['bbmc_cmp_seen'] = ['matomo', 'ext_youtube'];
+cmp_check(BBMC_Cmp::remember([], ['matomo']) === ['ext_youtube'], 'matomo dropped from seen');
 echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard passed\n";
