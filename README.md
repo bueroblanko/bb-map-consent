@@ -242,3 +242,7 @@ Footer: Shortcode `[bb_consent_settings]` oder ein Menü-Link auf `#bb-consent-s
 Grenzen: Tracker, die ein anderes Plugin erst per JavaScript nachlädt, ohne dass eines der Muster im HTML steht, werden nicht erkannt. Optimierungsplugins dürfen die Skripte mit `data-bbmc-cmp` nicht verzögern. Cookielos konfiguriertes Matomo wird trotzdem gesperrt. Texte sind neutrale Standardtexte und keine rechtliche Prüfung. Bots (z. B. Suchmaschinen) sehen kein Banner.
 
 Geprüft: `php tests/cmp.php` (13 Tracker-Varianten, unveränderte fremde Skripte, noscript, Resource-Hints, Versionswechsel, Schutz vor zweitem Cookie-Plugin) und Headless-Chrome mit gefiltertem Testseiten-HTML: vor der Entscheidung und nach „Nur notwendige“ keine Anfragen an Google oder Facebook, nach „Alle akzeptieren“ laden beide, nach Neuladen automatisch, nach Widerruf über den Footer-Link wieder keine.
+
+## Vorschaubilder für YouTube (ab 0.10.2)
+
+Unter Einstellungen → BB Consent → Gestaltung lässt sich „Vorschaubilder für YouTube anzeigen“ einschalten (Standard aus). Der Platzhalter zeigt dann das Vorschaubild des Videos hinter einem dunklen Schleier, Text weiß. Der Server lädt jedes Bild einmal von `i.ytimg.com` (höchstens 12 neue Bilder pro Seitenaufruf, Zeitlimit 3 s) und speichert es unter `wp-content/uploads/bb-consent/yt/`. Besucher haben vor ihrer Zustimmung keinen Kontakt zu YouTube. Schlägt ein Abruf fehl, folgt der nächste Versuch frühestens nach einem Tag. Nach dem Einschalten den Seiten-Cache leeren.

@@ -43,6 +43,7 @@ final class BBMC_Custom_CSS {
         if ($tab === 'banner') { do_action('bbmc_settings_screen'); echo '</div>'; return; }
         echo '<form method="post" action="options.php">';
         settings_fields('bbmc_design');
+        if (class_exists('BBMC_Thumbs')) { BBMC_Thumbs::field(); }
         echo '<section class="bb-card"><header><h2><label for="bbmc_custom_css">Eigenes CSS für die Content-Blocker</label></h2><p id="bbmc-css-help">Gilt auf der gesamten Website. <code>.bbmc</code> für den Blocker, <code>.bbmc-placeholder</code> für den Platzhalter, <code>.bbmc-allow</code> für den Freigabebutton. Beispiel: <code>.bbmc { --bbmc-accent: #113262; }</code></p></header>';
         echo '<div class="bb-card-body"><textarea id="bbmc_custom_css" name="' . self::OPTION . '" rows="14" class="code" spellcheck="false" aria-describedby="bbmc-css-help">' . esc_textarea(self::sanitize(get_option(self::OPTION, ''))) . '</textarea>';
         echo '<p class="bb-small">Wird nach den Plugin-Styles geladen. CSS für einzelne Seiten tragen Sie beim Bearbeiten der Seite ein, es hat bei gleicher Spezifität Vorrang. Danach eventuell den Seiten-Cache leeren.</p></div><div class="bb-card-foot">';
