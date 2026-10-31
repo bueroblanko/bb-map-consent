@@ -212,16 +212,35 @@ final class BBMC_Cmp {
     }
     /** Tracking IDs in a text (Borlabs settings or its public config). Meta, Mouseflow and Hotjar only next to their names. */
     public static function find_ids($text) {
-        $found = [];
         $text = (string) $text;
-        if (preg_match('~\b(G-(?=[A-Z]*\d)[A-Z0-9]{8,12})\b~', $text, $m)) { $found['ga4'] = $m[1]; }
-        if (preg_match('~\b(GTM-[A-Z0-9]{5,9})\b~', $text, $m)) { $found['gtm'] = $m[1]; }
-        if (preg_match('~\b(AW-\d{8,12})\b~', $text, $m)) { $found['ads'] = $m[1]; }
-        // Borlabs 3 stores the pixel as "pixel-id" (JSON in its config, serialised in the database).
-        if (preg_match('~pixel[-_]?id(?:\W{0,4}s:\d+:)?\W{0,12}(\d{15,16})\b~i', $text, $m) || preg_match('~(?:facebook|meta[-_ ]?pixel|fbq)[^\d]{0,400}?\b(\d{15,16})\b~is', $text, $m)) { $found['meta'] = $m[1]; }
-        if (preg_match('~mouseflow[^\n]{0,400}?\b([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\b~is', $text, $m)) { $found['mouseflow'] = strtolower($m[1]); }
-        if (preg_match('~(?:hotjar|hjid)[^\d]{0,200}?\b(\d{6,9})\b~is', $text, $m)) { $found['hotjar'] = $m[1]; }
+        // Several candidates per service: Borlabs templates carry example values (G-123456789, AW-123456789) next to real ones.
+        $patterns = [
+            'ga4' => ['~\b(G-(?=[A-Z]*\d)[A-Z0-9]{8,12})\b~'],
+            'gtm' => ['~\b(GTM-[A-Z0-9]{5,9})\b~'],
+            'ads' => ['~\b(AW-\d{8,12})\b~'],
+            // Borlabs 3 stores the pixel as "pixel-id" (JSON in its config, serialised in the database).
+            'meta' => ['~pixel[-_]?id(?:\W{0,4}s:\d+:)?\W{0,12}(\d{15,16})\b~i', '~(?:facebook|meta[-_ ]?pixel|fbq)[^\d]{0,400}?\b(\d{15,16})\b~is'],
+            'mouseflow' => ['~mouseflow[^\n]{0,400}?\b([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\b~is'],
+            'hotjar' => ['~(?:hotjar|hjid)[^\d]{0,200}?\b(\d{6,9})\b~is'],
+        ];
+        $found = [];
+        foreach ($patterns as $key => $list) {
+            foreach ($list as $pattern) {
+                if (!preg_match_all($pattern, $text, $m)) { continue; }
+                foreach ($m[1] as $id) {
+                    if (!self::example_id($id)) { $found[$key] = $key === 'mouseflow' ? strtolower($id) : $id; break 2; }
+                }
+            }
+        }
         return self::clean_tracking($found);
+    }
+    /** Example values from templates and documentation: counting digits (123456789), repeated characters (X…, 0…). */
+    public static function example_id($id) {
+        $core = strtoupper(preg_replace('~^(?:G|GTM|AW)-~i', '', (string) $id));
+        $plain = str_replace('-', '', $core);
+        if (preg_match('~^(.)\1+$~', $plain) || preg_match('~^X+$~', $plain) || strpos($plain, 'XXXX') !== false) { return true; }
+        foreach (['1234567', '9876543', 'ABCDEF1234', '0000000'] as $run) { if (strpos($plain, $run) !== false) { return true; } }
+        return false;
     }
     /** IDs stored by Borlabs Cookie (its database tables and the config files it publishes). */
     public static function borlabs_ids() {

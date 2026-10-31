@@ -295,3 +295,7 @@ Unter Einstellungen › BB Consent › Rechtstexte › Verbindung reicht jetzt e
 ## 0.10.10: „Mit Zentrale verbinden“
 
 Rechtstexte › Verbindung hat jetzt einen Knopf „Mit Zentrale verbinden“. Er öffnet legal.bbkd.de, dort einmal bestätigen (ist die Domain noch unbekannt, kann sie direkt angelegt werden). Danach geht es automatisch zurück, WordPress holt sich den Zugang über eine Einmal-Freigabe (5 Minuten gültig) und ruft die Texte ab. Nichts mehr kopieren. Verbindungscode und Einzelfelder stehen unter „Andere Wege“.
+
+## 0.10.11: Beispielwerte aus Borlabs werden ignoriert
+
+Borlabs-Vorlagen enthalten Beispiel-IDs wie `G-123456789` oder `AW-123456789`. Die Übernahme aus Borlabs zeigt solche Werte nicht mehr an und nimmt stattdessen die echte ID, falls eine vorhanden ist.
