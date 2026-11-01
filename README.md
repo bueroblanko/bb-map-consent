@@ -331,3 +331,5 @@ Für Seiten ohne eigene Rechtstexte, zum Beispiel eine Karriereseite, die auf di
 ## 0.10.18: Übernahme aus Borlabs 3 vollständiger
 
 Borlabs 3 legt seine öffentliche Konfiguration unter `wp-content/cache/borlabs-cookie/` ab und speichert die Codes der Dienste dort nur Base64-codiert (`optInCode`). Die Übernahme sucht jetzt auch dort und dekodiert die Codes. Dadurch werden zum Beispiel der Spotify-Key und ein Meta-Pixel ohne eigenes ID-Feld gefunden.
+
+Außerdem in 0.10.18: Im Einstellungsfenster stehen die Dienste je Kategorie als Liste, eine Zeile pro Dienst mit Anbieter, Sitz und Link zur Datenschutzerklärung, statt als Fließtext. Eigene Texte mit `{dienste}` bekommen die Liste ebenfalls.
