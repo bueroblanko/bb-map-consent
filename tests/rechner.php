@@ -31,6 +31,11 @@ rc_check(strpos($page,'Finanzierungsrechner laden')!==false && strpos($page,'lea
 rc_check(BB_Map_Consent::filter_html('<link rel="preconnect" href="https://leaddealer.app">')==='', 'leaddealer hint removed');
 $nolw = BB_Map_Consent::filter_html('<body><script src="https://leaddealer.app/vendor/wire-elements/wire-extender.js"></script></body>');
 rc_check(strpos($nolw,'class="bbmc"')===false && strpos($nolw,'wire-extender.js"></script>')===false, 'no livewire tag: script held, no placeholder');
+// Every placeholder service needs a consent key in maps.js, otherwise its load button does nothing.
+$js = file_get_contents(__DIR__.'/../assets/maps.js');
+foreach (['youtube','maps','instagram','elfsight','tramino','bookings','planity','dealerweb','jobmorgen','cleverpv','anlagenplaner','leaddealer'] as $svc) {
+    rc_check(preg_match('~const keys = \{[^}]*\b'.$svc.':~', $js)===1, "maps.js key for $svc");
+}
 // Placeholders follow the banner's form of address.
 if (!function_exists('get_option')) { function get_option($k, $d = false) { return $k === 'bbmc_cmp_address' ? ($GLOBALS['rc_address'] ?? $d) : $d; } }
 $GLOBALS['rc_address'] = 'du';
