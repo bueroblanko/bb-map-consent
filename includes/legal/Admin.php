@@ -104,6 +104,12 @@ final class Admin {
             echo '</div>';
             self::insertField($s['key'],'Eigenen Text nach „'.$label.'“ einfügen',$inserts[$s['key']]??'');
         }
+        // Einschübe hinter Bausteinen, die hier nicht mehr greifen (z. B. Dienst entfernt): sonst unsichtbar und nicht löschbar.
+        $shown=array_column(array_filter($segments,fn($s)=>($s['kind']??'')==='block'),'key');
+        foreach($inserts as $k=>$h) {
+            if($k==='_start'||$k==='_end'||in_array($k,$shown,true)||trim(wp_strip_all_tags((string)$h))==='') { continue; }
+            self::insertField($k,'Eigener Text nach „'.preg_replace('~/(de|en)$~','',$k).'“ (Baustein greift nicht mehr, leeren zum Entfernen)',$h);
+        }
         self::insertField('_end','Eigener Text am Ende',$inserts['_end']??'');
         echo '</div>';submit_button('Speichern');echo '</form>';
         self::selbstKnopf($key);

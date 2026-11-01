@@ -10,7 +10,7 @@ add_filter('pre_http_request',function($pre,$args,$url){
  $resource=basename($parts['path']);
  if(strpos($parts['path'],'/segments/')!==false){
   if($args['method']==='PUT'){update_option('bb_legal_test_last_segments',json_decode($args['body'],true),false);$json=['status'=>'ok'];}
-  else $json=['segments'=>[['kind'=>'insert','key'=>'_start','html'=>'<p>Eigener Anfang</p>'],['kind'=>'block','key'=>'imprint_company/de','id'=>1,'html'=>'<h2>Anbieter</h2><p>Neutraler Testtext imprint</p>','customized'=>false],['kind'=>'block','key'=>'imprint_contact/de','id'=>2,'html'=>'<p>Kunde hat das angepasst</p>','customized'=>true]],'customization'=>['blocks'=>[],'inserts'=>[]]];
+  else $json=['segments'=>[['kind'=>'insert','key'=>'_start','html'=>'<p>Eigener Anfang</p>'],['kind'=>'block','key'=>'imprint_company/de','id'=>1,'html'=>'<h2>Anbieter</h2><p>Neutraler Testtext imprint</p>','customized'=>false],['kind'=>'block','key'=>'imprint_contact/de','id'=>2,'html'=>'<p>Kunde hat das angepasst</p>','customized'=>true],['kind'=>'insert','key'=>'imprint_alt/de','html'=>'<p>Verwaister Einschub</p>']],'customization'=>['blocks'=>[],'inserts'=>[]]];
  }
  elseif($resource==='legal')$json=['outputs'=>get_option('bb_legal_test_outputs',[])];
  elseif($resource==='ack'){$json=['status'=>'ok'];update_option('bb_legal_test_last_ack',json_decode($args['body'],true));}

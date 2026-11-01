@@ -28,6 +28,7 @@ if($case==='off'){
  verify(strpos($list,'Rechtsinhalte')!==false&&strpos($list,'edit=imprint')!==false&&strpos($list,'tab=inputs')!==false&&strpos($list,'tab=settings')!==false,'Übersicht mit Bearbeiten-Link und Reitern Angaben und Verbindung');
  $_GET['edit']='imprint/de';ob_start();\BB\Legal\V1\Admin::screen();$editor=ob_get_clean();unset($_GET['edit']);
  verify(strpos($editor,'name="blocks[imprint_company/de]"')!==false&&strpos($editor,'name="inserts[_start]"')!==false&&strpos($editor,'name="inserts[_end]"')!==false,'Editor zeigt Bausteine und Einfügestellen');
+verify(strpos($editor,'name="inserts[imprint_alt/de]"')!==false&&strpos($editor,'Verwaister Einschub')!==false,'Editor zeigt Einschub hinter nicht mehr greifendem Baustein');
  verify(strpos($editor,'angepasst – wird nicht mehr aktualisiert')!==false&&strpos($editor,'name="reset[]"')!==false,'Angepasster Baustein markiert und zurücksetzbar');
  verify(strpos($editor,'Eigener Anfang')!==false,'Bestehender eigener Text vorbelegt');
  $_GET['tab']='settings';ob_start();\BB\Legal\V1\Admin::screen();$settings=ob_get_clean();unset($_GET['tab']);
