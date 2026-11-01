@@ -349,3 +349,7 @@ Unter Einstellungen → BB Consent → Gestaltung lässt sich das überschreiben
 ## 0.10.22: Jobmorgen mit Anbieter
 
 Im Banner steht bei der Jobmorgen-Stellensuche jetzt der Anbieter (MANNHEIMER MORGEN GmbH, Mannheim) und der Link zur Datenschutzerklärung von jobmorgen.de, wie bei YouTube und Google Maps.
+
+## 0.10.23: Finanzierungsrechner über leaddealer.app
+
+Baufinanzierungsrechner, die über leaddealer.app eingebunden sind (z. B. der Rechner von Hüttig & Rompf: `wire-extender.js` plus `<livewire data-component="calculator" …>`), laden erst nach Zustimmung. Bis dahin steht vor dem `<livewire>`-Tag ein Platzhalter „Finanzierungsrechner“. Nach dem Klick wird das Skript als normales `<script src>` eingefügt und startet den Rechner selbst. Widerruf: `[bb_leaddealer_revoke]`. Im Banner erscheint der Dienst als „Finanzierungsrechner (leaddealer.app)“, sobald er auf einer Seite gesehen wurde.
