@@ -19,9 +19,9 @@
       save: 'Auswahl speichern',
       intro: 'Hier legen Sie fest, welche Dienste geladen werden dürfen. Essenzielle Funktionen sind immer aktiv. Eine Einwilligung ist nicht erforderlich, um die Website zu nutzen. Einige Dienste verarbeiten Daten in den USA. Mit Ihrer Einwilligung stimmen Sie auch dieser Verarbeitung zu (Art. 49 Abs. 1 lit. a DSGVO). Für die USA besteht nach Einschätzung des EuGH kein mit der EU vergleichbares Datenschutzniveau. Wenn Sie unter 16 Jahre alt sind, fragen Sie bitte Ihre Erziehungsberechtigten um Erlaubnis. Ihre Auswahl gilt 30 Tage.',
       necessary: 'Ermöglichen grundlegende Funktionen der Website, zum Beispiel das Speichern dieser Auswahl in Ihrem Browser.',
-      analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website: {dienste}.',
-      marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website: {dienste}.',
-      external: 'Inhalte anderer Anbieter, zum Beispiel Videos oder Karten. Beim Laden wird Ihre IP-Adresse an den jeweiligen Anbieter übermittelt. Sie können einzelne Inhalte auch direkt im Platzhalter freigeben. Auf dieser Website: {dienste}.',
+      analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website:{dienste}',
+      marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website:{dienste}',
+      external: 'Inhalte anderer Anbieter, zum Beispiel Videos oder Karten. Beim Laden wird Ihre IP-Adresse an den jeweiligen Anbieter übermittelt. Sie können einzelne Inhalte auch direkt im Platzhalter freigeben. Auf dieser Website:{dienste}',
       more: 'Weitere Informationen finden Sie in der {datenschutz} und im {impressum}.'
     },
     du: {
@@ -33,9 +33,9 @@
       save: 'Auswahl speichern',
       intro: 'Hier legst du fest, welche Dienste geladen werden dürfen. Essenzielle Funktionen sind immer aktiv. Eine Einwilligung ist nicht erforderlich, um die Website zu nutzen. Einige Dienste verarbeiten Daten in den USA. Mit deiner Einwilligung stimmst du auch dieser Verarbeitung zu (Art. 49 Abs. 1 lit. a DSGVO). Für die USA besteht nach Einschätzung des EuGH kein mit der EU vergleichbares Datenschutzniveau. Wenn du unter 16 Jahre alt bist, frag bitte deine Erziehungsberechtigten um Erlaubnis. Deine Auswahl gilt 30 Tage.',
       necessary: 'Ermöglichen grundlegende Funktionen der Website, zum Beispiel das Speichern dieser Auswahl in deinem Browser.',
-      analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website: {dienste}.',
-      marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website: {dienste}.',
-      external: 'Inhalte anderer Anbieter, zum Beispiel Videos oder Karten. Beim Laden wird deine IP-Adresse an den jeweiligen Anbieter übermittelt. Du kannst einzelne Inhalte auch direkt im Platzhalter freigeben. Auf dieser Website: {dienste}.',
+      analytics: 'Erfassen Nutzungsdaten, damit wir verstehen, wie Besucher die Website nutzen. Auf dieser Website:{dienste}',
+      marketing: 'Werden von Anbietern genutzt, um Werbung zu personalisieren und ihren Erfolg zu messen, auch über mehrere Websites hinweg. Auf dieser Website:{dienste}',
+      external: 'Inhalte anderer Anbieter, zum Beispiel Videos oder Karten. Beim Laden wird deine IP-Adresse an den jeweiligen Anbieter übermittelt. Du kannst einzelne Inhalte auch direkt im Platzhalter freigeben. Auf dieser Website:{dienste}',
       more: 'Weitere Informationen findest du in der {datenschutz} und im {impressum}.'
     }
   };
@@ -54,15 +54,17 @@
   if (config.categories.external) words.push('externe Medien wie Videos oder Karten');
   const kategorien = words.join(' sowie ');
   // Own texts (settings page) win over the defaults.
-  const text = (key, services) => (own[key] || base[key]).replace(/\{datenschutz\}/g, privacy).replace(/\{impressum\}/g, imprint).replace(/\{einstellungen\}/g, '<a href="#bb-consent-settings">Einstellungen</a>').replace(/\{kategorien\}/g, kategorien).replace(/\{dienste\}/g, services || '');
+  const text = (key, services) => (own[key] || base[key]).replace(/\{datenschutz\}/g, privacy).replace(/\{impressum\}/g, imprint).replace(/\{einstellungen\}/g, '<a href="#bb-consent-settings">Einstellungen</a>').replace(/\{kategorien\}/g, kategorien).replace(/\{dienste\}\.?/g, services || '');
   // Service name with provider and a link to its privacy policy, where known.
   const providers = config.providers || {};
   const label = (name) => {
     const p = providers[name];
-    if (!p) return esc(name);
-    const link = /^https:\/\//.test(p[1] || '') ? ', <a href="' + esc(p[1]) + '" target="_blank" rel="noopener">Datenschutzerklärung</a>' : '';
-    return esc(name) + ' (' + esc(p[0]) + link + ')';
+    if (!p) return '<li><strong>' + esc(name) + '</strong></li>';
+    const link = /^https:\/\//.test(p[1] || '') ? ' · <a href="' + esc(p[1]) + '" target="_blank" rel="noopener">Datenschutzerklärung</a>' : '';
+    return '<li style="margin-bottom:.35em"><strong>' + esc(name) + '</strong><br>' + esc(p[0]) + link + '</li>';
   };
+  // One line per service instead of running text.
+  const list = (names) => '<ul class="bbmc-services" style="margin:.6em 0 0;padding-left:1.2em;list-style:disc">' + names.map(label).join('') + '</ul>';
   const categories = {necessary: {enabled: true, readOnly: true}};
   const sections = [{description: text('intro')}, {title: titles.necessary, description: text('necessary'), linkedCategory: 'necessary'}];
   used.forEach((key) => {
@@ -70,14 +72,14 @@
     const cookies = clear[key].map((name) => ({name}));
     if (root !== location.hostname.replace(/^www\./, '')) clear[key].forEach((name) => cookies.push({name, domain: root}));
     categories[key] = {autoClear: {cookies, reloadPage: true}};
-    sections.push({title: titles[key], description: text(key, config.categories[key].map(label).join(', ')), linkedCategory: key});
+    sections.push({title: titles[key], description: text(key, list(config.categories[key])), linkedCategory: key});
   });
   if (config.categories.external) {
     // One toggle per placeholder service; assets/maps.js loads or blocks the placeholders accordingly.
     const services = {};
     Object.keys(external).forEach((id) => { services[id] = {label: esc(external[id])}; });
     categories.external = {services};
-    sections.push({title: titles.external, description: text('external', config.categories.external.map(label).join(', ')), linkedCategory: 'external'});
+    sections.push({title: titles.external, description: text('external', list(config.categories.external)), linkedCategory: 'external'});
   }
   sections.push({title: 'Weitere Informationen', description: text('more')});
   const announce = () => document.dispatchEvent(new CustomEvent('bbmc:cmp'));
