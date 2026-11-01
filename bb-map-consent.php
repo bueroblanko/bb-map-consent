@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung, Elfsight, YouTube, Tramino, Microsoft Bookings und die Jobmorgen-Stellensuche.
- * Version: 0.10.16
+ * Version: 0.10.17
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,7 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.10.16');
+define('BBMC_VERSION', '0.10.17');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
@@ -33,8 +33,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.10.16');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.10.16', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.10.17');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.10.17', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -140,7 +140,7 @@ final class BB_Map_Consent {
         $thumb = $service === 'youtube' && class_exists('BBMC_Thumbs') ? BBMC_Thumbs::url((string) ($config['src'] ?? '')) : '';
         $size = $styles ? ' style="' . $styles . '"' : '';
         $compact = $height && $height < 260 ? ' bbmc-compact' : '';
-        $privacy = get_privacy_policy_url() ?: home_url('/datenschutz');
+        $privacy = class_exists('BBMC_Cmp') ? BBMC_Cmp::privacy_url() : (get_privacy_policy_url() ?: home_url('/datenschutz'));
         $link = $privacy ? ' <a href="' . esc_url($privacy) . '">Datenschutzerklärung</a>' : '';
         return '<section class="bbmc' . $compact . '" data-service="' . esc_attr($service) . '"' . $size . ' data-bbmc="' . esc_attr(wp_json_encode($config)) . '"><div class="bbmc-placeholder' . ($thumb ? ' bbmc-thumb" style="--bbmc-thumb:url(' . esc_url($thumb) . ')' : '') . '"><strong>' . $name . ' ist deaktiviert</strong><p class="bbmc-long">' . $notice . $link . '</p><p class="bbmc-short">' . $short . $link . '</p><label><input type="checkbox" class="bbmc-remember"> <span class="bbmc-long">Freigabe für 30 Tage auf diesem Gerät merken</span><span class="bbmc-short">30 Tage merken</span></label><button type="button" class="bbmc-allow">' . $name . ' laden</button><noscript>Zum Freigeben des Inhalts ist JavaScript erforderlich.</noscript></div><div class="bbmc-target" hidden></div><button type="button" class="bbmc-revoke" hidden>Einwilligung widerrufen</button><p class="bbmc-status" role="status"></p></section>';
     }

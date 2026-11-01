@@ -133,4 +133,11 @@ cmp_check(BBMC_Cmp::hide_settings_links('<html><head></head><body></body></html>
 $prov = BBMC_Cmp::config(['mouseflow', 'matomo', 'ext_youtube'], '/d/');
 cmp_check($prov['providers']->Mouseflow === ['Mouseflow ApS, Dänemark', 'https://mouseflow.com/legal/privacy-policy/'] && !isset($prov['providers']->Matomo) && $prov['providers']->YouTube[1] === 'https://policies.google.com/privacy', 'providers '.json_encode($prov['providers']));
 foreach (BBMC_Cmp::PROVIDERS as $id => [$who, $url]) { cmp_check(isset(BBMC_Cmp::SERVICES[$id]) || (strpos($id, 'ext_') === 0 && isset(BBMC_Cmp::EXTERNAL[substr($id, 4)])), "provider id $id"); cmp_check(strpos($url, 'https://') === 0, "provider url $id"); }
+// Own legal links for sites without own pages (e.g. a group's privacy policy); only https.
+$options[BBMC_Cmp::LINKS] = ['privacy' => 'https://www.example.com/policy', 'imprint' => 'javascript:alert(1)'];
+cmp_check(BBMC_Cmp::privacy_url() === 'https://www.example.com/policy' && BBMC_Cmp::link('imprint') === '', 'own links '.BBMC_Cmp::privacy_url());
+$box = BB_Map_Consent::box(['service' => 'youtube', 'kind' => 'iframe', 'src' => 'https://www.youtube-nocookie.com/embed/x']);
+cmp_check(strpos($box, 'href="https://www.example.com/policy"') !== false, 'placeholder uses own privacy link');
+unset($options[BBMC_Cmp::LINKS]);
+cmp_check(BBMC_Cmp::privacy_url() === '/datenschutz/', 'default privacy page');
 echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard, tracking IDs and Borlabs import passed\n";

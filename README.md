@@ -323,3 +323,7 @@ Im Einstellungsfenster steht hinter jedem Dienst der Anbieter mit Sitz und ein L
 ## 0.10.16: Platzhalter mit derselben Anrede wie das Banner
 
 Ist im Banner die Anrede „Du“ eingestellt, sprechen auch die Platzhalter (Karten, Videos, Rechner …) mit „du“ an, zum Beispiel „Mit dem Laden stimmst du zu …“. Bei „Sie“ bleibt alles wie bisher.
+
+## 0.10.17: Eigene Links für Datenschutz und Impressum
+
+Für Seiten ohne eigene Rechtstexte, zum Beispiel eine Karriereseite, die auf die Konzern-Datenschutzerklärung verweist: Unter „Cookie-Banner für Tracking“ lassen sich ein eigener Link zur Datenschutzerklärung und zum Impressum eintragen (nur https). Banner und Platzhalter verlinken dann dorthin. Leer bleibt alles wie bisher.
