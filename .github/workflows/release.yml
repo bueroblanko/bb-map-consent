@@ -28,6 +28,7 @@ jobs:
           php tests/dealerweb.php
           php tests/planity.php
           php tests/cmp.php
+          php tests/look.php
           node tests/consent.js
           node --check assets/maps.js
           node --check includes/legal/editor.js

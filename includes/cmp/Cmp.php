@@ -198,7 +198,9 @@ final class BBMC_Cmp {
         [$html, $found] = self::filter($html);
         $seen = self::remember($found, $cookieless ? ['matomo'] : []);
         if (!$seen) { return self::hide_settings_links($html); }
-        return self::inject($html, self::config($seen, self::privacy_url(), (array) get_option(self::TEXTS, []), get_option(self::ADDRESS, 'sie'), self::imprint_url()), plugins_url('', __FILE__) . '/', BBMC_VERSION);
+        $config = self::config($seen, self::privacy_url(), (array) get_option(self::TEXTS, []), get_option(self::ADDRESS, 'sie'), self::imprint_url());
+        if (class_exists('BBMC_Look')) { $config['look'] = BBMC_Look::client(); }
+        return self::inject($html, $config, plugins_url('', __FILE__) . '/', BBMC_VERSION);
     }
     /** Valid IDs only, normalised; $invalid collects labels of entries that were dropped. */
     public static function clean_tracking(array $ids, array &$invalid = []) {

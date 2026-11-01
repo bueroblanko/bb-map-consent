@@ -339,3 +339,9 @@ Im Einstellungsfenster stehen die Dienste je Kategorie als Liste, eine Zeile pro
 ## 0.10.20: Borlabs-Shortcodes ohne Borlabs
 
 Ist Borlabs deaktiviert, bleiben alte Shortcodes nicht mehr als Rohtext stehen. `[borlabs-cookie type="btn-consent-preferences" title="Cookies"]` (auch Borlabs 2 `btn-cookie-preference`) wird zum Link auf die BB-Consent-Einstellungen, mit dem Titel als Linktext. Umschlossene Inhalte (Content-Blocker) bleiben stehen und werden von BB Consent selbst blockiert, alle anderen Borlabs-Shortcodes verschwinden. Ist Borlabs aktiv, greift das nicht.
+
+## 0.10.21: Banner im Seitenlook
+
+Banner und Platzhalter übernehmen automatisch den Look der Website: Akzentfarbe und Button-Rundung aus Divi (Theme-Optionen), aus den globalen Farben von Elementor oder aus der Palette eines Block-Themes, die Schrift liest das Banner im Browser (Fließtext für den Text, Überschriftenschrift für den Titel). Die unveränderte Divi-Standardfarbe #2ea3f2 zählt nicht als Markenfarbe; ohne erkannte Farbe bleibt das Banner neutral grau. Helle Akzentfarben bekommen dunkle Schrift.
+
+Unter Einstellungen → BB Consent → Gestaltung lässt sich das überschreiben: Akzentfarbe (Wie die Website / Eigene), Schrift (Wie die Website / Systemschrift), Ecken (Wie die Website / Eckig / Leicht rund / Rund), Farbschema des Banners (Hell / Dunkel). Eigenes CSS hat weiter Vorrang, weil es Variablen direkt an `#cc-main` bzw. `.bbmc` setzt, der Seitenlook nur an `:root`.
