@@ -11,6 +11,8 @@ final class BBMC_Cmp {
     const OPTION = 'bbmc_cmp_enabled';
     const SEEN = 'bbmc_cmp_seen';
     const TEXTS = 'bbmc_cmp_texts';
+    /** Links for sites without own legal pages (e.g. a group's privacy policy); empty = WordPress pages. */
+    const LINKS = 'bbmc_cmp_links';
     const ADDRESS = 'bbmc_cmp_address';
     const TRACKING = 'bbmc_cmp_tracking';
     /**
@@ -195,7 +197,7 @@ final class BBMC_Cmp {
         [$html, $found] = self::filter($html);
         $seen = self::remember($found, $cookieless ? ['matomo'] : []);
         if (!$seen) { return self::hide_settings_links($html); }
-        return self::inject($html, self::config($seen, get_privacy_policy_url() ?: home_url('/datenschutz'), (array) get_option(self::TEXTS, []), get_option(self::ADDRESS, 'sie'), self::imprint_url()), plugins_url('', __FILE__) . '/', BBMC_VERSION);
+        return self::inject($html, self::config($seen, self::privacy_url(), (array) get_option(self::TEXTS, []), get_option(self::ADDRESS, 'sie'), self::imprint_url()), plugins_url('', __FILE__) . '/', BBMC_VERSION);
     }
     /** Valid IDs only, normalised; $invalid collects labels of entries that were dropped. */
     public static function clean_tracking(array $ids, array &$invalid = []) {
@@ -313,8 +315,20 @@ final class BBMC_Cmp {
         $head = stripos($html, '</head>');
         return $head === false ? $css . $html : substr_replace($html, $css, $head, 0);
     }
+    /** An own https link (privacy or imprint) from the settings, else ''. */
+    public static function link($key) {
+        $links = function_exists('get_option') ? (array) get_option(self::LINKS, []) : [];
+        $url = isset($links[$key]) ? (string) $links[$key] : '';
+        return preg_match('~^https://[^\s"<>]+$~i', $url) ? $url : '';
+    }
+    /** Privacy policy for banner and placeholders: own link, WordPress privacy page, else /datenschutz. */
+    public static function privacy_url() {
+        return self::link('privacy') ?: (get_privacy_policy_url() ?: home_url('/datenschutz'));
+    }
     /** WordPress has no imprint setting; a published page with the slug impressum or imprint, else /impressum. */
     public static function imprint_url() {
+        $own = self::link('imprint');
+        if ($own) { return $own; }
         foreach (['impressum', 'imprint'] as $slug) {
             $page = get_page_by_path($slug);
             if ($page && $page->post_status === 'publish') { return get_permalink($page); }
@@ -338,6 +352,15 @@ final class BBMC_Cmp {
     public static function register() {
         register_setting('bbmc_cmp', self::OPTION, ['type' => 'boolean', 'default' => false, 'sanitize_callback' => function ($v) { return (bool) $v; }]);
         register_setting('bbmc_cmp', self::ADDRESS, ['type' => 'string', 'default' => 'sie', 'sanitize_callback' => function ($v) { return $v === 'du' ? 'du' : 'sie'; }]);
+        register_setting('bbmc_cmp', self::LINKS, ['type' => 'array', 'default' => [], 'sanitize_callback' => function ($v) {
+            $clean = [];
+            foreach (['privacy', 'imprint'] as $key) {
+                $url = is_array($v) && isset($v[$key]) ? trim((string) $v[$key]) : '';
+                if ($url === '') { continue; }
+                if (preg_match('~^https://[^\s"<>]+$~i', $url)) { $clean[$key] = esc_url_raw($url); } else { add_settings_error(self::LINKS, 'bbmc_links', 'Eigene Links müssen mit https:// beginnen.'); }
+            }
+            return $clean;
+        }]);
         register_setting('bbmc_cmp', self::TEXTS, ['type' => 'array', 'default' => [], 'sanitize_callback' => function ($v) { return self::clean_texts(is_array($v) ? wp_unslash($v) : []); }]);
         register_setting('bbmc_cmp', self::TRACKING, ['type' => 'array', 'default' => [], 'sanitize_callback' => function ($v) {
             $invalid = [];
@@ -378,11 +401,17 @@ final class BBMC_Cmp {
         echo '<form method="post" action="options.php">';
         settings_fields('bbmc_cmp');
         $address = get_option(self::ADDRESS, 'sie');
-        echo '<section class="bb-card"><header><h2>Cookie-Banner für Tracking</h2><p>Erkennt Google Analytics, Tag Manager, Google Ads, Meta-Pixel, LinkedIn, TikTok, Matomo, Hotjar, Mouseflow und Clarity und lädt sie erst nach Zustimmung. Matomo mit <code>disableCookies</code> setzt keine Cookies und läuft ohne Zustimmung. Karten und Videos behalten ihre Platzhalter und erscheinen im Banner als „Externe Medien“. Die Auswahl im Banner und die Freigabe im Platzhalter sind verbunden.</p></header><div class="bb-card-body"><div class="bb-grid">';
+        echo '<section class="bb-card"><header><h2>Cookie-Banner für Tracking</h2><p>Erkennt Google Analytics, Tag Manager, Google Ads, Meta-Pixel, LinkedIn, TikTok, Spotify, Matomo, Hotjar, Mouseflow und Clarity und lädt sie erst nach Zustimmung. Matomo mit <code>disableCookies</code> setzt keine Cookies und läuft ohne Zustimmung. Karten und Videos behalten ihre Platzhalter und erscheinen im Banner als „Externe Medien“. Die Auswahl im Banner und die Freigabe im Platzhalter sind verbunden.</p></header><div class="bb-card-body"><div class="bb-grid">';
         echo '<div class="bb-f w4"><label class="bb-switch"><input type="checkbox" name="' . self::OPTION . '" value="1"' . checked((bool) get_option(self::OPTION, false), true, false) . '><span><strong>Banner aktivieren</strong><small>Im Footer <code>[bb_consent_settings]</code> oder einen Menülink auf <code>#bb-consent-settings</code> einsetzen, damit Besucher ihre Auswahl ändern können.</small></span></label></div>';
         echo '<div class="bb-f w2"><span class="bb-label">Anrede</span><div class="bb-seg" role="radiogroup" aria-label="Anrede">';
         foreach (['sie' => 'Sie', 'du' => 'Du'] as $key => $label) { echo '<label><input type="radio" name="' . self::ADDRESS . '" value="' . $key . '"' . checked($address, $key, false) . '><span>' . $label . '</span></label>'; }
-        echo '</div></div></div></div><div class="bb-card-foot">';
+        echo '</div></div>';
+        $links = (array) get_option(self::LINKS, []);
+        foreach (['privacy' => ['Eigener Link Datenschutzerklärung', 'leer = Datenschutzseite dieser Website'], 'imprint' => ['Eigener Link Impressum', 'leer = Seite /impressum dieser Website']] as $key => [$label, $hint]) {
+            $id = 'bbmc_cmp_link_' . $key;
+            echo '<div class="bb-f w2"><label for="' . $id . '">' . esc_html($label) . '</label><input id="' . $id . '" name="' . self::LINKS . '[' . $key . ']" type="url" value="' . esc_attr(isset($links[$key]) ? $links[$key] : '') . '" placeholder="' . esc_attr($hint) . '" spellcheck="false" autocomplete="off"></div>';
+        }
+        echo '</div></div><div class="bb-card-foot">';
         submit_button('Speichern', 'primary', 'submit', false);
         echo '</div></section>';
         echo '<section class="bb-card"><header><h2>Tracking-Codes</h2><p>Nur für Codes, die sonst nirgends eingebaut sind, zum Beispiel weil Borlabs sie bisher ausgegeben hat. BB Consent schreibt den Standard-Code und lädt ihn erst nach Zustimmung. Ist das Banner aus, wird nichts ausgegeben. Steht dieselbe ID schon im Theme oder einem Plugin, wird sie nicht doppelt eingebaut.</p></header><div class="bb-card-body"><div class="bb-grid">';
