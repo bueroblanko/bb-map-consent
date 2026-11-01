@@ -353,3 +353,7 @@ Im Banner steht bei der Jobmorgen-Stellensuche jetzt der Anbieter (MANNHEIMER MO
 ## 0.10.23: Finanzierungsrechner über leaddealer.app
 
 Baufinanzierungsrechner, die über leaddealer.app eingebunden sind (z. B. der Rechner von Hüttig & Rompf: `wire-extender.js` plus `<livewire data-component="calculator" …>`), laden erst nach Zustimmung. Bis dahin steht vor dem `<livewire>`-Tag ein Platzhalter „Finanzierungsrechner“. Nach dem Klick wird das Skript als normales `<script src>` eingefügt und startet den Rechner selbst. Widerruf: `[bb_leaddealer_revoke]`. Im Banner erscheint der Dienst als „Finanzierungsrechner (leaddealer.app)“, sobald er auf einer Seite gesehen wurde.
+
+## 0.10.24: Finanzierungsrechner lädt per Klick
+
+Korrektur zu 0.10.23: Der Knopf „Finanzierungsrechner laden“ tat nichts, weil der Dienst im Skript keinen Einwilligungsschlüssel hatte. Ein Test prüft jetzt für jeden Platzhalter-Dienst, dass der Schlüssel existiert.
