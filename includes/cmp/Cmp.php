@@ -70,6 +70,7 @@ final class BBMC_Cmp {
         'ext_instagram' => ['Meta Platforms Ireland Limited, Irland', 'https://privacycenter.instagram.com/policy'],
         'ext_bookings' => ['Microsoft Ireland Operations Limited, Irland', 'https://www.microsoft.com/de-de/privacy/privacystatement'],
         'ext_elfsight' => ['Elfsight', 'https://elfsight.com/privacy-policy/'],
+        'ext_jobmorgen' => ['MANNHEIMER MORGEN GmbH, Mannheim', 'https://www.jobmorgen.de/datenschutz'],
         'ext_cleverpv' => ['clever-PV GmbH, Landsberg am Lech', 'https://clever-pv.com/de/datenschutzerklaerung/'],
         'ext_anlagenplaner' => ['Sunbeam Communications GmbH, Berlin, nutzt Google Maps', 'https://sunbeam-communications.com/impressum/'],
     ];
