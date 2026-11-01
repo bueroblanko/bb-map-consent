@@ -335,3 +335,7 @@ Borlabs 3 legt seine öffentliche Konfiguration unter `wp-content/cache/borlabs-
 ## 0.10.19: Dienste als Liste
 
 Im Einstellungsfenster stehen die Dienste je Kategorie als Liste, eine Zeile pro Dienst mit Anbieter, Sitz und Link zur Datenschutzerklärung, statt als Fließtext. Eigene Texte mit `{dienste}` bekommen die Liste ebenfalls.
+
+## 0.10.20: Borlabs-Shortcodes ohne Borlabs
+
+Ist Borlabs deaktiviert, bleiben alte Shortcodes nicht mehr als Rohtext stehen. `[borlabs-cookie type="btn-consent-preferences" title="Cookies"]` (auch Borlabs 2 `btn-cookie-preference`) wird zum Link auf die BB-Consent-Einstellungen, mit dem Titel als Linktext. Umschlossene Inhalte (Content-Blocker) bleiben stehen und werden von BB Consent selbst blockiert, alle anderen Borlabs-Shortcodes verschwinden. Ist Borlabs aktiv, greift das nicht.

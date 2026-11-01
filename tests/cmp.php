@@ -88,6 +88,12 @@ cmp_check(BBMC_Cmp::matomo_cookieless("<script>_paq.push(['disableCookies']);</s
 $options['bbmc_cmp_seen'] = ['matomo', 'ext_youtube'];
 cmp_check(BBMC_Cmp::remember([], ['matomo']) === ['ext_youtube'], 'matomo dropped from seen');
 if (!function_exists('esc_html')) { function esc_html($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); } }
+if (!function_exists('wp_strip_all_tags')) { function wp_strip_all_tags($v) { return strip_tags($v); } }
+if (!function_exists('do_shortcode')) { function do_shortcode($v) { return $v; } }
+cmp_check(strpos(BBMC_Cmp::borlabs_shortcode(['type' => 'btn-consent-preferences', 'title' => 'Cookies', 'element' => 'link']), 'href="#bb-consent-settings"') !== false, 'borlabs preferences shortcode becomes settings link');
+cmp_check(strpos(BBMC_Cmp::borlabs_shortcode(['type' => 'btn-cookie-preference', 'title' => 'Einstellungen']), '>Einstellungen</a>') !== false, 'borlabs 2 preference button keeps title');
+cmp_check(BBMC_Cmp::borlabs_shortcode(['type' => 'cookie-list']) === '', 'other borlabs shortcodes vanish');
+cmp_check(BBMC_Cmp::borlabs_shortcode(['id' => 'youtube', 'type' => 'content-blocker'], '<iframe src="https://www.youtube.com/embed/x"></iframe>') === '<iframe src="https://www.youtube.com/embed/x"></iframe>', 'borlabs content blocker keeps wrapped content');
 cmp_check(strpos(BBMC_Cmp::shortcode(), '>Cookies</a>') !== false && strpos(BBMC_Cmp::shortcode(['label' => 'Cookie-Einstellungen']), '>Cookie-Einstellungen</a>') !== false && strpos(BBMC_Cmp::shortcode(''), '>Cookies</a>') !== false, 'settings link label');
 // Tracking IDs written by BB Consent (e.g. formerly output by Borlabs).
 $bad = [];
