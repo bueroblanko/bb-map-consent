@@ -327,3 +327,7 @@ Ist im Banner die Anrede „Du“ eingestellt, sprechen auch die Platzhalter (Ka
 ## 0.10.17: Eigene Links für Datenschutz und Impressum
 
 Für Seiten ohne eigene Rechtstexte, zum Beispiel eine Karriereseite, die auf die Konzern-Datenschutzerklärung verweist: Unter „Cookie-Banner für Tracking“ lassen sich ein eigener Link zur Datenschutzerklärung und zum Impressum eintragen (nur https). Banner und Platzhalter verlinken dann dorthin. Leer bleibt alles wie bisher.
+
+## 0.10.18: Übernahme aus Borlabs 3 vollständiger
+
+Borlabs 3 legt seine öffentliche Konfiguration unter `wp-content/cache/borlabs-cookie/` ab und speichert die Codes der Dienste dort nur Base64-codiert (`optInCode`). Die Übernahme sucht jetzt auch dort und dekodiert die Codes. Dadurch werden zum Beispiel der Spotify-Key und ein Meta-Pixel ohne eigenes ID-Feld gefunden.

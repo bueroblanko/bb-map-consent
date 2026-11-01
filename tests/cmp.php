@@ -133,6 +133,10 @@ cmp_check(BBMC_Cmp::hide_settings_links('<html><head></head><body></body></html>
 $prov = BBMC_Cmp::config(['mouseflow', 'matomo', 'ext_youtube'], '/d/');
 cmp_check($prov['providers']->Mouseflow === ['Mouseflow ApS, Dänemark', 'https://mouseflow.com/legal/privacy-policy/'] && !isset($prov['providers']->Matomo) && $prov['providers']->YouTube[1] === 'https://policies.google.com/privacy', 'providers '.json_encode($prov['providers']));
 foreach (BBMC_Cmp::PROVIDERS as $id => [$who, $url]) { cmp_check(isset(BBMC_Cmp::SERVICES[$id]) || (strpos($id, 'ext_') === 0 && isset(BBMC_Cmp::EXTERNAL[substr($id, 4)])), "provider id $id"); cmp_check(strpos($url, 'https://') === 0, "provider url $id"); }
+// Borlabs 3 public config (wp-content/cache/borlabs-cookie/…): codes only base64-encoded, key far from the name.
+$cfg = '{"services":{"spotify-pixel":{"name":"Spotify Ads Pixel","optInCode":"KGZ1bmN0aW9uKHcsZCl7dmFyIGlkPSdzcGR0LWNhcHR1cmUnLG49J3NjcmlwdCc7DQoNCg0KDQoNCg0KDQoNCg0KDQoNCg0KDQoNCg0KDQoNCg0KDQoNCncuc3BkdCgnY29uZicsIHsNCiAga2V5OiAnYTFiMmMzZDRlNWY2MDcxODI5M2E0YjVjNmQ3ZThmOTAnLA0KfSk7DQp3LnNwZHQoJ3ZpZXcnKTt9KSh3aW5kb3csZG9jdW1lbnQpOw==","settings":[]},"facebook-pixel":{"name":"Meta","optInCode":"PHNjcmlwdD5mYnEoJ2luaXQnLCAnNjE1MjM0MDg3NzE5MzQyJyk7ZmJxKCd0cmFjaycsJ1BhZ2VWaWV3Jyk7PC9zY3JpcHQ+"}}}';
+$fromCfg = BBMC_Cmp::find_ids($cfg);
+cmp_check(($fromCfg['spotify'] ?? '') === 'a1b2c3d4e5f60718293a4b5c6d7e8f90' && ($fromCfg['meta'] ?? '') === '615234087719342', 'borlabs base64 config '.json_encode($fromCfg));
 // Own legal links for sites without own pages (e.g. a group's privacy policy); only https.
 $options[BBMC_Cmp::LINKS] = ['privacy' => 'https://www.example.com/policy', 'imprint' => 'javascript:alert(1)'];
 cmp_check(BBMC_Cmp::privacy_url() === 'https://www.example.com/policy' && BBMC_Cmp::link('imprint') === '', 'own links '.BBMC_Cmp::privacy_url());
