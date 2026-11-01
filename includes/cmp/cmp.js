@@ -3,6 +3,14 @@
   const node = document.getElementById('bbmc-cmp-config');
   if (!node || !window.CookieConsent) return;
   const config = JSON.parse(node.textContent);
+  // Look of the site (BBMC_Look): fonts are read here, colours and corners come as CSS from PHP.
+  const look = config.look || {};
+  if (look.font === 'site' && document.body) {
+    const heading = document.querySelector('h1, h2');
+    document.documentElement.style.setProperty('--cc-font-family', getComputedStyle(document.body).fontFamily);
+    if (heading) document.documentElement.style.setProperty('--bbmc-heading-font', getComputedStyle(heading).fontFamily);
+  }
+  if (look.scheme === 'dark') document.documentElement.classList.add('cc--darkmode');
   const own = config.texts || {};
   const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
   const privacy = config.privacy ? '<a href="' + esc(config.privacy) + '">Datenschutzerklärung</a>' : 'Datenschutzerklärung';
