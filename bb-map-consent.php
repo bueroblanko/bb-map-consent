@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: BB Consent
- * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung, Elfsight, YouTube, Tramino, Microsoft Bookings und die Jobmorgen-Stellensuche.
- * Version: 0.10.22
+ * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung, Elfsight, YouTube, Tramino, Microsoft Bookings die Jobmorgen-Stellensuche und Rechner (clever-PV, Autarkierechner, leaddealer.app).
+ * Version: 0.10.23
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,7 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.10.22');
+define('BBMC_VERSION', '0.10.23');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
@@ -23,7 +23,7 @@ final class BB_Map_Consent {
         add_action('admin_init', function () {
             if (wp_doing_ajax() && self::frontend_ajax()) { ob_start([__CLASS__, 'filter_ajax']); }
         }, 0);
-        foreach (['youtube' => 'YouTube', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'cleverpv' => 'clever-PV-Rechner', 'anlagenplaner' => 'Autarkierechner'] as $service => $label) {
+        foreach (['youtube' => 'YouTube', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'cleverpv' => 'clever-PV-Rechner', 'anlagenplaner' => 'Autarkierechner', 'leaddealer' => 'Finanzierungsrechner'] as $service => $label) {
             add_shortcode('bb_' . $service . '_revoke', function () use ($service, $label) { return '<button type="button" class="bbmc-revoke" data-service="' . esc_attr($service) . '">' . $label . '-Einwilligung widerrufen</button>'; });
         }
         add_shortcode('bb_elfsight_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="elfsight">Elfsight-Einwilligung widerrufen</button>'; });
@@ -33,8 +33,8 @@ final class BB_Map_Consent {
         add_shortcode('bb_dealerweb_revoke', function () { return '<button type="button" class="bbmc-revoke" data-service="dealerweb">Aktionsbanner-Einwilligung widerrufen</button>'; });
     }
     public static function assets() {
-        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.10.22');
-        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.10.22', true);
+        wp_enqueue_style('bb-map-consent', plugins_url('assets/maps.css', __FILE__), [], '0.10.23');
+        wp_enqueue_script('bb-map-consent', plugins_url('assets/maps.js', __FILE__), [], '0.10.23', true);
     }
     public static function host($url) {
         return strtolower((string) wp_parse_url(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_HOST));
@@ -91,6 +91,15 @@ final class BB_Map_Consent {
         if ($src === '') { return (bool) preg_match('~pv-system-tech\.com/[^"\'\s]*sbloader~i', $tag); }
         return self::anlagenplaner_host($src);
     }
+    /** Baufinanzierungsrechner (e.g. Hüttig & Rompf) served by leaddealer.app: wire-extender.js plus a <livewire> tag. */
+    public static function leaddealer_script($tag) {
+        $src = self::attribute($tag, 'src');
+        if ($src === '') { return (bool) preg_match('~leaddealer\.app/~i', $tag); }
+        return self::leaddealer_host($src);
+    }
+    public static function leaddealer_host($url) {
+        return (bool) preg_match('/(?:^|\.)leaddealer\.app$/', self::host(strpos($url, '//') === 0 ? 'https:' . $url : $url));
+    }
     public static function anlagenplaner_host($url) {
         return (bool) preg_match('/(?:^|\.)pv-system-tech\.com$/', self::host(strpos($url, '//') === 0 ? 'https:' . $url : $url));
     }
@@ -124,6 +133,7 @@ final class BB_Map_Consent {
             'jobmorgen' => ['Stellensuche von jobmorgen.de', 'Mit dem Laden stimmen Sie zu, dass die Stellensuche von jobmorgen.de (MANNHEIMER MORGEN GmbH, Mannheim) eingebunden wird. Dabei werden Ihre IP-Adresse und bei einer Suche Ihre Eingaben an den Anbieter übermittelt.', 'Beim Laden werden Daten an jobmorgen.de übermittelt.'],
             'cleverpv' => ['clever-PV-Rechner', 'Mit dem Laden stimmen Sie zu, dass der Einsparungsrechner der clever-PV GmbH (Landsberg am Lech) eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an clever-PV übermittelt.', 'Beim Laden werden Daten an clever-PV übermittelt.'],
             'anlagenplaner' => ['Autarkierechner', 'Mit dem Laden stimmen Sie zu, dass der Autarkierechner der Sunbeam Communications GmbH (Berlin) eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an Sunbeam übermittelt. Der Rechner nutzt außerdem Google Maps, dabei wird Ihre IP-Adresse an Google übermittelt; Daten können auch in den USA verarbeitet werden.', 'Beim Laden werden Daten an Sunbeam und Google übermittelt.'],
+            'leaddealer' => ['Finanzierungsrechner', 'Mit dem Laden stimmen Sie zu, dass ein Finanzierungsrechner über leaddealer.app eingebunden wird. Dabei werden Ihre IP-Adresse und Ihre Eingaben an den Betreiber des Rechners übermittelt, und es werden technisch notwendige Cookies von leaddealer.app gesetzt.', 'Beim Laden werden Daten an leaddealer.app übermittelt.'],
             'dealerweb' => ['Aktionsbanner', 'Mit dem Laden stimmen Sie zu, dass ein Aktionsbanner der COmarketing GmbH (dealerweb-comarketing.de) eingebunden wird, das über die Website-Plattform Wix ausgeliefert wird. Dabei wird Ihre IP-Adresse an COmarketing und Wix übermittelt; Daten können auch außerhalb der EU verarbeitet werden.', 'Beim Laden werden Daten an COmarketing und Wix übermittelt.'],
         ];
         [$name, $notice, $short] = $texts[$service];
@@ -255,8 +265,9 @@ final class BB_Map_Consent {
         $planity = false;
         $jobmorgen = false;
         $anlagenplaner = false;
+        $leaddealer = false;
         // Tokenise tags without reserialising the document or touching script strings.
-        $html = preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>|<[a-z][a-z0-9]*\b[^>]*\sdata-et-multi-view\s*=[^>]*>~is', function ($m) use ($feeds, &$planity, &$elfsight_loader, &$jobmorgen, &$anlagenplaner) {
+        $html = preg_replace_callback('~<!--.*?-->|<script\b[^>]*>.*?</script\s*>|<blockquote\b[^>]*>.*?</blockquote\s*>|<iframe\b[^>]*>.*?</iframe\s*>|<link\b[^>]*>|<[a-z][a-z0-9]*\b[^>]*\sdata-et-multi-view\s*=[^>]*>~is', function ($m) use ($feeds, &$planity, &$elfsight_loader, &$jobmorgen, &$anlagenplaner, &$leaddealer) {
             $tag = $m[0];
             if (strpos($tag, '<!--') === 0) { return $tag; }
             if (!preg_match('~^<(?:script|blockquote|iframe|link)\b~i', $tag)) { return self::multi_view($tag); }
@@ -289,6 +300,10 @@ final class BB_Map_Consent {
                     $jobmorgen = true;
                     return '<template class="bbmc-feed-script" data-service="jobmorgen" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
                 }
+                if (self::leaddealer_script($tag)) {
+                    $leaddealer = true;
+                    return '<template class="bbmc-feed-script" data-service="leaddealer" data-script="' . esc_attr(base64_encode($tag)) . '"></template>';
+                }
                 if (self::anlagenplaner_script($tag)) {
                     // Like Jobmorgen: the placeholder goes before the calculator's container below.
                     $anlagenplaner = true;
@@ -307,7 +322,7 @@ final class BB_Map_Consent {
             if (stripos($tag, '<link') === 0) {
                 $rel = self::attribute($tag, 'rel');
                 $href = self::attribute($tag, 'href');
-                if ((self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href) === 'static.elfsight.com' || in_array(self::host($href), ['outlook.office365.com', 'outlook.office.com'], true) || self::extra_iframe_service($href) || preg_match('/(?:^|\.)(youtube(?:-nocookie)?\.com|ytimg\.com|googlevideo\.com|tramino\.de)$/', self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href)) || self::google($href) || self::instagram_host($href) || self::dealerweb_url($href) || self::anlagenplaner_host($href) || self::host($href) === 'd2skjte8udjqxw.cloudfront.net' || in_array(self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href), ['jobmorgen.de', 'www.jobmorgen.de'], true)) && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
+                if ((self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href) === 'static.elfsight.com' || in_array(self::host($href), ['outlook.office365.com', 'outlook.office.com'], true) || self::extra_iframe_service($href) || preg_match('/(?:^|\.)(youtube(?:-nocookie)?\.com|ytimg\.com|googlevideo\.com|tramino\.de)$/', self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href)) || self::google($href) || self::instagram_host($href) || self::dealerweb_url($href) || self::anlagenplaner_host($href) || self::leaddealer_host($href) || self::host($href) === 'd2skjte8udjqxw.cloudfront.net' || in_array(self::host(strpos($href, '//') === 0 ? 'https:' . $href : $href), ['jobmorgen.de', 'www.jobmorgen.de'], true)) && preg_match('/preconnect|dns-prefetch|preload|prefetch/i', $rel)) { return ''; }
                 return $tag;
             }
             $src = self::attribute($tag, 'src');
@@ -352,6 +367,9 @@ final class BB_Map_Consent {
         }
         if ($anlagenplaner) {
             $html = preg_replace('~<div\b[^>]*\b(?:id|class)\s*=\s*["\'][^"\']*\bsb-anlagenplaner\b~i', self::box(['service' => 'anlagenplaner', 'kind' => 'scripts', 'height' => 500]) . '$0', $html, 1);
+        }
+        if ($leaddealer) {
+            $html = preg_replace('~<livewire\b~i', self::box(['service' => 'leaddealer', 'kind' => 'scripts', 'height' => 600]) . '$0', $html, 1);
         }
         if ($elfsight_loader && !$elfsight_widgets) {
             // A loader in <head> must not insert a visible section into the head.
