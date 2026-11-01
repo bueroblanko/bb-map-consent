@@ -82,6 +82,7 @@ final class BBMC_Cmp {
         add_action('admin_post_bbmc_cmp_reset', [__CLASS__, 'reset']);
         add_action('admin_post_bbmc_cmp_import', [__CLASS__, 'import']);
         add_shortcode('bb_consent_settings', [__CLASS__, 'shortcode']);
+        add_action('init', function () { if (!shortcode_exists('borlabs-cookie')) { add_shortcode('borlabs-cookie', [__CLASS__, 'borlabs_shortcode']); } }, 99);
         add_action('template_redirect', function () {
             if (self::active() && !is_feed() && !is_admin() && !wp_doing_ajax() && !isset($_GET['et_fb']) && !is_customize_preview()) { ob_start([__CLASS__, 'output']); }
         }, 0);
@@ -348,6 +349,15 @@ final class BBMC_Cmp {
     public static function shortcode($atts = []) {
         $label = is_array($atts) && isset($atts['label']) && trim((string) $atts['label']) !== '' ? (string) $atts['label'] : 'Cookies';
         return '<a href="#bb-consent-settings" class="bbmc-cmp-settings">' . esc_html($label) . '</a>';
+    }
+    /** Leftover Borlabs shortcodes after Borlabs is gone: the preferences button becomes our settings link, wrapped content stays (BB Consent blocks embeds itself), everything else disappears instead of showing as raw text. */
+    public static function borlabs_shortcode($atts = [], $content = null) {
+        $atts = is_array($atts) ? $atts : [];
+        $type = isset($atts['type']) ? strtolower((string) $atts['type']) : '';
+        if (strpos($type, 'btn-') === 0 || strpos($type, 'preference') !== false) {
+            return self::shortcode(['label' => isset($atts['title']) && trim(wp_strip_all_tags((string) $atts['title'])) !== '' ? wp_strip_all_tags((string) $atts['title']) : 'Cookies']);
+        }
+        return $content !== null && $content !== '' ? do_shortcode($content) : '';
     }
     /** Known keys only, simple inline HTML (links, bold) allowed. */
     public static function clean_texts(array $texts) {
