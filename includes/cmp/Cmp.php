@@ -248,6 +248,13 @@ final class BBMC_Cmp {
     /** Tracking IDs in a text (Borlabs settings or its public config). Meta, Mouseflow, Hotjar, TikTok and Spotify only next to their names. */
     public static function find_ids($text) {
         $text = (string) $text;
+        // Borlabs 3 keeps each service's code base64-encoded in its public config (optInCode …); some IDs only appear there.
+        if (preg_match_all('~"(?:optInCode|optOutCode|fallbackCode)"\s*:\s*"([A-Za-z0-9+/=\\\\]{16,})"~', $text, $codes)) {
+            foreach ($codes[1] as $code) {
+                $decoded = base64_decode(str_replace('\\/', '/', $code), true);
+                if (is_string($decoded) && $decoded !== '') { $text .= "\n" . $decoded; }
+            }
+        }
         // Several candidates per service: Borlabs templates carry example values (G-123456789, AW-123456789) next to real ones.
         $patterns = [
             'ga4' => ['~\b(G-(?=[A-Z]*\d)[A-Z0-9]{8,12})\b~'],
@@ -258,7 +265,7 @@ final class BBMC_Cmp {
             'mouseflow' => ['~mouseflow[^\n]{0,400}?\b([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\b~is'],
             'hotjar' => ['~(?:hotjar|hjid)[^\d]{0,200}?\b(\d{6,9})\b~is'],
             'tiktok' => ['~(?:tiktok|ttq)[^\n]{0,400}?\b((?=[A-Z]*\d)[A-Z0-9]{20})\b~s'],
-            'spotify' => ['~(?:spotify|spdt)[^\n]{0,400}?\b([a-f0-9]{32})\b~is'],
+            'spotify' => ['~spdt\(\s*[\'"]conf[\'"]\s*,\s*\{\s*key\s*:\s*[\'"]([a-f0-9]{32})[\'"]~i', '~(?:spotify|spdt)[^\n]{0,400}?\b([a-f0-9]{32})\b~is'],
         ];
         $found = [];
         foreach ($patterns as $key => $list) {
@@ -292,7 +299,9 @@ final class BBMC_Cmp {
         }
         $uploads = function_exists('wp_upload_dir') ? wp_upload_dir(null, false) : [];
         if (!empty($uploads['basedir'])) {
-            foreach (array_merge((array) glob($uploads['basedir'] . '/borlabs-cookie/*.js'), (array) glob($uploads['basedir'] . '/borlabs-cookie/*/*.js')) as $file) {
+            // Borlabs 3 writes its public config to wp-content/cache/borlabs-cookie/<blog>/, older versions to uploads.
+            $content = defined('WP_CONTENT_DIR') ? WP_CONTENT_DIR : dirname($uploads['basedir']);
+            foreach (array_merge((array) glob($uploads['basedir'] . '/borlabs-cookie/*.js'), (array) glob($uploads['basedir'] . '/borlabs-cookie/*/*.js'), (array) glob($content . '/cache/borlabs-cookie/*.js'), (array) glob($content . '/cache/borlabs-cookie/*/*.js')) as $file) {
                 if (is_file($file) && filesize($file) < 2000000) { $text .= file_get_contents($file) . "\n"; }
             }
         }
