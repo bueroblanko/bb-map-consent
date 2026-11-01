@@ -99,7 +99,7 @@ final class BBMC_Look {
     public static function hover($hex) {
         $target = self::light($hex) ? 255 : 0;
         $out = '#';
-        foreach ([1, 3, 5] as $i) { $out .= sprintf('%02x', (int) round(hexdec(substr($hex, $i, 2)) * 0.82 + $target * 0.18)); }
+        foreach ([1, 3, 5] as $i) { $out .= sprintf('%02x', intdiv((int) hexdec(substr($hex, $i, 2)) * 82 + $target * 18 + 50, 100)); }
         return $out;
     }
     public static function css(array $look) {
