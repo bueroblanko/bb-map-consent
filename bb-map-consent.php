@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BB Consent
  * Description: Lokale Einwilligung für Google Maps, Snazzy Maps, klassische Divi-Karten, Instagram, DealerWeb-Aktionsbanner, Planity-Terminbuchung, Elfsight, YouTube, Tramino, Microsoft Bookings die Jobmorgen-Stellensuche und Rechner (clever-PV, Autarkierechner, leaddealer.app).
- * Version: 0.10.24
+ * Version: 0.10.25
  * Update URI: https://github.com/bueroblanko/bb-map-consent
  * Plugin URI: https://github.com/bueroblanko/bb-map-consent
  * Requires at least: 6.2
@@ -11,7 +11,7 @@
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) { exit; }
-define('BBMC_VERSION', '0.10.24');
+define('BBMC_VERSION', '0.10.25');
 final class BB_Map_Consent {
     public static function boot() {
         add_action('wp_enqueue_scripts', [__CLASS__, 'assets']);
