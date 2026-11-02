@@ -32,7 +32,7 @@ final class BBMC_Cmp {
         'spotify' => ['Spotify Ads Pixel', '~^[a-f0-9]{32}$~', 'Pixel-Key (32 Zeichen)', false],
     ];
     /** Own texts per site (e.g. from eRecht24); empty fields keep the neutral defaults in cmp.js. */
-    const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing', 'external' => 'Beschreibung Externe Medien', 'more' => 'Weitere Informationen'];
+    const TEXT_FIELDS = ['title' => 'Titel', 'description' => 'Banner-Text', 'description_none' => 'Banner-Text ohne Dienste', 'ok' => 'Button „Verstanden“ (ohne Dienste)', 'accept_all' => 'Button „Alle akzeptieren“', 'accept_necessary' => 'Button „Nur notwendige“', 'preferences' => 'Button „Einstellungen“', 'save' => 'Button „Auswahl speichern“', 'intro' => 'Einleitung in den Einstellungen', 'necessary' => 'Beschreibung Notwendig', 'analytics' => 'Beschreibung Statistik', 'marketing' => 'Beschreibung Marketing', 'external' => 'Beschreibung Externe Medien', 'more' => 'Weitere Informationen'];
     const CATEGORIES = ['analytics' => 'Statistik', 'marketing' => 'Marketing', 'external' => 'Externe Medien'];
     /** Placeholder services of BB Consent (data-service of .bbmc) => label in the banner. Seen ids carry the prefix ext_. */
     const EXTERNAL = ['youtube' => 'YouTube', 'maps' => 'Google Maps', 'instagram' => 'Instagram', 'elfsight' => 'Elfsight', 'tramino' => 'Tramino', 'bookings' => 'Microsoft Bookings', 'planity' => 'Planity', 'dealerweb' => 'Aktionsbanner (COmarketing)', 'jobmorgen' => 'Jobmorgen', 'cleverpv' => 'clever-PV-Rechner', 'anlagenplaner' => 'Autarkierechner', 'leaddealer' => 'Finanzierungsrechner (leaddealer.app)'];
@@ -198,7 +198,7 @@ final class BBMC_Cmp {
         $cookieless = self::matomo_cookieless($html);
         [$html, $found] = self::filter($html);
         $seen = self::remember($found, $cookieless ? ['matomo'] : []);
-        if (!$seen) { return self::hide_settings_links($html); }
+        // Switched on means shown: without a service that needs consent the banner says so (cmp.js, text description_none).
         $config = self::config($seen, self::privacy_url(), (array) get_option(self::TEXTS, []), get_option(self::ADDRESS, 'sie'), self::imprint_url());
         if (class_exists('BBMC_Look')) { $config['look'] = BBMC_Look::client(); }
         return self::inject($html, $config, plugins_url('', __FILE__) . '/', BBMC_VERSION);
@@ -400,8 +400,8 @@ final class BBMC_Cmp {
     }
     /** Settings page sections: [title, hint, [[key, width of 6]]]. */
     const TEXT_SECTIONS = [
-        ['Banner', 'Erscheint beim ersten Besuch.', [['title', 6], ['description', 6]]],
-        ['Buttons', '', [['accept_all', 3], ['accept_necessary', 3], ['preferences', 3], ['save', 3]]],
+        ['Banner', 'Erscheint beim ersten Besuch.', [['title', 6], ['description', 6], ['description_none', 6]]],
+        ['Buttons', '', [['accept_all', 3], ['accept_necessary', 3], ['preferences', 3], ['save', 3], ['ok', 3]]],
         ['Einstellungen-Fenster', 'Öffnet sich über „Einstellungen“ oder den Link im Footer.', [['intro', 6], ['necessary', 6], ['analytics', 3], ['marketing', 3], ['external', 6], ['more', 6]]],
     ];
     public static function screen() {
@@ -452,9 +452,9 @@ final class BBMC_Cmp {
             foreach ($fields as [$key, $width]) {
                 $id = 'bbmc_cmp_text_' . $key;
                 $value = isset($texts[$key]) ? (string) $texts[$key] : '';
-                $long = in_array($key, ['description', 'intro', 'necessary', 'analytics', 'marketing', 'external', 'more'], true);
+                $long = in_array($key, ['description', 'description_none', 'intro', 'necessary', 'analytics', 'marketing', 'external', 'more'], true);
                 echo '<div class="bb-f w' . $width . '"><label for="' . $id . '">' . esc_html(self::TEXT_FIELDS[$key]) . '</label>' . ($long
-                    ? '<textarea id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" rows="' . ($key === 'description' || $key === 'intro' ? 4 : 2) . '" placeholder="Standardtext">' . esc_textarea($value) . '</textarea>'
+                    ? '<textarea id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" rows="' . ($key === 'description' || $key === 'description_none' || $key === 'intro' ? 4 : 2) . '" placeholder="Standardtext">' . esc_textarea($value) . '</textarea>'
                     : '<input id="' . $id . '" name="' . self::TEXTS . '[' . $key . ']" type="text" value="' . esc_attr($value) . '" placeholder="Standardtext">') . '</div>';
             }
             echo '</div></div>';

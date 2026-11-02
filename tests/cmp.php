@@ -150,4 +150,15 @@ $box = BB_Map_Consent::box(['service' => 'youtube', 'kind' => 'iframe', 'src' =>
 cmp_check(strpos($box, 'href="https://www.example.com/policy"') !== false, 'placeholder uses own privacy link');
 unset($options[BBMC_Cmp::LINKS]);
 cmp_check(BBMC_Cmp::privacy_url() === '/datenschutz/', 'default privacy page');
+// Banner switched on but no service on the site: the banner is still injected (plain notice), links stay visible.
+if (!function_exists('plugins_url')) { function plugins_url($p = '', $f = '') { return 'https://example.test/wp-content/plugins/bb-consent/includes/cmp'; } }
+if (!defined('BBMC_VERSION')) { define('BBMC_VERSION', 'test'); }
+if (!function_exists('get_page_by_path')) { function get_page_by_path($p) { return null; } }
+if (!function_exists('home_url')) { function home_url($p = '') { return 'https://example.test' . $p; } }
+$options['bbmc_cmp_seen'] = [];
+$options[BBMC_Cmp::TRACKING] = [];
+$plainPage = '<html><head></head><body><a href="#bb-consent-settings" class="bbmc-cmp-settings">Cookies</a></body></html>';
+$outPlain = BBMC_Cmp::output($plainPage);
+cmp_check(strpos($outPlain, 'id="bbmc-cmp-config"') !== false && strpos($outPlain, 'bbmc-cmp-nolinks') === false, 'banner shown without services');
+cmp_check(strpos(file_get_contents(__DIR__.'/../includes/cmp/cmp.js'), "description_none") !== false && isset(BBMC_Cmp::TEXT_FIELDS['description_none'], BBMC_Cmp::TEXT_FIELDS['ok']), 'texts for banner without services');
 echo "CMP: ".count($cases)." trackers, untouched scripts, noscript, hints, revision, injection and other-CMP guard, tracking IDs and Borlabs import passed\n";

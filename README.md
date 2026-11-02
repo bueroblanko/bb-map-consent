@@ -354,6 +354,10 @@ Im Banner steht bei der Jobmorgen-Stellensuche jetzt der Anbieter (MANNHEIMER MO
 
 Baufinanzierungsrechner, die über leaddealer.app eingebunden sind (z. B. der Rechner von Hüttig & Rompf: `wire-extender.js` plus `<livewire data-component="calculator" …>`), laden erst nach Zustimmung. Bis dahin steht vor dem `<livewire>`-Tag ein Platzhalter „Finanzierungsrechner“. Nach dem Klick wird das Skript als normales `<script src>` eingefügt und startet den Rechner selbst. Widerruf: `[bb_leaddealer_revoke]`. Im Banner erscheint der Dienst als „Finanzierungsrechner (leaddealer.app)“, sobald er auf einer Seite gesehen wurde.
 
+## 0.10.26: Banner erscheint immer, wenn er eingeschaltet ist
+
+Ist der Cookie-Banner eingeschaltet, erscheint er jetzt auch dann, wenn auf der Website (noch) kein Dienst erkannt wurde, der eine Einwilligung braucht. Er zeigt dann einen schlichten Hinweis (eigener Text „Banner-Text ohne Dienste“, Button „Verstanden“), und der Link „Cookies“ bleibt sichtbar. Sobald ein Dienst erkannt wird, wechselt er automatisch zur normalen Abfrage und fragt Besucher neu.
+
 ## 0.10.25: Verwaiste Einschübe im Editor
 
 Eigene Texte, die hinter einem Baustein stehen, der für die Website nicht mehr greift (z. B. nach dem Entfernen eines Dienstes), erscheinen jetzt im Editor unter „Rechtsinhalte“ als eigenes Feld. Leeren und speichern entfernt sie. Vorher standen sie weiter im Text, waren im Editor aber unsichtbar.

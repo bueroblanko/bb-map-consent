@@ -21,6 +21,8 @@
     sie: {
       title: 'Datenschutz-Einstellungen',
       description: 'Wir möchten auf dieser Website {kategorien} nutzen. Diese werden erst geladen, wenn Sie einwilligen. Dabei können personenbezogene Daten wie Ihre IP-Adresse verarbeitet werden, teilweise auch in den USA. Ihre Einwilligung ist freiwillig und lässt sich jederzeit unter {einstellungen} widerrufen. Mehr in der {datenschutz}.',
+      description_none: 'Diese Website verwendet nur technisch notwendige Funktionen, zum Beispiel um Ihre Auswahl in diesem Hinweis zu speichern. Statistik-, Marketing- oder externe Dienste werden nicht geladen. Mehr in der {datenschutz}.',
+      ok: 'Verstanden',
       accept_all: 'Alle akzeptieren',
       accept_necessary: 'Nur essenzielle',
       preferences: 'Einstellungen',
@@ -35,6 +37,8 @@
     du: {
       title: 'Datenschutz-Einstellungen',
       description: 'Wir möchten auf dieser Website {kategorien} nutzen. Diese werden erst geladen, wenn du einwilligst. Dabei können personenbezogene Daten wie deine IP-Adresse verarbeitet werden, teilweise auch in den USA. Deine Einwilligung ist freiwillig und lässt sich jederzeit unter {einstellungen} widerrufen. Mehr in der {datenschutz}.',
+      description_none: 'Diese Website verwendet nur technisch notwendige Funktionen, zum Beispiel um deine Auswahl in diesem Hinweis zu speichern. Statistik-, Marketing- oder externe Dienste werden nicht geladen. Mehr in der {datenschutz}.',
+      ok: 'Verstanden',
       accept_all: 'Alle akzeptieren',
       accept_necessary: 'Nur essenzielle',
       preferences: 'Einstellungen',
@@ -61,6 +65,8 @@
   const words = kinds.length ? [(kinds.length > 1 ? kinds[0] + '- und ' + kinds[1] : kinds[0]) + 'dienste'] : [];
   if (config.categories.external) words.push('externe Medien wie Videos oder Karten');
   const kategorien = words.join(' sowie ');
+  // Banner switched on but nothing on the site needs consent (yet): a plain notice with one button.
+  const none = !used.length && !config.categories.external;
   // Own texts (settings page) win over the defaults.
   const text = (key, services) => (own[key] || base[key]).replace(/\{datenschutz\}/g, privacy).replace(/\{impressum\}/g, imprint).replace(/\{einstellungen\}/g, '<a href="#bb-consent-settings">Einstellungen</a>').replace(/\{kategorien\}/g, kategorien).replace(/\{dienste\}\.?/g, services || '');
   // Service name with provider and a link to its privacy policy, where known.
@@ -74,7 +80,7 @@
   // One line per service instead of running text.
   const list = (names) => '<ul class="bbmc-services" style="margin:.6em 0 0;padding-left:1.2em;list-style:disc">' + names.map(label).join('') + '</ul>';
   const categories = {necessary: {enabled: true, readOnly: true}};
-  const sections = [{description: text('intro')}, {title: titles.necessary, description: text('necessary'), linkedCategory: 'necessary'}];
+  const sections = [{description: text(none ? 'description_none' : 'intro')}, {title: titles.necessary, description: text('necessary'), linkedCategory: 'necessary'}];
   used.forEach((key) => {
     // Trackers often set cookies on the main domain (.kunde.de), also when the site runs on a subdomain.
     const cookies = clear[key].map((name) => ({name}));
@@ -111,16 +117,16 @@
     language: {default: 'de', translations: {de: {
       consentModal: {
         title: text('title'),
-        description: text('description'),
-        acceptAllBtn: text('accept_all'),
-        acceptNecessaryBtn: text('accept_necessary'),
+        description: text(none ? 'description_none' : 'description'),
+        acceptAllBtn: none ? undefined : text('accept_all'),
+        acceptNecessaryBtn: text(none ? 'ok' : 'accept_necessary'),
         showPreferencesBtn: text('preferences'),
         footer: privacy + ' ' + imprint
       },
       preferencesModal: {
         title: text('title'),
-        acceptAllBtn: text('accept_all'),
-        acceptNecessaryBtn: text('accept_necessary'),
+        acceptAllBtn: none ? undefined : text('accept_all'),
+        acceptNecessaryBtn: text(none ? 'ok' : 'accept_necessary'),
         savePreferencesBtn: text('save'),
         closeIconLabel: 'Schließen',
         sections
