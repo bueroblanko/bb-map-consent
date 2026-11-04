@@ -366,14 +366,17 @@ Eigene Texte, die hinter einem Baustein stehen, der für die Website nicht mehr 
 
 Korrektur zu 0.10.23: Der Knopf „Finanzierungsrechner laden“ tat nichts, weil der Dienst im Skript keinen Einwilligungsschlüssel hatte. Ein Test prüft jetzt für jeden Platzhalter-Dienst, dass der Schlüssel existiert.
 
+## 0.11.2: Haftungsausschluss vor dem Speichern
+
+Im Schritt „Abschluss“ des Formulars erscheint bei Änderungen ein Haftungsausschluss zum Anhaken (wie bei eRecht24).
+„Speichern und veröffentlichen“ ist erst danach aktiv; ohne Häkchen lehnt auch der Server das Speichern ab.
+
 ## 0.11.1: Formular direkt in WordPress
 
 Das Formular der Zentrale (Impressum und Datenschutz, Schritte, Felder, Live-Vorschau, Übernahme aus dem
 festen Impressum) steht direkt unter Einstellungen → Rechtstexte, ohne Weiterleitung. `includes/legal/form.js`
 ist dasselbe Skript wie in BB Studio (`public/bb-legal-form.js`), es ruft `admin-ajax.php?action=bb_legal_form`
 (Nonce, nur Admins), das signiert an die Zentrale weiterreicht (`form/*`, `PUT inputs`) und danach neu abruft.
-Vor dem Speichern muss ein Haftungsausschluss angehakt werden (wie bei eRecht24); ohne Häkchen lehnt auch
-der Server das Speichern ab.
 
 ## 0.11.0: Rechtstexte nur noch im Formular der Zentrale
 
