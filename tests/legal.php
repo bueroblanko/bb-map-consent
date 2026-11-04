@@ -60,10 +60,18 @@ $GLOBALS['admin']=true;Module::shortcode(['type'=>'imprint','lang'=>'en']);check
 class PushRequest{private $body;private $headers;public function __construct($body,$headers){$this->body=$body;$this->headers=$headers;}public function get_body(){return $this->body;}public function get_header($name){return $this->headers[$name]??'';}}
 $_SERVER['REQUEST_URI']='/wp-json/bb-legal/v1/push';$body=json_encode(['site_id'=>Store::get('site_id'),'output_id'=>2]);$timestamp=(string)time();$signature=hash_hmac('sha256',"POST\n".$_SERVER['REQUEST_URI']."\n".$timestamp."\n".$body,$key);$request=new PushRequest($body,['x-bb-site'=>Store::get('site_id'),'x-bb-timestamp'=>$timestamp,'x-bb-signature'=>$signature]);check(Module::verifyPush($request)===true,'Signierter Push akzeptiert');check(Module::verifyPush($request) instanceof WP_Error,'Push-Replay abgewehrt');check(Module::push($request)->status===202,'Push plant asynchronen Abruf');
 $GLOBALS['shortcode_tags']['erecht24']='foreign_callback';check(Module::conflicts(),'Fremde Handler erkannt');Module::activate();check($GLOBALS['shortcode_tags']['erecht24']==='foreign_callback','Fremde Handler nicht überschrieben');
-$GLOBALS['requests']=[];$GLOBALS['http']=[reply(['url'=>'https://legal.example.test/?formular='.str_repeat('a',64),'expires_in'=>600])];
-check((new Client())->formLink('https://example.test/wp-admin/options-general.php?page=bb-legal')==='https://legal.example.test/?formular='.str_repeat('a',64),'Formular-Link aus der Zentrale');
-[$url,$args]=$GLOBALS['requests'][0];check($args['method']==='POST'&&substr(parse_url($url,PHP_URL_PATH),-10)==='/form-link'&&json_decode($args['body'],true)['return']==='https://example.test/wp-admin/options-general.php?page=bb-legal','Formular-Link signiert mit Rückweg angefragt');
-$GLOBALS['http']=[reply(['url'=>'https://evil.example/?formular='.str_repeat('a',64)])];$bad=false;try{(new Client())->formLink('x');}catch(\RuntimeException $e){$bad=true;}check($bad,'Fremde Formular-Adresse abgelehnt');
+$GLOBALS['requests']=[];$GLOBALS['http']=[reply(['type'=>'imprint','steps'=>[],'inputs'=>['phone'=>'1'],'version'=>3,'prefill'=>false])];
+check((new Client())->form('imprint',['aktion'=>'laden'])['version']===3,'Formular: Felder aus der Zentrale');
+[$url]=$GLOBALS['requests'][0];check(substr(parse_url($url,PHP_URL_PATH),-13)==='/form/imprint','Formular: Typ im Pfad');
+$GLOBALS['requests']=[];$GLOBALS['http']=[reply(['texts'=>[['language'=>'de','title'=>'Impressum','html'=>'<p>x</p>']],'render_errors'=>[]])];
+check((new Client())->form('imprint',['aktion'=>'vorschau','inputs'=>['phone'=>'2']])['texts'][0]['html']==='<p>x</p>','Formular: Vorschau');
+[$url,$args]=$GLOBALS['requests'][0];check($args['method']==='POST'&&json_decode($args['body'],true)['inputs']['phone']==='2','Formular: Vorschau schickt Eingaben');
+$GLOBALS['requests']=[];$GLOBALS['http']=[reply(['status'=>'ok','inputs'=>['phone'=>'2'],'version'=>4,'render_errors'=>['Firma fehlt'],'conflicts'=>[]])];
+$r=(new Client())->form('imprint',['aktion'=>'speichern','inputs'=>['phone'=>'2'],'version'=>3]);
+[$url,$args]=$GLOBALS['requests'][0];check($args['method']==='PUT'&&json_decode($args['body'],true)['base_version_id']===3,'Formular: Speichern mit Basisversion');
+check($r['unvollstaendig']&&strpos($r['meldung'],'Firma fehlt')!==false,'Formular: unvollständig gemeldet');
+$bad=false;try{(new Client())->form('terms',['aktion'=>'laden']);}catch(\RuntimeException $e){$bad=true;}check($bad,'Formular: nur Impressum und Datenschutz');
+$bad=false;try{(new Client())->form('imprint',['aktion'=>'loeschen']);}catch(\RuntimeException $e){$bad=true;}check($bad,'Formular: unbekannte Aktion abgelehnt');
 check(Admin::cleanText('<p>Text</p><script>alert(1)</script><style>p{}</style>')==='<p>Text</p>','Skript- und Stilblöcke samt Inhalt entfernt');
 $shop=[row(1),row(2,'privacy_policy'),row(30,'terms'),row(31,'withdrawal')];check(Store::validManifest($shop),'Manifest mit AGB und Widerruf gültig');
 check(Store::validManifest([row(1),row(2,'privacy_policy'),row(32,'kuenftig')]),'Unbekannte Textart wird übersprungen');check(!Store::validManifest([row(32,'kuenftig')]),'Nur unbekannte Textarten abgelehnt');

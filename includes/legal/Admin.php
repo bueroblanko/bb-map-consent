@@ -8,6 +8,7 @@ final class Admin {
         add_action('admin_enqueue_scripts',function($current)use($hook){
             if($current!==$hook) { return; }
             wp_enqueue_style('bb-ui-admin',Module::url().'/admin.css',[],Module::version());
+            wp_enqueue_script('bb-legal-form',Module::url().'/form.js',[],Module::version(),true);
         });
     }
     public static function notice() {
@@ -20,19 +21,34 @@ final class Admin {
         echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
         echo '<input type="hidden" name="action" value="bb_legal_save"><input type="hidden" name="operation" value="'.esc_attr($action).'">'; wp_nonce_field('bb_legal_'.$action);
     }
+    /** Formular der Zentrale direkt hier (form.js), Endpunkt ist formAjax(). */
+    private static function formular(array $types) {
+        $types=array_values(array_filter($types,function($t){ return in_array($t,Client::FORM_TYPES,true)&&self::selbst($t.'/de')===null; }));
+        if(!$types) { return; }
+        $endpoint=add_query_arg(['action'=>'bb_legal_form','_wpnonce'=>wp_create_nonce('bb_legal_form')],admin_url('admin-ajax.php'));
+        echo '<div style="margin:16px 0 24px" data-bb-legal-form="'.esc_attr(wp_json_encode(['endpunkt'=>$endpoint,'typen'=>$types])).'"><p>Formular wird geladen …</p></div>';
+    }
+    public static function formAjax() {
+        if(!current_user_can('manage_options')) { wp_send_json(['fehler'=>'Keine Berechtigung.'],403); }
+        if(!check_ajax_referer('bb_legal_form','_wpnonce',false)) { wp_send_json(['fehler'=>'Sitzung abgelaufen. Bitte die Seite neu laden.'],403); }
+        $data=json_decode((string)file_get_contents('php://input'),true);
+        $data=is_array($data)?$data:[];
+        $type=is_string($data['typ']??null)?$data['typ']:'';
+        if(!in_array($type,Client::FORM_TYPES,true)||self::selbst($type.'/de')!==null) { wp_send_json(['fehler'=>'Für diesen Text gibt es hier kein Formular.'],404); }
+        try { wp_send_json((new Client())->form($type,$data)); }
+        catch(\Throwable $e) { wp_send_json(['fehler'=>$e->getMessage()],409); }
+    }
     private static function url($args=[]) { return add_query_arg(array_merge(['page'=>'bb-legal'],$args),admin_url('options-general.php')); }
     public static function screen() {
         if (!current_user_can('manage_options')) { return; }
-        $messages=['saved'=>'Einstellungen gespeichert.','connected'=>'Verbunden. Texte und Angaben wurden aus der Zentrale abgerufen, Vorschau unter Rechtsinhalte.','connected_failed'=>'Verbindung gespeichert, aber der Abruf ist fehlgeschlagen. Code prüfen oder später „Texte und Angaben jetzt abrufen“.','connect_failed'=>'Verbinden hat nicht geklappt, der Link war abgelaufen oder schon benutzt. Bitte erneut auf „Mit Zentrale verbinden“ klicken.','connection_empty'=>'Nichts eingetragen. Am einfachsten oben auf „Mit Zentrale verbinden“ klicken.','code_invalid'=>'Der Verbindungscode ist unvollständig oder ungültig. Bitte in der Zentrale neu kopieren.','switch_blocked'=>'Diese Website ist schon mit einem anderen Projekt verbunden. Erst das Rechtstext-Modul ausschalten, dann neu verbinden.','synced'=>'Texte und Angaben aus der Zentrale abgerufen.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Angaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Angaben gespeichert und an die Zentrale gesendet.','merged'=>'Gespeichert. Parallele Änderungen wurden zusammengeführt.','conflict'=>'Gespeichert, aber einige Felder wurden parallel geändert. Bitte unten prüfen.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.','segments_ok'=>'Gespeichert. Geänderte Bausteine werden ab jetzt nicht mehr automatisch aktualisiert, alle anderen schon.','segments_unchanged'=>'Keine Änderungen.','segments_draft'=>'Zentrale nicht erreichbar. Deine Änderungen sind lokal gespeichert und stehen beim nächsten Öffnen wieder im Editor.','selbst_an'=>'Der Text ist vom Abgleich ausgeschlossen und wird hier selbst gepflegt.','selbst_aus'=>'Der Text kommt wieder aus der Rechtstexte-Zentrale.','selbst_gespeichert'=>'Gespeichert. Der Text ist sofort auf der Website.','form_saved'=>'Gespeichert. Die Texte wurden aus der Zentrale neu abgerufen.','form_saved_failed'=>'Gespeichert. Der Abruf ist fehlgeschlagen, die Texte kommen mit dem nächsten Abgleich.','form_failed'=>'Das Formular konnte nicht geöffnet werden. Bitte die Verbindung prüfen und erneut versuchen.'];
-        $problem=['connect_failed'=>'error','connection_empty'=>'warning','failed'=>'error','invalid'=>'error','code_invalid'=>'error','switch_blocked'=>'error','connected_failed'=>'warning','draft'=>'warning','segments_draft'=>'warning','conflict'=>'warning','pending'=>'warning','form_saved_failed'=>'warning','form_failed'=>'error'];
+        $messages=['saved'=>'Einstellungen gespeichert.','connected'=>'Verbunden. Texte und Angaben wurden aus der Zentrale abgerufen, Vorschau unter Rechtsinhalte.','connected_failed'=>'Verbindung gespeichert, aber der Abruf ist fehlgeschlagen. Code prüfen oder später „Texte und Angaben jetzt abrufen“.','connect_failed'=>'Verbinden hat nicht geklappt, der Link war abgelaufen oder schon benutzt. Bitte erneut auf „Mit Zentrale verbinden“ klicken.','connection_empty'=>'Nichts eingetragen. Am einfachsten oben auf „Mit Zentrale verbinden“ klicken.','code_invalid'=>'Der Verbindungscode ist unvollständig oder ungültig. Bitte in der Zentrale neu kopieren.','switch_blocked'=>'Diese Website ist schon mit einem anderen Projekt verbunden. Erst das Rechtstext-Modul ausschalten, dann neu verbinden.','synced'=>'Texte und Angaben aus der Zentrale abgerufen.','failed'=>'Abruf fehlgeschlagen. Die letzte gültige lokale Fassung bleibt erhalten.','enabled'=>'Modul vorbereitet. Bei einem Fremdanbieter erfolgt noch keine Übernahme.','disabled'=>'Rechtstext-Modul ausgeschaltet. Lokale Daten bleiben erhalten.','draft'=>'Angaben lokal als Entwurf gespeichert. Erneut senden, sobald die Verbindung funktioniert.','ok'=>'Angaben gespeichert und an die Zentrale gesendet.','merged'=>'Gespeichert. Parallele Änderungen wurden zusammengeführt.','conflict'=>'Gespeichert, aber einige Felder wurden parallel geändert. Bitte unten prüfen.','pending'=>'Änderung wartet in der Zentrale auf Freigabe.','invalid'=>'Angaben ungültig oder Formular veraltet. Es wurde nichts umgeschaltet.','segments_ok'=>'Gespeichert. Geänderte Bausteine werden ab jetzt nicht mehr automatisch aktualisiert, alle anderen schon.','segments_unchanged'=>'Keine Änderungen.','segments_draft'=>'Zentrale nicht erreichbar. Deine Änderungen sind lokal gespeichert und stehen beim nächsten Öffnen wieder im Editor.','selbst_an'=>'Der Text ist vom Abgleich ausgeschlossen und wird hier selbst gepflegt.','selbst_aus'=>'Der Text kommt wieder aus der Rechtstexte-Zentrale.','selbst_gespeichert'=>'Gespeichert. Der Text ist sofort auf der Website.'];
+        $problem=['connect_failed'=>'error','connection_empty'=>'warning','failed'=>'error','invalid'=>'error','code_invalid'=>'error','switch_blocked'=>'error','connected_failed'=>'warning','draft'=>'warning','segments_draft'=>'warning','conflict'=>'warning','pending'=>'warning'];
         $tab=isset($_GET['tab'])&&$_GET['tab']==='settings'?'settings':'texts';
         $edit=isset($_GET['edit'])&&is_string($_GET['edit'])&&preg_match('~^(imprint|privacy_policy|social_media|terms|withdrawal)/(de|en)$~',wp_unslash($_GET['edit']))?wp_unslash($_GET['edit']):'';
         echo '<div class="wrap bb-ui"><h1>Rechtstexte</h1><nav class="nav-tab-wrapper">';
         foreach(['texts'=>'Rechtsinhalte','settings'=>'Verbindung'] as $key=>$name) { echo '<a class="nav-tab'.($tab===$key?' nav-tab-active':'').'" href="'.esc_url(self::url($key==='texts'?[]:['tab'=>$key])).'">'.$name.'</a>'; }
         echo '</nav>';
         $message=isset($_GET['bb_legal_result'])?sanitize_key(wp_unslash($_GET['bb_legal_result'])):'';
-        // Zurück aus dem Formular der Zentrale: gleich neu abrufen, damit die Website den neuen Stand zeigt
-        if(isset($_GET['bb_legal_form'])&&$_GET['bb_legal_form']==='gespeichert') { $message=(new Client())->sync()?'form_saved':'form_saved_failed'; }
         if(isset($messages[$message])) { echo '<div class="notice notice-'.($problem[$message]??'success').'"><p>'.esc_html($messages[$message]).'</p></div>'; }
         if($tab==='settings') { self::settings(); }
         elseif($edit!=='') { self::editor($edit); }
@@ -42,10 +58,10 @@ final class Admin {
     /** Übersicht wie in bb-cms: Seite, Stand, Status, Bearbeiten | Ansehen. */
     private static function texts() {
         $cache=Store::get('cache');
-        echo '<p style="max-width:900px">Impressum und Datenschutzerklärung kommen aus Bausteinen der Rechtstexte-Zentrale und werden automatisch aktuell gehalten. Geändert wird alles im Formular mit Vorschau: Angaben eintragen, Dienste anhaken, fertig.</p>';
-        self::form('formular');submit_button('Im Formular bearbeiten','primary','submit',false);echo ' <span class="description">Öffnet das Formular in der Rechtstexte-Zentrale, danach geht es hierher zurück.</span></form>';
         if(($cache['identity']??'')!==Store::identity()||empty($cache['outputs'])) { echo '<p>Noch keine Texte abgerufen. Unter <a href="'.esc_url(self::url(['tab'=>'settings'])).'">Verbindung</a> die Zentrale einrichten und Texte abrufen.</p>'; return; }
-        echo '<table class="widefat striped" style="max-width:1100px"><thead><tr><th>Seite</th><th>Stand</th><th>Pflege</th></tr></thead><tbody>';
+        echo '<p style="max-width:900px">Impressum und Datenschutzerklärung kommen aus Bausteinen der Rechtstexte-Zentrale und werden automatisch aktuell gehalten. Geändert wird alles hier im Formular, Schritt für Schritt mit Vorschau.</p>';
+        self::formular(Client::FORM_TYPES);
+        echo '<h2>Alle Texte</h2><table class="widefat striped" style="max-width:1100px"><thead><tr><th>Seite</th><th>Stand</th><th>Pflege</th></tr></thead><tbody>';
         foreach($cache['outputs'] as $row) {
             $v=$row['payload'];$key=$v['type'].'/'.$v['language'];
             $selbst=self::selbst($key)!==null;
@@ -80,8 +96,8 @@ final class Admin {
             return;
         }
         // Aus der Zentrale: geändert wird nur im Formular. Wer keinen Abgleich will, pflegt den Text selbst.
-        echo '<p style="max-width:900px">Dieser Text kommt aus der Rechtstexte-Zentrale und bleibt automatisch aktuell, auch bei Gesetzesänderungen. Änderungen machst du im Formular.</p>';
-        self::form('formular');submit_button('Im Formular bearbeiten','primary','submit',false);echo '</form>';
+        echo '<p style="max-width:900px">Dieser Text kommt aus der Rechtstexte-Zentrale und bleibt automatisch aktuell, auch bei Gesetzesänderungen.'.(in_array($type,Client::FORM_TYPES,true)&&$lang==='de'?' Änderungen machst du hier im Formular.':' Änderungen macht die Agentur.').'</p>';
+        if($lang==='de') { self::formular([$type]); }
         self::selbstKnopf($key);
     }
     private static function selbstKnopf($key) {
@@ -191,11 +207,6 @@ final class Admin {
                 $state=wp_generate_password(32,false,false);
                 set_transient('bb_legal_connect_'.get_current_user_id(),['state'=>$state,'endpoint'=>$endpoint],900);
                 wp_redirect($endpoint.'/?'.http_build_query(['view'=>'connect','domain'=>wp_parse_url(home_url(),PHP_URL_HOST),'return'=>self::url(['tab'=>'settings']),'state'=>$state]));exit;
-            } elseif($operation==='formular') {
-                // Ein Formular für alle: Einmal-Link der Zentrale, Rückweg auf diese Seite
-                $args=[];$result='form_failed';
-                $link=(new Client())->formLink(self::url());
-                wp_redirect($link);exit;
             } elseif($operation==='sync') { $result=(new Client())->sync()?'synced':'failed';if(($_POST['back']??'')==='inputs') { $args=['tab'=>'inputs']; } }
             elseif($operation==='toggle') {
                 $enabled=isset($_POST['enabled'])&&$_POST['enabled']==='1';
@@ -212,7 +223,7 @@ final class Admin {
                 else { unset($selbst[$key]);$result='selbst_aus'; }
                 Store::put('selbst',$selbst);
             }
-        } catch(\Throwable $e) { if(!in_array($result,['code_invalid','switch_blocked','connection_empty','form_failed'],true)) { $result='invalid'; } }
+        } catch(\Throwable $e) { if(!in_array($result,['code_invalid','switch_blocked','connection_empty'],true)) { $result='invalid'; } }
         wp_safe_redirect(self::url(array_merge($args,['bb_legal_result'=>$result])));exit;
     }
 }
