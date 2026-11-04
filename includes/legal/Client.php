@@ -61,13 +61,32 @@ final class Client {
             return $result['status'];
         } catch (\Throwable $e) { Store::status('draft_saved'); return 'draft'; }
     }
-    /** Einmal-Link ins Formular der Zentrale (10 Minuten). Rückweg nur auf diese Website. */
-    public function formLink($return) {
-        $reply = $this->request('POST', 'form-link', ['return' => (string)$return]);
-        $url = (string)($reply['url'] ?? '');
-        $endpoint = rtrim(Store::get('endpoint', 'https://legal.bbkd.de'), '/');
-        if (strpos($url, $endpoint . '/?formular=') !== 0 || !preg_match('/formular=[a-f0-9]{64}$/', $url)) { throw new \RuntimeException('Ungültige Antwort der Zentrale.'); }
-        return $url;
+    const FORM_TYPES = ['imprint', 'privacy_policy'];
+    /**
+     * Formular der Zentrale für form.js (gleiches Skript wie in BB Studio): laden, vorschau,
+     * uebernehmen (festes Impressum in Felder), speichern (Eingaben an die Zentrale, danach Abruf).
+     */
+    public function form($type, $data) {
+        if (!in_array($type, self::FORM_TYPES, true)) { throw new \RuntimeException('Für diesen Text gibt es kein Formular.'); }
+        $action = is_string($data['aktion'] ?? null) ? $data['aktion'] : '';
+        $inputs = isset($data['inputs']) && is_array($data['inputs']) ? $data['inputs'] : null;
+        if ($action === 'laden') { return $this->request('GET', 'form/' . $type); }
+        if ($action === 'vorschau') { return $this->request('POST', 'form/' . $type . '/preview', ['inputs' => $inputs ?: new \stdClass()]); }
+        if ($action === 'uebernehmen' && $type === 'imprint') { return $this->request('POST', 'form/imprint/prefill', new \stdClass()); }
+        if ($action === 'speichern') {
+            if ($inputs === null) { throw new \RuntimeException('Keine Eingaben.'); }
+            $version = isset($data['version']) && is_int($data['version']) ? $data['version'] : null;
+            $result = $this->request('PUT', 'inputs', ['inputs' => $inputs, 'base_version_id' => $version]);
+            $errors = is_array($result['render_errors'] ?? null) ? array_map('strval', $result['render_errors']) : [];
+            $synced = $this->sync();
+            $status = (string)($result['status'] ?? '');
+            if ($status === 'pending') { $message = 'Gespeichert, die Agentur gibt die Änderung noch frei.'; }
+            elseif ($errors) { $message = 'Gespeichert, aber noch unvollständig: ' . implode('; ', $errors) . '. Bis dahin bleibt der bisherige Text online.'; }
+            elseif ($status === 'conflict') { $message = 'Gespeichert. Ein Feld wurde parallel geändert, die Agentur prüft das.'; }
+            else { $message = $synced ? 'Gespeichert. Der neue Text steht auf der Website.' : 'Gespeichert. Der Abruf ist fehlgeschlagen, der Text kommt mit dem nächsten Abgleich.'; }
+            return ['meldung' => $message, 'unvollstaendig' => (bool)$errors || !$synced];
+        }
+        throw new \RuntimeException('Unbekannte Aktion.');
     }
     public function acknowledge() {
         $observed = Store::get('observed'); $cache = Store::get('cache');

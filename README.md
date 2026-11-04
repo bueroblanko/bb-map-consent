@@ -366,6 +366,13 @@ Eigene Texte, die hinter einem Baustein stehen, der für die Website nicht mehr 
 
 Korrektur zu 0.10.23: Der Knopf „Finanzierungsrechner laden“ tat nichts, weil der Dienst im Skript keinen Einwilligungsschlüssel hatte. Ein Test prüft jetzt für jeden Platzhalter-Dienst, dass der Schlüssel existiert.
 
+## 0.11.1: Formular direkt in WordPress
+
+Das Formular der Zentrale (Impressum und Datenschutz, Schritte, Felder, Live-Vorschau, Übernahme aus dem
+festen Impressum) steht direkt unter Einstellungen → Rechtstexte, ohne Weiterleitung. `includes/legal/form.js`
+ist dasselbe Skript wie in BB Studio (`public/bb-legal-form.js`), es ruft `admin-ajax.php?action=bb_legal_form`
+(Nonce, nur Admins), das signiert an die Zentrale weiterreicht (`form/*`, `PUT inputs`) und danach neu abruft.
+
 ## 0.11.0: Rechtstexte nur noch im Formular der Zentrale
 
 Unter Einstellungen → Rechtstexte öffnet „Im Formular bearbeiten“ das Formular der Rechtstexte-Zentrale (Impressum und Datenschutz, Schritt für Schritt mit Vorschau), danach geht es zurück und die Texte werden sofort neu abgerufen. Den Baustein-Editor, eigene Einschübe und den Reiter „Angaben“ gibt es nicht mehr. Wer einen Text nicht aus der Zentrale beziehen will, wählt „Selbst pflegen“ und bekommt den offenen Editor, ist dann aber selbst verantwortlich. Braucht die Zentrale ab Schema 7 (`POST /sites/{id}/form-link`).
