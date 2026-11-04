@@ -50,8 +50,14 @@
     (kinder || []).forEach(function (k) { if (k) e.appendChild(typeof k === 'string' ? document.createTextNode(k) : k); });
     return e;
   }
-  var gleich = function (a, b) { return JSON.stringify(a == null ? '' : a) === JSON.stringify(b == null ? '' : b); };
-  var leer = function (v) { return v == null || v === '' || v === false || (Array.isArray(v) && !v.length); };
+  // Leer ist leer: null, '', false, [] und Objekte ohne gefuellten Wert (z. B. {} oder {de:''}) zaehlen gleich.
+  var leer = function (v) {
+    if (v == null || v === '' || v === false) return true;
+    if (Array.isArray(v)) return !v.length;
+    if (typeof v === 'object') return Object.keys(v).every(function (k) { return leer(v[k]); });
+    return false;
+  };
+  var gleich = function (a, b) { return JSON.stringify(leer(a) ? '' : a) === JSON.stringify(leer(b) ? '' : b); };
   var kopie = function (o) { return JSON.parse(JSON.stringify(o || {})); };
 
   function mount(wurzel, optionen) {

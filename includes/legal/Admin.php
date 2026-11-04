@@ -7,8 +7,10 @@ final class Admin {
         $hook=add_options_page('Rechtstexte','Rechtstexte','manage_options','bb-legal',[__CLASS__,'screen']);
         add_action('admin_enqueue_scripts',function($current)use($hook){
             if($current!==$hook) { return; }
-            wp_enqueue_style('bb-ui-admin',Module::url().'/admin.css',[],Module::version());
-            wp_enqueue_script('bb-legal-form',Module::url().'/form.js',[],Module::version(),true);
+            // Version mit Dateistand, sonst haelt der Browser nach einem Update die alte Datei (ver blieb 1.0.0).
+            $v=function($f){return Module::version().'.'.(int)@filemtime(__DIR__.'/'.$f);};
+            wp_enqueue_style('bb-ui-admin',Module::url().'/admin.css',[],$v('admin.css'));
+            wp_enqueue_script('bb-legal-form',Module::url().'/form.js',[],$v('form.js'),true);
         });
     }
     public static function notice() {
