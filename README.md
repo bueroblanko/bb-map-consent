@@ -366,6 +366,11 @@ Eigene Texte, die hinter einem Baustein stehen, der für die Website nicht mehr 
 
 Korrektur zu 0.10.23: Der Knopf „Finanzierungsrechner laden“ tat nichts, weil der Dienst im Skript keinen Einwilligungsschlüssel hatte. Ein Test prüft jetzt für jeden Platzhalter-Dienst, dass der Schlüssel existiert.
 
+## 0.11.3: Häkchen kommt nach dem Update sicher an
+
+Das Formular-Skript wird jetzt mit dem Dateistand geladen, sonst zeigte der Browser nach dem Update auf 0.11.2 noch das alte
+Skript ohne Haftungsausschluss. Leere Felder ({}, {de:''}) gelten nicht mehr als Änderung („(leer) →“ ohne neuen Wert).
+
 ## 0.11.2: Haftungsausschluss vor dem Speichern
 
 Im Schritt „Abschluss“ des Formulars erscheint bei Änderungen ein Haftungsausschluss zum Anhaken (wie bei eRecht24).
