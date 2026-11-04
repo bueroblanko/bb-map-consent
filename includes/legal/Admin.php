@@ -37,6 +37,9 @@ final class Admin {
         $data=is_array($data)?$data:[];
         $type=is_string($data['typ']??null)?$data['typ']:'';
         if(!in_array($type,Client::FORM_TYPES,true)||self::selbst($type.'/de')!==null) { wp_send_json(['fehler'=>'Für diesen Text gibt es hier kein Formular.'],404); }
+        // Benutzer fuer den Verlauf in der Zentrale, nur serverseitig gesetzt
+        $u=wp_get_current_user();$name=trim((string)$u->display_name);$login=(string)$u->user_login;
+        $data['benutzer']=($name!==''&&$name!==$login?$name.' ('.$login.')':$login).' · WordPress';
         try { wp_send_json((new Client())->form($type,$data)); }
         catch(\Throwable $e) { wp_send_json(['fehler'=>$e->getMessage()],409); }
     }
@@ -47,7 +50,7 @@ final class Admin {
         $problem=['connect_failed'=>'error','connection_empty'=>'warning','failed'=>'error','invalid'=>'error','code_invalid'=>'error','switch_blocked'=>'error','connected_failed'=>'warning','draft'=>'warning','segments_draft'=>'warning','conflict'=>'warning','pending'=>'warning'];
         $tab=isset($_GET['tab'])&&$_GET['tab']==='settings'?'settings':'texts';
         $edit=isset($_GET['edit'])&&is_string($_GET['edit'])&&preg_match('~^(imprint|privacy_policy|social_media|terms|withdrawal)/(de|en)$~',wp_unslash($_GET['edit']))?wp_unslash($_GET['edit']):'';
-        echo '<div class="wrap bb-ui"><h1>Rechtstexte</h1><nav class="nav-tab-wrapper">';
+        echo '<div class="wrap bb-ui bb-ui-breit"><h1>Rechtstexte</h1><nav class="nav-tab-wrapper">';
         foreach(['texts'=>'Rechtsinhalte','settings'=>'Verbindung'] as $key=>$name) { echo '<a class="nav-tab'.($tab===$key?' nav-tab-active':'').'" href="'.esc_url(self::url($key==='texts'?[]:['tab'=>$key])).'">'.$name.'</a>'; }
         echo '</nav>';
         $message=isset($_GET['bb_legal_result'])?sanitize_key(wp_unslash($_GET['bb_legal_result'])):'';

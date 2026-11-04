@@ -104,3 +104,5 @@ details.bb-section>.bb-grid{margin-top:12px}
 .bb-ui .nav-tab-wrapper{margin-bottom:16px}
 .bb-ui .bb-swatch{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .bb-ui .bb-color{width:44px;height:32px;padding:0 2px;margin-left:8px;vertical-align:middle;border:1px solid #c3c4c7;border-radius:6px;background:#fff;cursor:pointer}
+/* Rechtstexte-Seite mit Formular: volle Breite (Philipp 05.11.2026) */
+.bb-ui.bb-ui-breit{max-width:none}

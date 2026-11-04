@@ -72,12 +72,14 @@ final class Client {
         $inputs = isset($data['inputs']) && is_array($data['inputs']) ? $data['inputs'] : null;
         if ($action === 'laden') { return $this->request('GET', 'form/' . $type); }
         if ($action === 'vorschau') { return $this->request('POST', 'form/' . $type . '/preview', ['inputs' => $inputs ?: new \stdClass()]); }
+        if ($action === 'verlauf') { return $this->request('GET', 'form/' . $type . '/history'); }
         if ($action === 'uebernehmen' && $type === 'imprint') { return $this->request('POST', 'form/imprint/prefill', new \stdClass()); }
         if ($action === 'speichern') {
             if (($data['haftung'] ?? null) !== true) { throw new \RuntimeException('Bitte zuerst den Haftungsausschluss bestätigen.'); }
             if ($inputs === null) { throw new \RuntimeException('Keine Eingaben.'); }
             $version = isset($data['version']) && is_int($data['version']) ? $data['version'] : null;
-            $result = $this->request('PUT', 'inputs', ['inputs' => $inputs, 'base_version_id' => $version]);
+            $user = isset($data['benutzer']) && is_string($data['benutzer']) ? $data['benutzer'] : '';
+            $result = $this->request('PUT', 'inputs', ['inputs' => $inputs, 'base_version_id' => $version, 'user' => $user]);
             $errors = is_array($result['render_errors'] ?? null) ? array_map('strval', $result['render_errors']) : [];
             $synced = $this->sync();
             $status = (string)($result['status'] ?? '');
