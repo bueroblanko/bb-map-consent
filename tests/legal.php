@@ -68,8 +68,12 @@ check((new Client())->form('imprint',['aktion'=>'vorschau','inputs'=>['phone'=>'
 [$url,$args]=$GLOBALS['requests'][0];check($args['method']==='POST'&&json_decode($args['body'],true)['inputs']['phone']==='2','Formular: Vorschau schickt Eingaben');
 $GLOBALS['requests']=[];$GLOBALS['http']=[reply(['status'=>'ok','inputs'=>['phone'=>'2'],'version'=>4,'render_errors'=>['Firma fehlt'],'conflicts'=>[]])];
 $bad=false;try{(new Client())->form('imprint',['aktion'=>'speichern','inputs'=>['phone'=>'2'],'version'=>3]);}catch(\RuntimeException $e){$bad=strpos($e->getMessage(),'Haftungsausschluss')!==false;}check($bad&&!$GLOBALS['requests'],'Formular: Speichern ohne Haftungsausschluss abgelehnt');
-$r=(new Client())->form('imprint',['aktion'=>'speichern','inputs'=>['phone'=>'2'],'version'=>3,'haftung'=>true]);
+$r=(new Client())->form('imprint',['aktion'=>'speichern','inputs'=>['phone'=>'2'],'version'=>3,'haftung'=>true,'benutzer'=>'Anna (anna) · WordPress']);
 [$url,$args]=$GLOBALS['requests'][0];check($args['method']==='PUT'&&json_decode($args['body'],true)['base_version_id']===3,'Formular: Speichern mit Basisversion');
+check(json_decode($args['body'],true)['user']==='Anna (anna) · WordPress','Formular: Benutzer geht in den Verlauf');
+$GLOBALS['requests']=[];$GLOBALS['http']=[reply(['history'=>[['version'=>4,'at'=>'2026-11-05T00:00:00Z','user'=>'Anna','source'=>'wordpress','changes'=>[]]]])];
+check((new Client())->form('imprint',['aktion'=>'verlauf'])['history'][0]['user']==='Anna','Formular: Verlauf aus der Zentrale');
+[$url]=$GLOBALS['requests'][0];check(substr(parse_url($url,PHP_URL_PATH),-21)==='/form/imprint/history','Formular: Verlauf-Pfad');
 check($r['unvollstaendig']&&strpos($r['meldung'],'Firma fehlt')!==false,'Formular: unvollständig gemeldet');
 $bad=false;try{(new Client())->form('terms',['aktion'=>'laden']);}catch(\RuntimeException $e){$bad=true;}check($bad,'Formular: nur Impressum und Datenschutz');
 $bad=false;try{(new Client())->form('imprint',['aktion'=>'loeschen']);}catch(\RuntimeException $e){$bad=true;}check($bad,'Formular: unbekannte Aktion abgelehnt');

@@ -8,15 +8,15 @@
 (function () {
   'use strict';
   var TYPEN = { imprint: 'Impressum', privacy_policy: 'Datenschutz' };
-  var CSS = '.bblf{--bblf-rand:#dcdcde;--bblf-akzent:#2271b1;font-size:14px;line-height:1.5;color:#1d2327}'
+  var CSS = '.bblf{--bblf-rand:#dcdcde;--bblf-akzent:#1d2327;font-size:14px;line-height:1.5;color:#1d2327}'
     + '.bblf *{box-sizing:border-box}.bblf-tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}'
     + '.bblf-tab{border:1px solid var(--bblf-rand);background:#fff;border-radius:4px;padding:6px 14px;cursor:pointer;font:inherit}'
     + '.bblf-tab[aria-selected=true]{background:var(--bblf-akzent);border-color:var(--bblf-akzent);color:#fff}'
-    + '.bblf-raster{display:grid;grid-template-columns:200px minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}'
+    + '.bblf-raster{display:grid;grid-template-columns:220px minmax(0,1fr) minmax(0,1.25fr);gap:20px;align-items:start}.bblf-vorschau{position:sticky;top:40px}'
     + '@media (max-width:1100px){.bblf-raster{grid-template-columns:minmax(0,1fr)}}'
     + '.bblf-schritte{list-style:none;margin:0;padding:0}.bblf-schritte li{margin:0 0 4px}'
     + '.bblf-schritte button{display:flex;gap:8px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:6px 8px;border-radius:4px;cursor:pointer;font:inherit;color:inherit}'
-    + '.bblf-schritte button[aria-current=step]{background:#f0f6fc;font-weight:600}'
+    + '.bblf-schritte button[aria-current=step]{background:#f0f0f1;font-weight:600}'
     + '.bblf-nr{display:inline-flex;width:22px;height:22px;border-radius:50%;border:1px solid var(--bblf-rand);align-items:center;justify-content:center;font-size:12px;flex:none}'
     + '.bblf-schritte .bblf-fertig .bblf-nr{background:var(--bblf-akzent);border-color:var(--bblf-akzent);color:#fff}'
     + '.bblf-karte{background:#fff;border:1px solid var(--bblf-rand);border-radius:6px;padding:16px}'
@@ -31,10 +31,12 @@
     + '.bblf-fuss{display:flex;gap:8px;justify-content:space-between;margin-top:16px;flex-wrap:wrap}'
     + '.bblf-knopf{border:1px solid var(--bblf-akzent);color:var(--bblf-akzent);background:#fff;border-radius:4px;padding:6px 14px;cursor:pointer;font:inherit}'
     + '.bblf-knopf.bblf-primaer{background:var(--bblf-akzent);color:#fff}.bblf-knopf[disabled]{opacity:.6;cursor:default}'
-    + '.bblf-hinweis{border-left:4px solid var(--bblf-akzent);background:#f0f6fc;padding:8px 12px;margin:0 0 14px;border-radius:2px}'
+    + '.bblf-hinweis{border-left:4px solid var(--bblf-akzent);background:#f6f7f7;padding:8px 12px;margin:0 0 14px;border-radius:2px}'
     + '.bblf-hinweis.bblf-fehler{border-color:#d63638;background:#fcf0f1}.bblf-hinweis.bblf-ok{border-color:#00a32a;background:#edfaef}'
-    + '.bblf-vorschau iframe{width:100%;height:70vh;border:1px solid var(--bblf-rand);border-radius:4px;background:#fff}'
-    + '.bblf-haftung{background:#fcf9e8;border:1px solid #dba617;border-radius:4px;padding:10px 12px}.bblf-diff{margin:0 0 12px;padding-left:18px}.bblf-diff li{margin:0 0 4px}.bblf-alt{color:#8a2424;text-decoration:line-through}.bblf-neu{color:#00661f}';
+    + '.bblf-vorschau iframe{width:100%;height:calc(100vh - 140px);min-height:480px;border:1px solid var(--bblf-rand);border-radius:4px;background:#fff}'
+    + '.bblf-haftung{background:#fcf9e8;border:1px solid #dba617;border-radius:4px;padding:10px 12px}.bblf-diff{margin:0 0 12px;padding-left:18px}.bblf-diff li{margin:0 0 4px}.bblf-alt{color:#8a2424;text-decoration:line-through}.bblf-neu{color:#00661f}'
+    + '.bblf-verlauf{list-style:none;margin:0;padding:0}.bblf-verlauf>li{border-top:1px solid var(--bblf-rand);padding:10px 0}.bblf-verlauf>li:first-child{border-top:0;padding-top:0}'
+    + '.bblf-verlauf-kopf{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 6px}.bblf-verlauf-kopf span{color:#646970}.bblf-verlauf-nav{margin-top:12px!important}';
   var HAFTUNG = 'Ich habe die Angaben geprüft und bin für ihre Richtigkeit und Vollständigkeit selbst verantwortlich. Die Texte werden aus Bausteinen '
     + 'erzeugt und ersetzen keine individuelle Rechtsberatung. Für Schäden aus falschen oder fehlenden Angaben wird keine Haftung übernommen.';
   var VORSCHAU_CSS = 'body{font:15px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:#1d2327;margin:16px;overflow-wrap:anywhere}h1{font-size:22px;line-height:1.3}h2{font-size:18px;line-height:1.3}h3{font-size:16px}';
@@ -81,7 +83,7 @@
     function laden(typ) {
       s.typ = typ; s.schritt = 0; s.form = null; s.vorschau = null; s.laedt = true; zeichne();
       rufe({ aktion: 'laden', typ: typ }).then(function (form) {
-        s.form = form; s.haftung = false; s.inputs = kopie(form.inputs); s.anfang = kopie(form.inputs); s.laedt = false;
+        s.form = form; s.haftung = false; s.verlauf = null; s.inputs = kopie(form.inputs); s.anfang = kopie(form.inputs); s.laedt = false;
         zeichne(); vorschau(0);
       }).catch(function (e) { s.laedt = false; s.meldung = { art: 'fehler', text: e.message }; zeichne(); });
     }
@@ -215,6 +217,28 @@
       }).catch(function (e) { knopf.disabled = false; s.meldung = { art: 'fehler', text: e.message }; zeichne(); });
     }
 
+    // Verlauf aus der Zentrale: wer hat wann was gespeichert (Philipp 05.11.2026)
+    function verlauf(haupt) {
+      haupt.appendChild(el('h2', { text: 'Verlauf' }));
+      if (s.verlauf === null) {
+        s.verlauf = 'laedt';
+        rufe({ aktion: 'verlauf', typ: s.typ }).then(function (r) { s.verlauf = r.history || []; zeichne(); })
+          .catch(function (e) { s.verlauf = { fehler: e.message }; zeichne(); });
+      }
+      if (s.verlauf === 'laedt' || s.verlauf === null) { haupt.appendChild(el('p', { text: 'Wird geladen …' })); return; }
+      if (s.verlauf.fehler) { haupt.appendChild(el('div', { class: 'bblf-hinweis bblf-fehler', text: s.verlauf.fehler })); return; }
+      if (!s.verlauf.length) { haupt.appendChild(el('p', { text: 'Noch keine gespeicherten Änderungen.' })); return; }
+      haupt.appendChild(el('ol', { class: 'bblf-verlauf' }, s.verlauf.map(function (v) {
+        var d = new Date(v.at), zeit = isNaN(d) ? v.at : d.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+        return el('li', {}, [
+          el('div', { class: 'bblf-verlauf-kopf' }, [el('strong', { text: v.user || 'Unbekannt' }), el('span', { text: zeit })]),
+          el('ul', { class: 'bblf-diff' }, (v.changes || []).map(function (c) {
+            return el('li', {}, [el('strong', { text: c.label + ': ' }), el('span', { class: 'bblf-alt', text: c.old || '(leer)' }), ' → ', el('span', { class: 'bblf-neu', text: c.new || '(leer)' })]);
+          })),
+        ]);
+      })));
+    }
+
     function zeichne() {
       wurzel.textContent = '';
       if (typen.length > 1) {
@@ -245,7 +269,9 @@
         return el('li', { class: i < s.schritt ? 'bblf-fertig' : '' }, [el('button', { type: 'button', 'aria-current': i === s.schritt ? 'step' : false, onclick: function () { s.schritt = i; zeichne(); } },
           [el('span', { class: 'bblf-nr', text: String(i + 1) }), st.title])]);
       }).concat([el('li', {}, [el('button', { type: 'button', 'aria-current': s.schritt === letzter ? 'step' : false, onclick: function () { s.schritt = letzter; zeichne(); } },
-        [el('span', { class: 'bblf-nr', text: '✓' }), 'Abschluss'])])]));
+        [el('span', { class: 'bblf-nr', text: '✓' }), 'Abschluss'])]),
+        el('li', { class: 'bblf-verlauf-nav' }, [el('button', { type: 'button', 'aria-current': s.schritt === letzter + 1 ? 'step' : false, onclick: function () { s.schritt = letzter + 1; zeichne(); } },
+        [el('span', { class: 'bblf-nr', text: '↺' }), 'Verlauf'])])]));
 
       var haupt = el('div', { class: 'bblf-karte' });
       if (s.schritt < letzter) {
@@ -255,6 +281,8 @@
           s.schritt > 0 ? el('button', { type: 'button', class: 'bblf-knopf', text: 'Zurück', onclick: function () { s.schritt--; zeichne(); } }) : el('span'),
           el('button', { type: 'button', class: 'bblf-knopf bblf-primaer', text: 'Weiter', onclick: function () { s.schritt++; zeichne(); } }),
         ]));
+      } else if (s.schritt > letzter) {
+        verlauf(haupt);
       } else {
         var diff = aenderungen();
         haupt.appendChild(el('h2', { text: 'Abschluss' }));
