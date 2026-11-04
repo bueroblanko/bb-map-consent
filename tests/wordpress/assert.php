@@ -25,17 +25,12 @@ if($case==='off'){
 }elseif($case==='editor'){
  require_once ABSPATH.'wp-admin/includes/template.php';require_once ABSPATH.'wp-admin/includes/plugin.php';wp_set_current_user(1);
  ob_start();\BB\Legal\V1\Admin::screen();$list=ob_get_clean();
- verify(strpos($list,'Rechtsinhalte')!==false&&strpos($list,'edit=imprint')!==false&&strpos($list,'tab=inputs')!==false&&strpos($list,'tab=settings')!==false,'Übersicht mit Bearbeiten-Link und Reitern Angaben und Verbindung');
+ verify(strpos($list,'Rechtsinhalte')!==false&&strpos($list,'Im Formular bearbeiten')!==false&&strpos($list,'edit=imprint')!==false&&strpos($list,'tab=settings')!==false&&strpos($list,'tab=inputs')===false,'Übersicht mit Formular-Knopf, Selbst pflegen und Verbindung, ohne Angaben-Reiter');
  $_GET['edit']='imprint/de';ob_start();\BB\Legal\V1\Admin::screen();$editor=ob_get_clean();unset($_GET['edit']);
- verify(strpos($editor,'name="blocks[imprint_company/de]"')!==false&&strpos($editor,'name="inserts[_start]"')!==false&&strpos($editor,'name="inserts[_end]"')!==false,'Editor zeigt Bausteine und Einfügestellen');
-verify(strpos($editor,'name="inserts[imprint_alt/de]"')!==false&&strpos($editor,'Verwaister Einschub')!==false,'Editor zeigt Einschub hinter nicht mehr greifendem Baustein');
- verify(strpos($editor,'angepasst – wird nicht mehr aktualisiert')!==false&&strpos($editor,'name="reset[]"')!==false,'Angepasster Baustein markiert und zurücksetzbar');
- verify(strpos($editor,'Eigener Anfang')!==false,'Bestehender eigener Text vorbelegt');
+ verify(strpos($editor,'Im Formular bearbeiten')!==false&&strpos($editor,'Vom Abgleich ausschließen')!==false&&strpos($editor,'name="blocks[')===false&&strpos($editor,'name="inserts[')===false,'Bearbeiten nur im Formular, kein freier Baustein-Editor');
  $_GET['tab']='settings';ob_start();\BB\Legal\V1\Admin::screen();$settings=ob_get_clean();unset($_GET['tab']);
  verify(strpos($settings,'name="site_key"')!==false&&strpos($settings,'name="enabled"')!==false,'Einstellungen mit Seitenschlüssel und Aktivierung');
- $_GET['tab']='inputs';ob_start();\BB\Legal\V1\Admin::screen();$inputs=ob_get_clean();unset($_GET['tab']);
- verify(strpos($inputs,'data-bb-wizard')!==false&&strpos($inputs,'name="fields[company]"')!==false&&strpos($inputs,'name="fields[services][]" value="youtube"')!==false,'Angaben als Assistent mit Feldern und Dienstauswahl');
- verify((new Client())->saveSegments('imprint','de',['imprint_company/de'=>'<p>Geändert</p>'],['_end'=>'<p>Schluss</p>'],[])==='segments_ok'&&get_option('bb_legal_test_last_segments')['inserts']['_end']==='<p>Schluss</p>','Änderungen signiert an die Zentrale gesendet');
+ verify(preg_match('~^https://legal\.bbkd\.de/\?formular=[a-f0-9]{64}$~',(new Client())->formLink(admin_url('options-general.php?page=bb-legal')))===1&&strpos(get_option('bb_legal_test_last_form')['return'],'page=bb-legal')!==false,'Formular-Link signiert angefragt');
 }elseif($case==='ack'){
  verify((new Client())->acknowledge(),'Öffentlich gerenderte Ausgaben bestätigt');verify(count(get_option('bb_legal_test_last_ack')['output_ids'])===3,'Bestätigung umfasst nur öffentlich gerenderte Ausgaben');
 }elseif($case==='foreign'){

@@ -61,29 +61,13 @@ final class Client {
             return $result['status'];
         } catch (\Throwable $e) { Store::status('draft_saved'); return 'draft'; }
     }
-    /** Bausteinfolge eines Textes live aus der Zentrale (für den Editor). */
-    public function segments($type, $lang) {
-        if (!in_array($type, Store::TYPES, true) || !in_array($lang, ['de','en'], true)) { throw new \RuntimeException('Unbekannter Text.'); }
-        $reply = $this->request('GET', 'segments/' . $type . '/' . $lang);
-        if (!is_array($reply['segments'] ?? null)) { throw new \RuntimeException('Ungültige Antwort der Zentrale.'); }
-        return $reply['segments'];
-    }
-    /**
-     * Geänderte Bausteine, eigene Texte und Rücksetzungen senden. Unveränderte Bausteine erkennt die Zentrale selbst.
-     * Ist sie nicht erreichbar, bleibt alles als lokaler Entwurf erhalten.
-     */
-    public function saveSegments($type, $lang, $blocks, $inserts, $reset) {
-        $key = $type . '/' . $lang;
-        $drafts = Store::get('segment_drafts'); $drafts = is_array($drafts) ? $drafts : [];
-        $drafts[$key] = ['blocks'=>$blocks,'inserts'=>$inserts,'reset'=>$reset,'at'=>time(),'identity'=>Store::identity()];
-        Store::put('segment_drafts', $drafts);
-        try {
-            $result = $this->request('PUT', 'segments/' . $type . '/' . $lang, ['blocks'=>(object)$blocks,'inserts'=>(object)$inserts,'reset'=>array_values($reset)]);
-            if (!in_array($result['status'] ?? '', ['ok','unchanged'], true)) { throw new \RuntimeException('Unbekannter Status.'); }
-            unset($drafts[$key]); Store::put('segment_drafts', $drafts);
-            $this->sync();
-            return 'segments_' . $result['status'];
-        } catch (\Throwable $e) { Store::status('draft_saved'); return 'segments_draft'; }
+    /** Einmal-Link ins Formular der Zentrale (10 Minuten). Rückweg nur auf diese Website. */
+    public function formLink($return) {
+        $reply = $this->request('POST', 'form-link', ['return' => (string)$return]);
+        $url = (string)($reply['url'] ?? '');
+        $endpoint = rtrim(Store::get('endpoint', 'https://legal.bbkd.de'), '/');
+        if (strpos($url, $endpoint . '/?formular=') !== 0 || !preg_match('/formular=[a-f0-9]{64}$/', $url)) { throw new \RuntimeException('Ungültige Antwort der Zentrale.'); }
+        return $url;
     }
     public function acknowledge() {
         $observed = Store::get('observed'); $cache = Store::get('cache');
