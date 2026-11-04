@@ -372,6 +372,8 @@ Das Formular der Zentrale (Impressum und Datenschutz, Schritte, Felder, Live-Vor
 festen Impressum) steht direkt unter Einstellungen → Rechtstexte, ohne Weiterleitung. `includes/legal/form.js`
 ist dasselbe Skript wie in BB Studio (`public/bb-legal-form.js`), es ruft `admin-ajax.php?action=bb_legal_form`
 (Nonce, nur Admins), das signiert an die Zentrale weiterreicht (`form/*`, `PUT inputs`) und danach neu abruft.
+Vor dem Speichern muss ein Haftungsausschluss angehakt werden (wie bei eRecht24); ohne Häkchen lehnt auch
+der Server das Speichern ab.
 
 ## 0.11.0: Rechtstexte nur noch im Formular der Zentrale
 

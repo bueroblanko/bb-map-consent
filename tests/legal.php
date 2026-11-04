@@ -67,7 +67,8 @@ $GLOBALS['requests']=[];$GLOBALS['http']=[reply(['texts'=>[['language'=>'de','ti
 check((new Client())->form('imprint',['aktion'=>'vorschau','inputs'=>['phone'=>'2']])['texts'][0]['html']==='<p>x</p>','Formular: Vorschau');
 [$url,$args]=$GLOBALS['requests'][0];check($args['method']==='POST'&&json_decode($args['body'],true)['inputs']['phone']==='2','Formular: Vorschau schickt Eingaben');
 $GLOBALS['requests']=[];$GLOBALS['http']=[reply(['status'=>'ok','inputs'=>['phone'=>'2'],'version'=>4,'render_errors'=>['Firma fehlt'],'conflicts'=>[]])];
-$r=(new Client())->form('imprint',['aktion'=>'speichern','inputs'=>['phone'=>'2'],'version'=>3]);
+$bad=false;try{(new Client())->form('imprint',['aktion'=>'speichern','inputs'=>['phone'=>'2'],'version'=>3]);}catch(\RuntimeException $e){$bad=strpos($e->getMessage(),'Haftungsausschluss')!==false;}check($bad&&!$GLOBALS['requests'],'Formular: Speichern ohne Haftungsausschluss abgelehnt');
+$r=(new Client())->form('imprint',['aktion'=>'speichern','inputs'=>['phone'=>'2'],'version'=>3,'haftung'=>true]);
 [$url,$args]=$GLOBALS['requests'][0];check($args['method']==='PUT'&&json_decode($args['body'],true)['base_version_id']===3,'Formular: Speichern mit Basisversion');
 check($r['unvollstaendig']&&strpos($r['meldung'],'Firma fehlt')!==false,'Formular: unvollständig gemeldet');
 $bad=false;try{(new Client())->form('terms',['aktion'=>'laden']);}catch(\RuntimeException $e){$bad=true;}check($bad,'Formular: nur Impressum und Datenschutz');
