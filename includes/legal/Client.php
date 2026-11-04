@@ -74,6 +74,7 @@ final class Client {
         if ($action === 'vorschau') { return $this->request('POST', 'form/' . $type . '/preview', ['inputs' => $inputs ?: new \stdClass()]); }
         if ($action === 'uebernehmen' && $type === 'imprint') { return $this->request('POST', 'form/imprint/prefill', new \stdClass()); }
         if ($action === 'speichern') {
+            if (($data['haftung'] ?? null) !== true) { throw new \RuntimeException('Bitte zuerst den Haftungsausschluss bestätigen.'); }
             if ($inputs === null) { throw new \RuntimeException('Keine Eingaben.'); }
             $version = isset($data['version']) && is_int($data['version']) ? $data['version'] : null;
             $result = $this->request('PUT', 'inputs', ['inputs' => $inputs, 'base_version_id' => $version]);

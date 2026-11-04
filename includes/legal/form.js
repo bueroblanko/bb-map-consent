@@ -34,7 +34,9 @@
     + '.bblf-hinweis{border-left:4px solid var(--bblf-akzent);background:#f0f6fc;padding:8px 12px;margin:0 0 14px;border-radius:2px}'
     + '.bblf-hinweis.bblf-fehler{border-color:#d63638;background:#fcf0f1}.bblf-hinweis.bblf-ok{border-color:#00a32a;background:#edfaef}'
     + '.bblf-vorschau iframe{width:100%;height:70vh;border:1px solid var(--bblf-rand);border-radius:4px;background:#fff}'
-    + '.bblf-diff{margin:0 0 12px;padding-left:18px}.bblf-diff li{margin:0 0 4px}.bblf-alt{color:#8a2424;text-decoration:line-through}.bblf-neu{color:#00661f}';
+    + '.bblf-haftung{background:#fcf9e8;border:1px solid #dba617;border-radius:4px;padding:10px 12px}.bblf-diff{margin:0 0 12px;padding-left:18px}.bblf-diff li{margin:0 0 4px}.bblf-alt{color:#8a2424;text-decoration:line-through}.bblf-neu{color:#00661f}';
+  var HAFTUNG = 'Ich habe die Angaben geprüft und bin für ihre Richtigkeit und Vollständigkeit selbst verantwortlich. Die Texte werden aus Bausteinen '
+    + 'erzeugt und ersetzen keine individuelle Rechtsberatung. Für Schäden aus falschen oder fehlenden Angaben wird keine Haftung übernommen.';
   var VORSCHAU_CSS = 'body{font:15px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:#1d2327;margin:16px;overflow-wrap:anywhere}h1{font-size:22px;line-height:1.3}h2{font-size:18px;line-height:1.3}h3{font-size:16px}';
 
   function el(tag, attrs, kinder) {
@@ -73,7 +75,7 @@
     function laden(typ) {
       s.typ = typ; s.schritt = 0; s.form = null; s.vorschau = null; s.laedt = true; zeichne();
       rufe({ aktion: 'laden', typ: typ }).then(function (form) {
-        s.form = form; s.inputs = kopie(form.inputs); s.anfang = kopie(form.inputs); s.laedt = false;
+        s.form = form; s.haftung = false; s.inputs = kopie(form.inputs); s.anfang = kopie(form.inputs); s.laedt = false;
         zeichne(); vorschau(0);
       }).catch(function (e) { s.laedt = false; s.meldung = { art: 'fehler', text: e.message }; zeichne(); });
     }
@@ -191,7 +193,7 @@
 
     function speichern(knopf) {
       knopf.disabled = true;
-      rufe({ aktion: 'speichern', typ: s.typ, inputs: s.inputs, version: s.form.version }).then(function (r) {
+      rufe({ aktion: 'speichern', typ: s.typ, inputs: s.inputs, version: s.form.version, haftung: s.haftung === true }).then(function (r) {
         s.meldung = { art: r.unvollstaendig ? 'fehler' : 'ok', text: r.meldung || 'Gespeichert.' };
         laden(s.typ);
       }).catch(function (e) { knopf.disabled = false; s.meldung = { art: 'fehler', text: e.message }; zeichne(); });
@@ -251,8 +253,16 @@
         var diff = aenderungen();
         haupt.appendChild(el('h2', { text: 'Abschluss' }));
         haupt.appendChild(diff.length ? el('ul', { class: 'bblf-diff' }, diff) : el('p', { text: 'Keine Änderungen.' }));
-        var knopf = el('button', { type: 'button', class: 'bblf-knopf bblf-primaer', text: 'Speichern und veröffentlichen', disabled: !diff.length });
+        var knopf = el('button', { type: 'button', class: 'bblf-knopf bblf-primaer', text: 'Speichern und veröffentlichen', disabled: true });
         knopf.addEventListener('click', function () { speichern(knopf); });
+        // Haftungsausschluss wie bei eRecht24: ohne Haken kein Speichern (der Server prueft es auch).
+        if (diff.length) {
+          haupt.appendChild(el('label', { class: 'bblf-feld bblf-schalter bblf-haftung' }, [
+            el('input', { type: 'checkbox', checked: s.haftung, onchange: function (e) { s.haftung = e.target.checked; knopf.disabled = !s.haftung; } }),
+            el('span', { text: HAFTUNG }),
+          ]));
+          knopf.disabled = !s.haftung;
+        }
         haupt.appendChild(el('div', { class: 'bblf-fuss' }, [
           el('button', { type: 'button', class: 'bblf-knopf', text: 'Zurück', onclick: function () { s.schritt--; zeichne(); } }),
           diff.length ? el('button', { type: 'button', class: 'bblf-knopf', text: 'Änderungen verwerfen', onclick: function () { s.inputs = kopie(s.anfang); s.schritt = 0; zeichne(); vorschau(0); } }) : null,
