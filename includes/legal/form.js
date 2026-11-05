@@ -34,11 +34,17 @@
     + '.bblf-hinweis{border-left:4px solid var(--bblf-akzent);background:#f6f7f7;padding:8px 12px;margin:0 0 14px;border-radius:2px}'
     + '.bblf-hinweis.bblf-fehler{border-color:#d63638;background:#fcf0f1}.bblf-hinweis.bblf-ok{border-color:#00a32a;background:#edfaef}'
     + '.bblf-vorschau iframe{width:100%;height:calc(100vh - 140px);min-height:480px;border:1px solid var(--bblf-rand);border-radius:4px;background:#fff}'
-    + '.bblf-haftung{background:#fcf9e8;border:1px solid #dba617;border-radius:4px;padding:10px 12px}.bblf-diff{margin:0 0 12px;padding-left:18px}.bblf-diff li{margin:0 0 4px}.bblf-alt{color:#8a2424;text-decoration:line-through}.bblf-neu{color:#00661f}'
+    + '.bblf-haftung-text{border:1px solid var(--bblf-rand);border-radius:4px;padding:8px 12px;margin:0 0 10px;font-size:13px;color:#3c434a}.bblf-haftung-text summary{font-weight:600;cursor:pointer;color:#1d2327}.bblf-haftung-text p{margin:8px 0}.bblf-haftung{background:#fcf9e8;border:1px solid #dba617;border-radius:4px;padding:10px 12px}.bblf-diff{margin:0 0 12px;padding-left:18px}.bblf-diff li{margin:0 0 4px}.bblf-alt{color:#8a2424;text-decoration:line-through}.bblf-neu{color:#00661f}'
     + '.bblf-verlauf{list-style:none;margin:0;padding:0}.bblf-verlauf>li{border-top:1px solid var(--bblf-rand);padding:10px 0}.bblf-verlauf>li:first-child{border-top:0;padding-top:0}'
     + '.bblf-verlauf-kopf{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 6px}.bblf-verlauf-kopf span{color:#646970}.bblf-verlauf-nav{margin-top:12px!important}';
-  var HAFTUNG = 'Ich habe die Angaben geprüft und bin für ihre Richtigkeit und Vollständigkeit selbst verantwortlich. Die Texte werden aus Bausteinen '
-    + 'erzeugt und ersetzen keine individuelle Rechtsberatung. Für Schäden aus falschen oder fehlenden Angaben wird keine Haftung übernommen.';
+  // Haftungshinweise, von Philipp freigegeben am 05.11.2026 (eigener Text, nicht von eRecht24)
+  var HAFTUNG_HINWEISE = [
+    'Impressum und Datenschutzerklärung entstehen aus Textbausteinen und Ihren Angaben in diesem Formular. Es handelt sich um Mustertexte, die die bekannten gesetzlichen Vorgaben zum Zeitpunkt der Erstellung berücksichtigen.',
+    'Büro Blanko kennt nicht alle Abläufe und Dienste auf Ihrer Website und prüft Ihre Angaben nicht. Verantwortlich für Richtigkeit, Vollständigkeit und Verwendung der Texte ist der Betreiber der Website.',
+    'Die Texte ersetzen keine Rechtsberatung. Für Ihren Einzelfall empfehlen wir eine anwaltliche Prüfung. Bearbeiten Sie die Texte für eine andere Person oder Firma, weisen Sie diese bitte darauf hin.',
+    'Büro Blanko haftet unbeschränkt bei Vorsatz und grober Fahrlässigkeit, bei Schäden aus der Verletzung von Leben, Körper oder Gesundheit, nach dem Produkthaftungsgesetz und im Rahmen übernommener Garantien. Bei leichter Fahrlässigkeit haftet Büro Blanko nur für die Verletzung wesentlicher Vertragspflichten, begrenzt auf den vorhersehbaren, vertragstypischen Schaden. Das gilt auch für Erfüllungsgehilfen.',
+  ];
+  var HAFTUNG = 'Ich habe die Hinweise gelesen und meine Angaben geprüft. Ich bin mit der Haftungsregelung einverstanden und verwende die Texte in eigener Verantwortung.';
   var VORSCHAU_CSS = 'body{font:15px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:#1d2327;margin:16px;overflow-wrap:anywhere}h1{font-size:22px;line-height:1.3}h2{font-size:18px;line-height:1.3}h3{font-size:16px}';
 
   function el(tag, attrs, kinder) {
@@ -291,6 +297,8 @@
         knopf.addEventListener('click', function () { speichern(knopf); });
         // Haftungsausschluss wie bei eRecht24: ohne Haken kein Speichern (der Server prueft es auch).
         if (diff.length) {
+          haupt.appendChild(el('details', { class: 'bblf-haftung-text', open: true }, [el('summary', { text: 'Hinweise zur Haftung' })]
+            .concat(HAFTUNG_HINWEISE.map(function (t) { return el('p', { text: t }); }))));
           haupt.appendChild(el('label', { class: 'bblf-feld bblf-schalter bblf-haftung' }, [
             el('input', { type: 'checkbox', checked: s.haftung, onchange: function (e) { s.haftung = e.target.checked; knopf.disabled = !s.haftung; } }),
             el('span', { text: HAFTUNG }),
