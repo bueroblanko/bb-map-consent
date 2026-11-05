@@ -366,6 +366,11 @@ Eigene Texte, die hinter einem Baustein stehen, der für die Website nicht mehr 
 
 Korrektur zu 0.10.23: Der Knopf „Finanzierungsrechner laden“ tat nichts, weil der Dienst im Skript keinen Einwilligungsschlüssel hatte. Ein Test prüft jetzt für jeden Platzhalter-Dienst, dass der Schlüssel existiert.
 
+## 0.11.5: Hinweise zur Haftung im Formular
+
+Im Abschluss stehen vor dem Häkchen die „Hinweise zur Haftung“ (Mustertext, Verantwortung des Betreibers, keine Rechtsberatung,
+Haftung mit den gesetzlichen Ausnahmen). Text von Philipp am 05.11.2026 freigegeben, gleich in BB Studio.
+
 ## 0.11.4: Formular breiter, schwarz, mit Verlauf
 
 Knöpfe schwarz, die Rechtstexte-Seite nutzt die volle Breite, die Vorschau ist größer und bleibt beim Scrollen stehen.
