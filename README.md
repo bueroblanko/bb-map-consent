@@ -366,6 +366,32 @@ Eigene Texte, die hinter einem Baustein stehen, der für die Website nicht mehr 
 
 Korrektur zu 0.10.23: Der Knopf „Finanzierungsrechner laden“ tat nichts, weil der Dienst im Skript keinen Einwilligungsschlüssel hatte. Ein Test prüft jetzt für jeden Platzhalter-Dienst, dass der Schlüssel existiert.
 
+## 0.12.0: Karte in Kundenfarben mit [bb_karte]
+
+Neuer Shortcode für eine eigene Karte statt Google Maps oder Snazzy Maps:
+
+`[bb_karte lat="50.119483" lng="8.682741" zoom="13" hoehe="400" land="#18243e" wasser="#4b5269" strasse="#a48463" titel="Sternstraße 8" route="https://maps.app.goo.gl/…"]`
+
+Pflicht sind nur `lat` und `lng`. Farben als Hex: `land`, `wasser`, `strasse`, `akzent` (Nadel und Button, sonst die
+Akzentfarbe aus BB Consent → Gestaltung); Grünflächen, Nebenstraßen, Bahn und Schriftfarbe werden daraus abgeleitet.
+Ohne Farben ist die Karte hell und neutral.
+
+Vor dem Klick steht ein Vektorbild mit den echten Straßen des Orts in denselben Farben. Der Server baut es einmal aus
+den Kacheln von OpenFreeMap (OpenStreetMap-Daten) und legt es unter `uploads/bb-consent/karten/` ab: für Redakteure
+sofort beim Ansehen der Seite, für Besucher im Hintergrund per WP-Cron. Bis dahin ist der Platzhalter einfarbig. Besucher
+haben vor dem Klick keinen Kontakt zu OpenFreeMap. Nach „Karte laden“ kommt MapLibre aus dem Plugin (`assets/karte/vendor`),
+die Kacheln und Schriften von tiles.openfreemap.org. Kein API-Schlüssel, keine Kosten. Die Datenschutzerklärung muss
+OpenFreeMap nennen. Die Freigabe ist eigenständig (nicht die Google-Maps-Freigabe), optional 30 Tage gemerkt;
+Widerruf über „Karte wieder ausblenden“ auf der Karte oder `[bb_karte_revoke]`.
+
+Bestehende Google-, Snazzy- und Divi-Karten bleiben unverändert, es wird nichts automatisch umgestellt. Andere Farben
+oder ein anderer Ort ergeben ein neues Bild; alte Bilder bleiben liegen. Danach den Seiten-Cache leeren, sobald das Bild
+da ist, sonst liefert der Cache die Seite ohne Platzhalterbild.
+
+`assets/karte/bb-map.js` ist dieselbe Datei wie in `~/Claude/bb-map` (dort auch der Generator für statische Seiten);
+die Farbrechnung in `includes/karte.php` und in `bb-map.js` muss gleich bleiben, `tests/karte.php` prüft die Werte.
+Geprüft: Platzhalter aus PHP und aus dem Node-Generator für Frankfurt mit echten Kacheln pfadgleich.
+
 ## 0.11.5: Hinweise zur Haftung im Formular
 
 Im Abschluss stehen vor dem Häkchen die „Hinweise zur Haftung“ (Mustertext, Verantwortung des Betreibers, keine Rechtsberatung,

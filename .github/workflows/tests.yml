@@ -21,6 +21,7 @@ jobs:
           for test in tests/*.php; do php "$test"; done
           node tests/consent.js
           node --check assets/maps.js
+          node --check assets/karte/bb-map.js
           node --check includes/legal/editor.js
           node --check includes/legal/form.js
   wordpress:
